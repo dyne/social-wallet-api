@@ -28,8 +28,32 @@
             [ring.middleware.session :refer :all]
             [markdown.core :as md]
 
+            [taoensso.timbre :as log]
+
             [freecoin-lib.core :refer :all]
+            [freecoin-lib.app :as freecoin]
             [social-wallet-api.config :refer :all]))
+
+;; sanitize configuration or returns nil if not found
+(defn- get-config [obj]
+  (if (contains? obj :config)
+    (let [mc (merge config-default (:config obj))]
+      ;; any imposed conversion of config values may happen here
+      ;; for example values that must be integer or strings:
+      ;; (merge mc {:total  (Integer. (:total mc))
+      ;;            :quorum (Integer. (:quorum mc))})
+      mc
+      )
+    nil))
+
+;; generic wrapper to complete the conf structure if missing
+;; TODO: may be a good point to insert promises and raise errors
+(defn- complete [func obj schema]
+  (if-let [conf (get-config obj)]
+    {:data (func conf (:data obj))
+     :config conf}
+    {:data (func config-default (:data obj))
+     :config config-default}))
 
 (def rest-api
   (api
@@ -49,8 +73,41 @@
                    :body (md/md-to-html-string
                           (slurp "README.md"))}))
 
-    (context "/wallet/v1" []
-      :tags ["WALLET"])))
+    ;; (context "/wallet/v1/accounts" []
+    ;;          :tags ["WALLET" "ACCOUNTS"]
+    ;;          (GET "list" []
+    ;;                :return Accounts
+    ;;                :body [config Config]
+    ;;                :summary "List all valid accounts"
+    ;;                (ok (let [conf (get-config config)]
+    ;;                      {:data (list-accounts conf)
+    ;;                       :config conf})))
+
+    ;;          (POST "import" []
+    ;;                :return Accounts
+    ;;                :body [account Accounts]
+    ;;                :summary "Import an existing account"
+    ;;                (ok (complete import-account account Accounts)))
+
+    ;;          (POST "create" []
+    ;;                :return Accounts
+    ;;                :body [account Accounts]
+    ;;                :summary "Create a new account"
+    ;;                (ok (complete create-account account Accounts))))
+
+    ))
+
+(defonce ^:private app-state (atom {}))
+(defn init    []
+  (log/set-level! :warn)
+  (->> @app-state
+       freecoin/start
+       (swap! app-state))
+  (log/warn "MongoDB backend connected."))
+
+(defn destroy []
+  (log/warn "Stopping the Social Wallet API.")
+  (freecoin/stop @app-state))
 
 ;; explicit middleware configuration for compojure
 (def rest-api-defaults
