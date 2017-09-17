@@ -32,7 +32,8 @@
 
             [freecoin-lib.core :refer :all]
             [freecoin-lib.app :as freecoin]
-            [social-wallet-api.config :refer :all]))
+            [social-wallet-api.config  :refer :all]
+            [social-wallet-api.schemas :refer :all]))
 
 ;; sanitize configuration or returns nil if not found
 (defn- get-config [obj]
@@ -55,6 +56,18 @@
     {:data (func config-default (:data obj))
      :config config-default}))
 
+(defonce ^:private app-state (atom {}))
+(defn init    []
+  (log/set-level! :info)
+  (->> @app-state
+       freecoin/start
+       (swap! app-state conj))
+  (log/warn "MongoDB backend connected."))
+
+(defn destroy []
+  (log/warn "Stopping the Social Wallet API.")
+  (freecoin/stop @app-state))
+
 (def rest-api
   (api
     {:swagger
@@ -66,22 +79,27 @@
               :contact {:url "https://github.com/pienews/social-wallet-api"}}}}}
 
     (context "/" []
-             :tags ["static"]
+             :tags ["INFO"]
              (GET "/readme" request
                   {:headers {"Content-Type"
                              "text/html; charset=utf-8"}
                    :body (md/md-to-html-string
                           (slurp "README.md"))}))
 
+    (context "/wallet/v1/tags" []
+             :tags ["TAGS"]
+             (GET "/list" request
+                  {:return Tags
+                   :summary "List all tags"
+                   :body (ok {:data (list-tags (:backend @app-state) {})})}))
+
+
     ;; (context "/wallet/v1/accounts" []
-    ;;          :tags ["WALLET" "ACCOUNTS"]
-    ;;          (GET "list" []
-    ;;                :return Accounts
-    ;;                :body [config Config]
+    ;;          :tags ["ACCOUNTS"]
+    ;;          (GET "/list" request
+    ;;               {:return Accounts
     ;;                :summary "List all valid accounts"
-    ;;                (ok (let [conf (get-config config)]
-    ;;                      {:data (list-accounts conf)
-    ;;                       :config conf})))
+    ;;                :body (ok {:data (list-accounts (:backend @app-state))})}))
 
     ;;          (POST "import" []
     ;;                :return Accounts
@@ -96,18 +114,6 @@
     ;;                (ok (complete create-account account Accounts))))
 
     ))
-
-(defonce ^:private app-state (atom {}))
-(defn init    []
-  (log/set-level! :warn)
-  (->> @app-state
-       freecoin/start
-       (swap! app-state))
-  (log/warn "MongoDB backend connected."))
-
-(defn destroy []
-  (log/warn "Stopping the Social Wallet API.")
-  (freecoin/stop @app-state))
 
 ;; explicit middleware configuration for compojure
 (def rest-api-defaults
