@@ -22,9 +22,9 @@
 (defproject social-wallet-api "0.1.0-SNAPSHOT"
   :description "Freecoin web API for wallet operations"
   :dependencies [[org.clojure/clojure "1.8.0"]
-                 [metosin/compojure-api "1.1.10"]
-                 [ring/ring-core "1.6.1"]
-                 [ring/ring-defaults "0.3.0"]
+                 [metosin/compojure-api "1.1.11"]
+                 [ring/ring-core "1.6.2"]
+                 [ring/ring-defaults "0.3.1"]
 
                  [org.clojars.dyne/freecoin-lib "0.4.0-SNAPSHOT"]
 
@@ -32,7 +32,7 @@
                  [org.clojars.dyne/fxc "0.5.0"]
 
                  ;; for rendering of readme etc.
-                 [markdown-clj "0.9.99"]
+                 [markdown-clj "1.0.1"]
 
                  ;; logging done right with timbre and slf4j
                  [com.taoensso/timbre "4.10.0"]
@@ -56,9 +56,9 @@
          :destroy social-wallet-api.handler/destroy}
 
   :uberjar-name "server.jar"
-  :profiles {:dev {:dependencies [[javax.servlet/javax.servlet-api "3.1.0"]
-                                  [cheshire "5.7.1"]
-                                  [ring/ring-mock "0.3.0"]
+  :profiles {:dev {:dependencies [[javax.servlet/javax.servlet-api "4.0.0"]
+                                  [cheshire "5.8.0"]
+                                  [ring/ring-mock "0.3.1"]
                                   [midje "1.8.3"]]
                    :plugins [[lein-ring "0.12.0"]
                              [lein-midje "3.2"]]}})
