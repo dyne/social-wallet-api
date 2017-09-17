@@ -93,6 +93,13 @@
                    :summary "List all tags"
                    :body (ok {:data (list-tags (:backend @app-state) {})})}))
 
+    (context "/wallet/v1/transactions" []
+             :tags ["TRANSACTIONS"]
+             (GET "/list" request
+                  {:return Transactions
+                   :summary "List all transactions"
+                   :body (ok {:data (list-transactions
+                                     (:backend @app-state) {})})}))
 
     ;; (context "/wallet/v1/accounts" []
     ;;          :tags ["ACCOUNTS"]

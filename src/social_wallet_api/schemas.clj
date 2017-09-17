@@ -42,3 +42,18 @@
   {(s/required-key :tag) [s/Str]
    (s/required-key :created-by) [s/Str]
    (s/required-key :created) [s/Str]})
+
+(s/defschema Transactions
+  "Transaction schema validator"
+  ;; {:_id (str timestamp "-" from-account-id)
+  ;;  :currency "MONGO"
+  ;;  :timestamp timestamp
+  ;;  :from-id from-account-id
+  ;;  :to-id to-account-id
+  ;;  :tags tags
+  ;;  :amount (util/bigdecimal->long amount)}]
+  {(s/required-key :currency) [s/Str]
+   (s/required-key :timestamp) [s/Str]
+   (s/required-key :from-id) [s/Str]
+   (s/required-key :to-id) [s/Str]
+   (s/required-key :amount) [s/Num]})
