@@ -27,6 +27,10 @@
 (defn- k [type key default]
   (rjs/field type {:example (get default key)}))
 
+(s/defschema Query
+  "POST Wallet query validator"
+  {:blockchain (rjs/field s/Str {:example "mongo"})})
+
 (s/defschema Accounts
   "Account schema validator"
   ;; first-name last-name email password flags
@@ -36,12 +40,15 @@
    (s/required-key :password)   [s/Str]
    (s/required-key :flags)      [s/Str]})
 
-(s/defschema Tags
+(s/defschema Tag
   "Tag schema validator"
   ;; tag(string) created-by(string) created(timestamp)
   {(s/required-key :tag) [s/Str]
+   (s/required-key :count) [s/Num]
+   (s/required-key :amount) [s/Num]
    (s/required-key :created-by) [s/Str]
    (s/required-key :created) [s/Str]})
+(s/defschema Tags [Tag])
 
 (s/defschema Transactions
   "Transaction schema validator"

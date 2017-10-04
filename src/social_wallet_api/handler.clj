@@ -33,9 +33,11 @@
             [auxiliary.config :refer :all]
             [freecoin-lib.core :refer :all]
             [freecoin-lib.app :as freecoin]
-            [social-wallet-api.schemas :refer :all]))
+            [social-wallet-api.schemas :refer [Query Tag Tags Transactions]]))
 
 (defonce config-default (config-read "social-wallet-api"))
+
+(defonce blockchains (atom {}))
 
 ;; sanitize configuration or returns nil if not found
 (defn- get-config [obj]
@@ -58,7 +60,6 @@
     {:data (func config-default (:data obj))
      :config config-default}))
 
-(def blockchains (atom {}))
 
 (defn init    []
 
@@ -97,11 +98,19 @@
 
     (context "/wallet/v1/tags" []
              :tags ["TAGS"]
-             (GET "/list" request
-                  {:return Tags
-                   :summary "List all tags"
-                   :body (ok {:data (list-tags
-                                     (:mongo @blockchains) {})})}))
+             (POST "/list" request
+                  :return Tags
+                  :body [query Query]
+                  :summary "List all tags"
+                  :description "
+
+Takes a JSON structure made of a `blockchain` identifier.
+
+It returns a list of tags found on that blockchain.
+
+"
+                  (ok {:data (log/spy (list-tags
+                              (get @blockchains (-> query :blockchain keyword)) {}))})))
 
     (context "/wallet/v1/transactions" []
              :tags ["TRANSACTIONS"]
@@ -138,7 +147,7 @@
   securely over HTTPS."
   (-> site-defaults
       (assoc-in [:cookies] false)
-      (assoc-in [:security :anti-forgery] true)
+      (assoc-in [:security :anti-forgery] false)
       (assoc-in [:security :ssl-redirect] false)
       (assoc-in [:security :hsts] true)))
 
