@@ -64,10 +64,11 @@
 
   (if-let [log-level (get-in config-default [:social-wallet-api :log-level])]
     (log/set-level! (keyword log-level))
+    ;; else
     (log/set-level! :info))
 
   (let [mongo (->> (get-in config-default [:social-wallet-api :freecoin])
-                   freecoin/connect-mongo)]
+                   freecoin/connect-mongo new-mongo)]
     (swap! blockchains conj {:mongo mongo}))
   (log/warn "MongoDB backend connected."))
 
@@ -81,7 +82,8 @@
      {:ui "/"
       :spec "/swagger.json"
       :data {:info
-             {:title "Social-wallet-api"
+             {:version "0.5.0-SNAPSHOT"
+              :title "Social-wallet-api"
               :description "Social Wallet REST API backend for webapps"
               :contact {:url "https://github.com/pienews/social-wallet-api"}}}}}
 
