@@ -26,10 +26,14 @@
                  [ring/ring-core "1.6.2"]
                  [ring/ring-defaults "0.3.1"]
 
+                 ;; core freecoin toolkit library
                  [org.clojars.dyne/freecoin-lib "0.4.0-SNAPSHOT"]
-
+                 
                  ;; simple secret sharing
                  [org.clojars.dyne/fxc "0.5.0"]
+
+                 ;; auxiliary functions (configuration etc.)
+                 [org.clojars.dyne/auxiliary "0.2.0-SNAPSHOT"]
 
                  ;; for rendering of readme etc.
                  [markdown-clj "1.0.1"]
@@ -55,10 +59,11 @@
          :handler social-wallet-api.handler/app
          :destroy social-wallet-api.handler/destroy}
 
-  :uberjar-name "server.jar"
+  :uberjar-name "social-wallet-api.jar"
   :profiles {:dev {:dependencies [[javax.servlet/javax.servlet-api "4.0.0"]
                                   [cheshire "5.8.0"]
                                   [ring/ring-mock "0.3.1"]
                                   [midje "1.8.3"]]
+                   :repl-options {:init-ns social-wallet-api.handler}
                    :plugins [[lein-ring "0.12.0"]
                              [lein-midje "3.2"]]}})

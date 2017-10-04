@@ -30,7 +30,7 @@
 (s/defschema Accounts
   "Account schema validator"
   ;; first-name last-name email password flags
-  {(s/required-key :first-name) [s/Str]
+  {:first-name s/Str
    (s/optional-key :last-name)  [s/Str]
    (s/required-key :email)      [s/Str]
    (s/required-key :password)   [s/Str]

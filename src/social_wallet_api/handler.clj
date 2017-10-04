@@ -30,15 +30,17 @@
 
             [taoensso.timbre :as log]
 
+            [auxiliary.config :refer :all]
             [freecoin-lib.core :refer :all]
             [freecoin-lib.app :as freecoin]
-            [social-wallet-api.config  :refer :all]
             [social-wallet-api.schemas :refer :all]))
+
+(defonce config-default (config-read "social-wallet-api"))
 
 ;; sanitize configuration or returns nil if not found
 (defn- get-config [obj]
   (if (contains? obj :config)
-    (let [mc (merge config-default (:config obj))]
+    (let [mc (merge config-default {:defaults (:config obj)})]
       ;; any imposed conversion of config values may happen here
       ;; for example values that must be integer or strings:
       ;; (merge mc {:total  (Integer. (:total mc))
@@ -56,17 +58,22 @@
     {:data (func config-default (:data obj))
      :config config-default}))
 
-(defonce ^:private app-state (atom {}))
+(def blockchains (atom {}))
+
 (defn init    []
-  (log/set-level! :info)
-  (->> @app-state
-       freecoin/start
-       (swap! app-state conj))
+
+  (if-let [log-level (get-in config-default [:social-wallet-api :log-level])]
+    (log/set-level! (keyword log-level))
+    (log/set-level! :info))
+
+  (let [mongo (->> (get-in config-default [:social-wallet-api :freecoin])
+                   freecoin/connect-mongo)]
+    (swap! blockchains conj {:mongo mongo}))
   (log/warn "MongoDB backend connected."))
 
 (defn destroy []
   (log/warn "Stopping the Social Wallet API.")
-  (freecoin/stop @app-state))
+  (freecoin/disconnect-mongo (:mongo @blockchains)))
 
 (def rest-api
   (api
@@ -91,7 +98,8 @@
              (GET "/list" request
                   {:return Tags
                    :summary "List all tags"
-                   :body (ok {:data (list-tags (:backend @app-state) {})})}))
+                   :body (ok {:data (list-tags
+                                     (:mongo @blockchains) {})})}))
 
     (context "/wallet/v1/transactions" []
              :tags ["TRANSACTIONS"]
@@ -99,7 +107,7 @@
                   {:return Transactions
                    :summary "List all transactions"
                    :body (ok {:data (list-transactions
-                                     (:backend @app-state) {})})}))
+                                     (:mongo @blockchains) {})})}))
 
     ;; (context "/wallet/v1/accounts" []
     ;;          :tags ["ACCOUNTS"]
@@ -128,7 +136,7 @@
   securely over HTTPS."
   (-> site-defaults
       (assoc-in [:cookies] false)
-      (assoc-in [:security :anti-forgery] false)
+      (assoc-in [:security :anti-forgery] true)
       (assoc-in [:security :ssl-redirect] false)
       (assoc-in [:security :hsts] true)))
 
