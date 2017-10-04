@@ -33,7 +33,7 @@
             [auxiliary.config :refer :all]
             [freecoin-lib.core :refer :all]
             [freecoin-lib.app :as freecoin]
-            [social-wallet-api.schemas :refer [Query Tag Tags Transactions]]))
+            [social-wallet-api.schemas :refer [Query Tag Transaction]]))
 
 (defonce config-default (config-read "social-wallet-api"))
 
@@ -110,15 +110,22 @@ It returns a list of tags found on that blockchain.
 
 "
                   (ok (list-tags
-                              (get @blockchains (-> query :blockchain keyword)){}))))
+                       (get @blockchains (-> query :blockchain keyword)){}))))
 
     (context "/wallet/v1/transactions" []
              :tags ["TRANSACTIONS"]
-             (GET "/list" request
-                  {:return Transactions
+             (POST "/list" request
+                   :return [Transaction]
+                   :body [query Query]
                    :summary "List all transactions"
-                   :body (ok {:data (list-transactions
-                                     (:mongo @blockchains) {})})}))
+                   :description "
+Takes a JSON structure with a `blockchain` query identifier.
+
+Returns a list of transactions found on that blockchain.
+
+"
+                   (ok (list-transactions
+                        (get @blockchains (-> query :blockchain keyword)) {}))))
 
     ;; (context "/wallet/v1/accounts" []
     ;;          :tags ["ACCOUNTS"]
