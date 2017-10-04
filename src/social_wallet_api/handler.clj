@@ -99,7 +99,7 @@
     (context "/wallet/v1/tags" []
              :tags ["TAGS"]
              (POST "/list" request
-                  :return Tags
+                  :return [Tag]
                   :body [query Query]
                   :summary "List all tags"
                   :description "
@@ -109,8 +109,8 @@ Takes a JSON structure made of a `blockchain` identifier.
 It returns a list of tags found on that blockchain.
 
 "
-                  (ok {:data (log/spy (list-tags
-                              (get @blockchains (-> query :blockchain keyword)) {}))})))
+                  (ok (list-tags
+                              (get @blockchains (-> query :blockchain keyword)){}))))
 
     (context "/wallet/v1/transactions" []
              :tags ["TRANSACTIONS"]

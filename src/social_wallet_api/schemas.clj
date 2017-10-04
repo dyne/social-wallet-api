@@ -43,12 +43,12 @@
 (s/defschema Tag
   "Tag schema validator"
   ;; tag(string) created-by(string) created(timestamp)
-  {(s/required-key :tag) [s/Str]
-   (s/required-key :count) [s/Num]
-   (s/required-key :amount) [s/Num]
-   (s/required-key :created-by) [s/Str]
-   (s/required-key :created) [s/Str]})
-(s/defschema Tags [Tag])
+  {(s/required-key :tag)        s/Str
+   (s/required-key :count)      s/Num
+   (s/required-key :amount)     s/Num
+   (s/required-key :created-by) s/Any
+   (s/required-key :created)    s/Any})
+
 
 (s/defschema Transactions
   "Transaction schema validator"
@@ -59,8 +59,8 @@
   ;;  :to-id to-account-id
   ;;  :tags tags
   ;;  :amount (util/bigdecimal->long amount)}]
-  {(s/required-key :currency) [s/Str]
-   (s/required-key :timestamp) [s/Str]
-   (s/required-key :from-id) [s/Str]
-   (s/required-key :to-id) [s/Str]
-   (s/required-key :amount) [s/Num]})
+  {(s/required-key :currency)   s/Str
+   (s/required-key :timestamp)  s/Str
+   (s/required-key :from-id)    s/Str
+   (s/required-key :to-id)      s/Str
+   (s/required-key :amount)     s/Num})
