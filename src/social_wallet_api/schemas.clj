@@ -31,7 +31,7 @@
   "POST Wallet query validator"
   {:blockchain (rjs/field s/Str {:example "mongo"})})
 
-(s/defschema Accounts
+(s/defschema Account
   "Account schema validator"
   ;; first-name last-name email password flags
   {:first-name s/Str
