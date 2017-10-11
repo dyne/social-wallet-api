@@ -60,6 +60,9 @@
     {:data (func config-default (:data obj))
      :config config-default}))
 
+;; TODO: pass as arg?
+(defn- get-blockchain [blockchains query]
+  (get @blockchains (-> query :blockchain keyword)))
 
 (defn init    []
 
@@ -95,7 +98,7 @@
                              "text/html; charset=utf-8"}
                    :body (md/md-to-html-string
                           (slurp "README.md"))}))
-
+    
     (context "/wallet/v1/tags" []
              :tags ["TAGS"]
              (POST "/list" request
@@ -110,7 +113,8 @@ It returns a list of tags found on that blockchain.
 
 "
                   (ok (list-tags
-                       (get @blockchains (-> query :blockchain keyword)){}))))
+                       (get-blockchain blockchains query)
+                       {}))))
 
     (context "/wallet/v1/transactions" []
              :tags ["TRANSACTIONS"]
@@ -125,7 +129,8 @@ Returns a list of transactions found on that blockchain.
 
 "
                    (ok (list-transactions
-                        (get @blockchains (-> query :blockchain keyword)) {}))))
+                        (get-blockchain blockchains query)
+                        {}))))
 
     ;; (context "/wallet/v1/accounts" []
     ;;          :tags ["ACCOUNTS"]
