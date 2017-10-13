@@ -29,7 +29,7 @@
                  [ring/ring-defaults "0.3.1"]
 
                  ;; core freecoin toolkit library
-                 [org.clojars.dyne/freecoin-lib version]
+                 [org.clojars.dyne/freecoin-lib ~version]
                  
                  ;; simple secret sharing
                  [org.clojars.dyne/fxc "0.5.0"]
