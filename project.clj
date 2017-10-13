@@ -19,7 +19,9 @@
 ;; You should have received a copy of the GNU Affero General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-(defproject social-wallet-api "0.1.0-SNAPSHOT"
+(def version (clojure.string/trim (slurp "VERSION")))
+
+(defproject social-wallet-api version
   :description "Freecoin web API for wallet operations"
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [metosin/compojure-api "1.1.11"]
@@ -27,7 +29,7 @@
                  [ring/ring-defaults "0.3.1"]
 
                  ;; core freecoin toolkit library
-                 [org.clojars.dyne/freecoin-lib "0.5.0-SNAPSHOT"]
+                 [org.clojars.dyne/freecoin-lib version]
                  
                  ;; simple secret sharing
                  [org.clojars.dyne/fxc "0.5.0"]

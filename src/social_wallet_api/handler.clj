@@ -86,7 +86,7 @@
      {:ui "/"
       :spec "/swagger.json"
       :data {:info
-             {:version "0.5.0-SNAPSHOT"
+             {:version (clojure.string/trim (slurp "VERSION"))
               :title "Social-wallet-api"
               :description "Social Wallet REST API backend for webapps"
               :contact {:url "https://github.com/pienews/social-wallet-api"}}}}}
