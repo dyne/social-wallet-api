@@ -60,7 +60,7 @@
     {:data (func config-default (:data obj))
      :config config-default}))
 
-;; TODO: pass as arg?
+;; TODO: pass blockchains as arg?
 (defn- get-blockchain [blockchains query]
   (get @blockchains (-> query :blockchain keyword)))
 
