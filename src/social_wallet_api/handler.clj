@@ -67,9 +67,14 @@
 (defn init    []
 
   (if-let [log-level (get-in config-default [:social-wallet-api :log-level])]
-    (log/set-level! (keyword log-level))
-    ;; else
-    (log/set-level! :info))
+    (log/merge-config! {:level log-level
+                        ;; #{:trace :debug :info :warn :error :fatal :report}
+
+                        ;; Control log filtering by
+                        ;; namespaces/patterns. Useful for turning off
+                        ;; logging in noisy libraries, etc.:
+                        :ns-whitelist  ["social-wallet-api.*"]
+                        :ns-blacklist  ["org.eclipse.jetty.*"]}))
 
   (let [mongo (->> (get-in config-default [:social-wallet-api :freecoin])
                    freecoin/connect-mongo new-mongo)]
