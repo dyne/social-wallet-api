@@ -67,7 +67,7 @@
 (defn init    []
 
   (if-let [log-level (get-in config-default [:social-wallet-api :log-level])]
-    (log/merge-config! {:level log-level
+    (log/merge-config! {:level (keyword log-level)
                         ;; #{:trace :debug :info :warn :error :fatal :report}
 
                         ;; Control log filtering by
