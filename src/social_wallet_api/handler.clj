@@ -30,8 +30,8 @@
 
             [taoensso.timbre :as log]
 
-            [auxiliary.config :refer :all]
-            [freecoin-lib.core :refer :all]
+            [auxiliary.config :refer [config-read]]
+            [freecoin-lib.core :as lib]
             [freecoin-lib.app :as freecoin]
             [social-wallet-api.schemas :refer [Query Tag Transaction]]))
 
