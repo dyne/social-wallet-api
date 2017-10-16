@@ -62,9 +62,7 @@
          :destroy social-wallet-api.handler/destroy}
 
   :uberjar-name "social-wallet-api.jar"
-  :profiles {:dev {:dependencies [[javax.servlet/javax.servlet-api "4.0.0"]
-                                  [cheshire "5.8.0"]
-                                  [ring/ring-mock "0.3.1"]
+  :profiles {:dev {:dependencies [[ring/ring-mock "0.3.1"]
                                   [midje "1.8.3"]]
                    :repl-options {:init-ns social-wallet-api.handler}
                    :plugins [[lein-ring "0.12.0"]
