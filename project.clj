@@ -35,7 +35,7 @@
                  [org.clojars.dyne/fxc "0.5.0"]
 
                  ;; auxiliary functions (configuration etc.)
-                 [org.clojars.dyne/auxiliary "0.2.0-SNAPSHOT"]
+                 [org.clojars.dyne/auxiliary "0.3.0-SNAPSHOT"]
 
                  ;; for rendering of readme etc.
                  [markdown-clj "1.0.1"]
@@ -55,6 +55,8 @@
             :email "jaromil@dyne.org"
             :year 2017
             :key "gpl-3.0"}
+
+  :resource-paths ["resources" "test-resources"]
   :deploy-repositories [["releases" {:url :clojars
                                      :creds :gpg}]]
   :ring {:init    social-wallet-api.handler/init
@@ -67,3 +69,4 @@
                    :repl-options {:init-ns social-wallet-api.handler}
                    :plugins [[lein-ring "0.12.0"]
                              [lein-midje "3.2"]]}})
+ 

@@ -35,7 +35,8 @@
             [freecoin-lib.app :as freecoin]
             [social-wallet-api.schemas :refer [Query Tag Transaction]]))
 
-(defonce config-default (config-read "social-wallet-api"))
+(def  app-name "social-wallet-api")
+(defonce config-default (config-read app-name))
 
 (defonce blockchains (atom {}))
 
@@ -64,22 +65,25 @@
 (defn- get-blockchain [blockchains query]
   (get @blockchains (-> query :blockchain keyword)))
 
-(defn init    []
+(defn init
+  ([]
+   (init config-default app-name))
+  ([config app-name]
+   ;; TODO: this should be able to read from resources or a specific file path
+   (if-let [log-level (get-in config [(keyword app-name) :log-level])]
+     (log/merge-config! {:level (keyword log-level)
+                         ;; #{:trace :debug :info :warn :error :fatal :report}
 
-  (if-let [log-level (get-in config-default [:social-wallet-api :log-level])]
-    (log/merge-config! {:level (keyword log-level)
-                        ;; #{:trace :debug :info :warn :error :fatal :report}
+                         ;; Control log filtering by
+                         ;; namespaces/patterns. Useful for turning off
+                         ;; logging in noisy libraries, etc.:
+                         :ns-whitelist  ["social-wallet-api.*"]
+                         :ns-blacklist  ["org.eclipse.jetty.*"]}))
 
-                        ;; Control log filtering by
-                        ;; namespaces/patterns. Useful for turning off
-                        ;; logging in noisy libraries, etc.:
-                        :ns-whitelist  ["social-wallet-api.*"]
-                        :ns-blacklist  ["org.eclipse.jetty.*"]}))
-
-  (let [mongo (->> (get-in config-default [:social-wallet-api :freecoin])
-                   freecoin/connect-mongo new-mongo)]
-    (swap! blockchains conj {:mongo mongo}))
-  (log/warn "MongoDB backend connected."))
+   (let [mongo (->> (get-in config [(keyword app-name) :freecoin]) 
+                    freecoin/connect-mongo lib/new-mongo)]
+     (swap! blockchains conj {:mongo mongo}))
+   (log/warn "MongoDB backend connected.")))
 
 (defn destroy []
   (log/warn "Stopping the Social Wallet API.")
@@ -117,7 +121,7 @@ Takes a JSON structure made of a `blockchain` identifier.
 It returns a list of tags found on that blockchain.
 
 "
-                  (ok (list-tags
+                  (ok (lib/list-tags
                        (get-blockchain blockchains query)
                        {}))))
 
@@ -133,7 +137,7 @@ Takes a JSON structure with a `blockchain` query identifier.
 Returns a list of transactions found on that blockchain.
 
 "
-                   (ok (list-transactions
+                   (ok (lib/list-transactions
                         (get-blockchain blockchains query)
                         {}))))
 
