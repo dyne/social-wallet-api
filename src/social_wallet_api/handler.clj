@@ -107,6 +107,22 @@
                              "text/html; charset=utf-8"}
                    :body (md/md-to-html-string
                           (slurp "README.md"))}))
+
+    (context "/" []
+             :tags ["LABEL"]
+             (POST "/label" request
+                   :return s/Keyword
+                   :body [query Query]
+                   :summary "Show the blockchain label"
+                   :description "
+
+Takes a JSON structure made of a `blockchain` identifier.
+
+It returns the label value.
+
+"
+                  (ok (lib/label
+                       (get-blockchain blockchains query)))))
     
     (context "/wallet/v1/tags" []
              :tags ["TAGS"]

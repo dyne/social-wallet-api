@@ -1,0 +1,9 @@
+
+log-level: debug
+
+freecoin:
+  mongo:
+    host: localhost
+    port: 27017
+    db:   test-freecoin
+
