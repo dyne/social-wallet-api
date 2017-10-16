@@ -40,8 +40,8 @@
 
 (defonce blockchains (atom {}))
 
-;; sanitize configuration or returns nil if not found
 (defn- get-config [obj]
+  "sanitize configuration or returns nil if not found"
   (if (contains? obj :config)
     (let [mc (merge config-default {:defaults (:config obj)})]
       ;; any imposed conversion of config values may happen here
