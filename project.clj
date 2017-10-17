@@ -31,9 +31,6 @@
                  ;; core freecoin toolkit library
                  [org.clojars.dyne/freecoin-lib ~version]
                  
-                 ;; simple secret sharing
-                 [org.clojars.dyne/fxc "0.5.0"]
-
                  ;; auxiliary functions (configuration etc.)
                  [org.clojars.dyne/auxiliary "0.3.0-SNAPSHOT"]
 
