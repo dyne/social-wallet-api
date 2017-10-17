@@ -1,13 +1,35 @@
 (ns social-wallet-api.test.handler
   (:require [midje.sweet :refer :all]
-            [ring.mock.request :as request]
+            [ring.mock.request :as mock]
             [social-wallet-api.handler :as h]
             [auxiliary.config :refer [config-read]]
-            [taoensso.timbre :as log]))
+            [taoensso.timbre :as log]
+            [cheshire.core :as cheshire]))
+
 (def app-name "social-wallet-api-test")
+
+(defn parse-body [body]
+  (cheshire/parse-string (slurp body) true))
+
 (against-background [(before :contents (h/init (config-read app-name) app-name))
                      (after :contents (h/destroy))]
                     (facts "Some basic requests work properly"
-                           (fact "Get the label"
-                                 (let [response (h/app (request/request :post "/label" {}))]
-                                   (:status response) => 200))))
+                           (fact "Get the label using the blockchain type as string"
+                                 (let [response (h/app
+                                                 (->
+                                                  (mock/request :post "/label")
+                                                  (mock/content-type "application/json")
+                                                  (mock/body  (cheshire/generate-string {:blockchain "mongo"}))))
+                                       body (parse-body (:body response))]
+                                   (:status response) => 200
+                                   body => "MONGO"))
+
+                           (fact "Get the label using the blockchain type as keyword"
+                                 (let [response (h/app
+                                                 (->
+                                                  (mock/request :post "/label")
+                                                  (mock/content-type "application/json")
+                                                  (mock/body  (cheshire/generate-string {:blockchain :mongo}))))
+                                       body (parse-body (:body response))]
+                                   (:status response) => 200
+                                   body => "MONGO"))))
