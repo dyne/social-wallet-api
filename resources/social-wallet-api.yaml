@@ -6,4 +6,7 @@ freecoin:
     host: localhost
     port: 27017
     db:   freecoin
+  faircoin:
+    currency: fair
+    rpc-config-path: /tmp/faircoin.conf
 

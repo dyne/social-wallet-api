@@ -29,7 +29,8 @@
 
 (s/defschema Query
   "POST Wallet query validator"
-  {:blockchain (rjs/field s/Str {:example "mongo"})})
+  {:blockchain (rjs/field s/Str {:example "mongo"})
+   (s/optional-key :account-id) (rjs/field s/Str {:example "account-id"})})
 
 (s/defschema Account
   "Account schema validator"
@@ -66,3 +67,6 @@
    (s/optional-key :from-id)    s/Any
    (s/optional-key :to-id)      s/Any
    (s/optional-key :amount)     s/Num})
+
+;; Blockchain Address
+(def Address s/Str)

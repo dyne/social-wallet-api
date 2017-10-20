@@ -33,7 +33,8 @@
             [auxiliary.config :refer [config-read]]
             [freecoin-lib.core :as lib]
             [freecoin-lib.app :as freecoin]
-            [social-wallet-api.schemas :refer [Query Tag Transaction]]))
+            [social-wallet-api.schemas :refer [Query Tag Transaction
+                                               Address]]))
 
 (def  app-name "social-wallet-api")
 (defonce config-default (config-read app-name))
@@ -63,7 +64,10 @@
 
 ;; TODO: pass blockchains as arg?
 (defn- get-blockchain [blockchains query]
-  (get @blockchains (-> query :blockchain keyword)))
+  (log/spy (get @blockchains (-> query :blockchain keyword))))
+
+(defn- get-blockchain-conf [config app-name blockchain]
+  (get-in config [(keyword app-name) :freecoin blockchain]))
 
 (defn init
   ([]
@@ -80,14 +84,21 @@
                          :ns-whitelist  ["social-wallet-api.*"]
                          :ns-blacklist  ["org.eclipse.jetty.*"]}))
 
-   (let [mongo (->> (get-in config [(keyword app-name) :freecoin]) 
+   ;; TODO a more generic way to go multiple configurations
+   (let [mongo (->> (get-blockchain-conf config app-name :mongo)
                     freecoin/connect-mongo lib/new-mongo)]
-     (swap! blockchains conj {:mongo mongo}))
-   (log/warn "MongoDB backend connected.")))
+     (swap! blockchains conj {:mongo mongo})
+     (log/warn "MongoDB backend connected."))
+   (let [fair-conf (get-blockchain-conf config app-name :faircoin)
+         fair (lib/new-btc-rpc (:currency fair-conf) (:rpc-config-path fair-conf))]
+     (swap! blockchains conj {:faircoin fair})
+     (log/warn "Faircoin config is loaded"))))
 
 (defn destroy []
   (log/warn "Stopping the Social Wallet API.")
-  (freecoin/disconnect-mongo (:mongo @blockchains)))
+  (freecoin/disconnect-mongo (:mongo @blockchains))
+  ;; TODO: fair?
+  )
 
 (def rest-api
   (api
@@ -121,8 +132,26 @@ Takes a JSON structure made of a `blockchain` identifier.
 It returns the label value.
 
 "
-                  (ok (lib/label
-                       (get-blockchain blockchains query)))))
+                   (if-let [blockchain (log/spy (get-blockchain blockchains (log/spy query)))]
+                     (ok (lib/label blockchain))
+                     (not-found "The blockchain conf is not loaded."))))
+
+    (context "/wallet/v1/address" []
+             :tags ["ADDRESS"]
+             (POST "/address" request
+                  :return [Address]
+                  :body [query Query]
+                  :summary "List all addresses related to an account"
+                  :description "
+
+Takes a JSON structure made of a `blockchain` identifier and an `account id`.
+
+It returns a list of addresses for the particular account.
+
+"
+                  (ok (lib/get-address
+                       (get-blockchain blockchains query)
+                       {}))))
     
     (context "/wallet/v1/tags" []
              :tags ["TAGS"]
