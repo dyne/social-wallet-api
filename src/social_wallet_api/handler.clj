@@ -35,7 +35,7 @@
             [freecoin-lib.core :as lib]
             [freecoin-lib.app :as freecoin]
             [social-wallet-api.schemas :refer [Query Tag Transaction
-                                               Address]]))
+                                               Address Balance]]))
 
 (def  app-name "social-wallet-api")
 (defonce config-default (config-read app-name))
@@ -154,6 +154,24 @@ It returns a list of addresses for the particular account.
 "
                    (if-let [blockchain (get-blockchain blockchains query)]
                      (ok (lib/get-address blockchain (:account-id query)))
+                     (not-found "No such blockchain can be found."))))
+
+    (context "/" []
+             :tags ["BALANCE"]
+             (POST "/balance" request
+                   :responses {status/not-found {:schema s/Str}}
+                   :return Balance
+                   :body [query Query]
+                   :summary "Returns the balance of an account or the total balance."
+                   :description "
+
+Takes a JSON structure made of a `blockchain` identifier and an `account id`.
+
+It returns balance for that particular account. If no account is provided it returns the total balance of the wallet.
+
+"
+                   (if-let [blockchain (get-blockchain blockchains query)]
+                     (ok (lib/get-balance blockchain (:account-id query)))
                      (not-found "No such blockchain can be found."))))
     
     (context "/wallet/v1/tags" []

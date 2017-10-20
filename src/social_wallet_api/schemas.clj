@@ -70,3 +70,5 @@
 
 ;; Blockchain Address
 (def Address s/Str)
+
+(def Balance s/Num)
