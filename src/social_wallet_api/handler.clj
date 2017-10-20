@@ -22,6 +22,7 @@
 (ns social-wallet-api.handler
   (:require [compojure.api.sweet :refer :all]
             [ring.util.http-response :refer :all]
+            [ring.util.http-status :as status]
             [schema.core :as s]
             [ring.middleware.defaults :refer
              [wrap-defaults site-defaults]]
@@ -64,7 +65,7 @@
 
 ;; TODO: pass blockchains as arg?
 (defn- get-blockchain [blockchains query]
-  (log/spy (get @blockchains (-> query :blockchain keyword))))
+  (get @blockchains (-> query :blockchain keyword)))
 
 (defn- get-blockchain-conf [config app-name blockchain]
   (get-in config [(keyword app-name) :freecoin blockchain]))
@@ -122,6 +123,7 @@
     (context "/" []
              :tags ["LABEL"]
              (POST "/label" request
+                   :responses {status/not-found {:schema s/Str}}
                    :return s/Keyword
                    :body [query Query]
                    :summary "Show the blockchain label"
@@ -132,26 +134,27 @@ Takes a JSON structure made of a `blockchain` identifier.
 It returns the label value.
 
 "
-                   (if-let [blockchain (log/spy (get-blockchain blockchains (log/spy query)))]
+                   (if-let [blockchain (get-blockchain blockchains query)]
                      (ok (lib/label blockchain))
-                     (not-found "The blockchain conf is not loaded."))))
+                     (not-found "No such blockchain can be found."))))
 
-    (context "/wallet/v1/address" []
+    (context "/" []
              :tags ["ADDRESS"]
              (POST "/address" request
-                  :return [Address]
-                  :body [query Query]
-                  :summary "List all addresses related to an account"
-                  :description "
+                   :responses {status/not-found {:schema s/Str}}
+                   :return [Address]
+                   :body [query Query]
+                   :summary "List all addresses related to an account"
+                   :description "
 
 Takes a JSON structure made of a `blockchain` identifier and an `account id`.
 
 It returns a list of addresses for the particular account.
 
 "
-                  (ok (lib/get-address
-                       (get-blockchain blockchains query)
-                       {}))))
+                   (if-let [blockchain (get-blockchain blockchains query)]
+                     (ok (lib/get-address blockchain (:account-id query)))
+                     (not-found "No such blockchain can be found."))))
     
     (context "/wallet/v1/tags" []
              :tags ["TAGS"]
