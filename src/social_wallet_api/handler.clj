@@ -34,8 +34,8 @@
             [auxiliary.config :refer [config-read]]
             [freecoin-lib.core :as lib]
             [freecoin-lib.app :as freecoin]
-            [social-wallet-api.schemas :refer [Query Tag Transaction
-                                               Address Balance]]))
+            [social-wallet-api.schemas :refer [Query Tag DBTransaction BTCTransaction TransactionQuery
+                                               Address Balance PerAccountQuery NewTransactionQuery]]))
 
 (def  app-name "social-wallet-api")
 (defonce config-default (config-read app-name))
@@ -67,8 +67,14 @@
 (defn- get-blockchain [blockchains query]
   (get @blockchains (-> query :blockchain keyword)))
 
+(defn- get-db-blockchain [blockchains]
+  (:mongo @blockchains))
+
 (defn- get-blockchain-conf [config app-name blockchain]
   (get-in config [(keyword app-name) :freecoin blockchain]))
+
+(defn- get-app-conf [config app-name]
+  (get-in config [(keyword app-name) :freecoin]))
 
 (defn init
   ([]
@@ -86,14 +92,14 @@
                          :ns-blacklist  ["org.eclipse.jetty.*"]}))
 
    ;; TODO a more generic way to go multiple configurations
-   (let [mongo (->> (get-blockchain-conf config app-name :mongo)
+   (let [mongo (->> (get-app-conf config app-name)
                     freecoin/connect-mongo lib/new-mongo)]
      (swap! blockchains conj {:mongo mongo})
      (log/warn "MongoDB backend connected."))
-   (let [fair-conf (get-blockchain-conf config app-name :faircoin)
-         fair (lib/new-btc-rpc (:currency fair-conf) (:rpc-config-path fair-conf))]
-     (swap! blockchains conj {:faircoin fair})
-     (log/warn "Faircoin config is loaded"))))
+   (when-let [fair-conf (get-blockchain-conf config app-name :faircoin)]
+     (let [fair (lib/new-btc-rpc (:currency fair-conf) (:rpc-config-path fair-conf))]
+       (swap! blockchains conj {:faircoin fair})
+       (log/warn "Faircoin config is loaded")))))
 
 (defn destroy []
   (log/warn "Stopping the Social Wallet API.")
@@ -143,7 +149,7 @@ It returns the label value.
              (POST "/address" request
                    :responses {status/not-found {:schema s/Str}}
                    :return [Address]
-                   :body [query Query]
+                   :body [query PerAccountQuery]
                    :summary "List all addresses related to an account"
                    :description "
 
@@ -161,7 +167,7 @@ It returns a list of addresses for the particular account.
              (POST "/balance" request
                    :responses {status/not-found {:schema s/Str}}
                    :return Balance
-                   :body [query Query]
+                   :body [query PerAccountQuery]
                    :summary "Returns the balance of an account or the total balance."
                    :description "
 
@@ -171,7 +177,7 @@ It returns balance for that particular account. If no account is provided it ret
 
 "
                    (if-let [blockchain (get-blockchain blockchains query)]
-                     (ok (lib/get-balance blockchain (:account-id query)))
+                     (ok (log/spy (lib/get-balance blockchain (log/spy (:account-id query)))))
                      (not-found "No such blockchain can be found."))))
     
     (context "/wallet/v1/tags" []
@@ -194,18 +200,67 @@ It returns a list of tags found on that blockchain.
     (context "/wallet/v1/transactions" []
              :tags ["TRANSACTIONS"]
              (POST "/list" request
-                   :return [Transaction]
+                   :return (s/either [DBTransaction] [BTCTransaction])
                    :body [query Query]
                    :summary "List all transactions"
                    :description "
 Takes a JSON structure with a `blockchain` query identifier.
 
 Returns a list of transactions found on that blockchain.
-
 "
                    (ok (lib/list-transactions
                         (get-blockchain blockchains query)
                         {}))))
+
+    (context "/wallet/v1/transactions" []
+             :tags ["TRANSACTIONS"]
+             (POST "/get" request
+                   :return s/Any ;; TODO (either BTCTransaction DBtransaction)
+                   :body [query TransactionQuery]
+                   :summary "Retieve a transaction by txid"
+                   :description "
+Takes a JSON structure with a `blockchain` query identifier and a `txid`.
+
+Returns the transaction if found on that blockchain.
+"
+                   (ok (lib/get-transaction
+                        (get-blockchain blockchains query)
+                        (:txid query)))))
+
+    (context "/wallet/v1/transactions" []
+             :tags ["TRANSACTIONS"]
+             (POST "/new" request
+                   :return s/Any
+                   :body [query NewTransactionQuery]
+                   :summary "Create a new transaction"
+                   :description "
+Takes a JSON structure with a `blockchain`, `from-account`, `to-account` query identifiers and optionally `tags`, `comment` and `comment-to` as paramaters.
+
+Creates a transaction.
+
+"
+                   (if-let [blockchain (get-blockchain blockchains (log/spy query))] 
+                     (if (= blockchain :mongo)
+                       (ok (lib/create-transaction blockchain
+                                                   (:from-id (log/spy query))
+                                                   (:amount query)
+                                                   (:to-id query)
+                                                   (-> query :params
+                                                       (dissoc :comment :comment-to))))
+                       (let [transaction-id (lib/create-transaction
+                                             blockchain
+                                             (:from-account-id query)
+                                             (:amount query)
+                                             (:to-amount-id query)
+                                             (dissoc (:params query) :tags))]
+                         ;; store to db as well with transaction-id
+                         (ok (lib/create-transaction (get-db-blockchain blockchains)
+                                                     (:from-account-id query)
+                                                     (:amount query)
+                                                     (:to-amount-id query)
+                                                     (-> query :params
+                                                         (dissoc :comment :comment-to)
+                                                         (assoc :transaction-id transaction-id)))))))))
 
     ;; (context "/wallet/v1/accounts" []
     ;;          :tags ["ACCOUNTS"]

@@ -29,8 +29,11 @@
 
 (s/defschema Query
   "POST Wallet query validator"
-  {:blockchain (rjs/field s/Str {:example "mongo"})
-   (s/optional-key :account-id) (rjs/field s/Str {:example "account-id"})})
+  {:blockchain (rjs/field s/Str {:example "mongo"})})
+
+(s/defschema PerAccountQuery
+  "POST Wallet query validator for requests per account"
+  (merge Query {:account-id (rjs/field s/Str {:example "account-id"})}))
 
 (s/defschema Account
   "Account schema validator"
@@ -51,22 +54,44 @@
    (s/required-key :created)    s/Any})
 
 
-(s/defschema Transaction
+(s/defschema DBTransaction
   "Transaction schema validator"
-  ;; {:_id (str timestamp "-" from-account-id)
-  ;;  :currency "MONGO"
-  ;;  :timestamp timestamp
-  ;;  :from-id from-account-id
-  ;;  :to-id to-account-id
-  ;;  :tags tags
-  ;;  :amount (util/bigdecimal->long amount)}]
-  {(s/optional-key :blockchain) s/Str
-   (s/optional-key :tags)      [s/Str]
-   (s/optional-key :currency)   s/Str
+  {(s/optional-key :tags)      [s/Str]
    (s/optional-key :timestamp)  s/Str
    (s/optional-key :from-id)    s/Any
    (s/optional-key :to-id)      s/Any
-   (s/optional-key :amount)     s/Num})
+   (s/optional-key :amount)     s/Num
+   (s/optional-key :transaction-id) s/Str})
+
+(s/defschema BTCTransaction  
+  {:account s/Str
+   :address s/Str 
+   :amount s/Num
+   (s/optional-key :category) s/Str
+   (s/optional-key :label) s/Str
+   (s/optional-key :vout) s/Num
+   (s/optional-key :fee) s/Num
+   (s/optional-key :confirmations) s/Num
+   (s/optional-key :blockhash) s/Num
+   (s/optional-key :blockindex) s/Num
+   (s/optional-key :blocktime) s/Num
+   (s/optional-key :txid) s/Str
+   (s/optional-key :walletconflicts) [s/Any]
+   (s/optional-key :details) [s/Any]
+   (s/optional-key :time) s/Num
+   (s/optional-key :otheraccount) s/Str
+   (s/optional-key :timereceived) s/Num
+   (s/optional-key :bip125-replaceable) s/Str
+   (s/optional-key :abandoned) s/Bool
+   (s/optional-key :comment) s/Str
+   (s/optional-key :hex) s/Str})
+
+(s/defschema TransactionQuery
+  (merge Query
+         {:txid s/Str}))
+
+(s/defschema NewTransactionQuery
+  (merge Query DBTransaction))
 
 ;; Blockchain Address
 (def Address s/Str)
