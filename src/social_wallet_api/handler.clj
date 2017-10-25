@@ -35,7 +35,8 @@
             [freecoin-lib.core :as lib]
             [freecoin-lib.app :as freecoin]
             [social-wallet-api.schemas :refer [Query Tag DBTransaction BTCTransaction TransactionQuery
-                                               Address Balance PerAccountQuery NewTransactionQuery]]))
+                                               Address Balance PerAccountQuery NewTransactionQuery
+                                               ListTransactionsQuery]]))
 
 (def  app-name "social-wallet-api")
 (defonce config-default (config-read app-name))
@@ -96,6 +97,7 @@
                     freecoin/connect-mongo lib/new-mongo)]
      (swap! blockchains conj {:mongo mongo})
      (log/warn "MongoDB backend connected."))
+
    (when-let [fair-conf (get-blockchain-conf config app-name :faircoin)]
      (let [fair (lib/new-btc-rpc (:currency fair-conf) (:rpc-config-path fair-conf))]
        (swap! blockchains conj {:faircoin fair})
@@ -177,7 +179,7 @@ It returns balance for that particular account. If no account is provided it ret
 
 "
                    (if-let [blockchain (get-blockchain blockchains query)]
-                     (ok (log/spy (lib/get-balance blockchain (log/spy (:account-id query)))))
+                     (ok (lib/get-balance blockchain (:account-id query)))
                      (not-found "No such blockchain can be found."))))
     
     (context "/wallet/v1/tags" []
@@ -197,20 +199,24 @@ It returns a list of tags found on that blockchain.
                        (get-blockchain blockchains query)
                        {}))))
 
+    ;; TODO: maye add the mongo filtering parameters too? Like tags and from/to timestamps
     (context "/wallet/v1/transactions" []
              :tags ["TRANSACTIONS"]
              (POST "/list" request
-                   :return (s/either [DBTransaction] [BTCTransaction])
-                   :body [query Query]
-                   :summary "List all transactions"
+                   :return s/Any #_(s/either [DBTransaction] [BTCTransaction])
+                   :body [query ListTransactionsQuery]
+                   :summary "List transactions"
                    :description "
-Takes a JSON structure with a `blockchain` query identifier.
+Takes a JSON structure with a `blockchain` query identifier. A number of optional identifiers are available for filtering like `account-id`, `count` and `from` for btc like blockains. 
 
 Returns a list of transactions found on that blockchain.
 "
                    (ok (lib/list-transactions
                         (get-blockchain blockchains query)
-                        {}))))
+                        (cond-> {}
+                          (:account-id query) (assoc :account-id (:account-id query))
+                          (:from query) (assoc :from (:from query))
+                          (:count query) (assoc :count (:count query)))))))
 
     (context "/wallet/v1/transactions" []
              :tags ["TRANSACTIONS"]
@@ -239,28 +245,31 @@ Takes a JSON structure with a `blockchain`, `from-account`, `to-account` query i
 Creates a transaction.
 
 "
-                   (if-let [blockchain (get-blockchain blockchains (log/spy query))] 
-                     (if (= blockchain :mongo)
+                   (if-let [blockchain (get-blockchain blockchains query)] 
+                     (if (= (-> query :blockchain keyword) :mongo)
                        (ok (lib/create-transaction blockchain
-                                                   (:from-id (log/spy query))
+                                                   (:from-id query)
                                                    (:amount query)
                                                    (:to-id query)
                                                    (-> query :params
-                                                       (dissoc :comment :comment-to))))
+                                                       (dissoc :comment :comment-to)
+                                                       (assoc :tags (:tags query)))))
+                       ;; else
                        (let [transaction-id (lib/create-transaction
                                              blockchain
-                                             (:from-account-id query)
+                                             (:from-id query)
                                              (:amount query)
-                                             (:to-amount-id query)
+                                             (:to-id query)
                                              (dissoc (:params query) :tags))]
                          ;; store to db as well with transaction-id
                          (ok (lib/create-transaction (get-db-blockchain blockchains)
-                                                     (:from-account-id query)
+                                                     (:from-id query)
                                                      (:amount query)
-                                                     (:to-amount-id query)
+                                                     (:to-id query)
                                                      (-> query :params
                                                          (dissoc :comment :comment-to)
-                                                         (assoc :transaction-id transaction-id)))))))))
+                                                         (assoc :transaction-id transaction-id)
+                                                         (assoc :tags (:tags query))))))))))
 
     ;; (context "/wallet/v1/accounts" []
     ;;          :tags ["ACCOUNTS"]
