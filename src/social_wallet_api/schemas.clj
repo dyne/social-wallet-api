@@ -87,11 +87,15 @@
    (s/optional-key :hex) s/Str})
 
 (s/defschema TransactionQuery
-  (merge Query
-         {:txid s/Str}))
+  (merge Query {:txid s/Str}))
 
 (s/defschema NewTransactionQuery
   (merge Query DBTransaction))
+
+(s/defschema ListTransactionsQuery
+  (merge Query {(s/optional-key :account-id) s/Str
+                (s/optional-key :count) s/Num
+                (s/optional-key :from) s/Num}))
 
 ;; Blockchain Address
 (def Address s/Str)
