@@ -266,29 +266,27 @@ Creates a transaction.
                    (with-error-responses blockchains query
                      (fn [blockchain query]
                        (if (= (-> query :blockchain keyword) :mongo)
-                         (ok (lib/create-transaction blockchain
-                                                     (:from-id query)
-                                                     (:amount query)
-                                                     (:to-id query)
-                                                     (-> query :params
-                                                         (dissoc :comment :comment-to)
-                                                         (assoc :tags (:tags query)))))
+                         (lib/create-transaction blockchain
+                                                 (:from-id query)
+                                                 (:amount query)
+                                                 (:to-id query)
+                                                 (-> query 
+                                                     (dissoc :comment :comment-to)))
                          ;; else
                          (let [transaction-id (lib/create-transaction
                                                blockchain
                                                (:from-id query)
                                                (:amount query)
                                                (:to-id query)
-                                               (dissoc (:params query) :tags))]
+                                               (dissoc query :tags))]
                            ;; store to db as well with transaction-id
-                           (ok (lib/create-transaction (get-db-blockchain blockchains)
-                                                       (:from-id query)
-                                                       (:amount query)
-                                                       (:to-id query)
-                                                       (-> query :params
-                                                           (dissoc :comment :comment-to)
-                                                           (assoc :transaction-id transaction-id)
-                                                           (assoc :tags (:tags query)))))))))))
+                           (lib/create-transaction (get-db-blockchain blockchains)
+                                                   (:from-id query)
+                                                   (:amount query)
+                                                   (:to-id query)
+                                                   (-> query 
+                                                       (dissoc :comment :comment-to)
+                                                       (assoc :transaction-id transaction-id)))))))))
 
     ;; (context "/wallet/v1/accounts" []
     ;;          :tags ["ACCOUNTS"]
