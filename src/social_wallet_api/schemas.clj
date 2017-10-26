@@ -61,7 +61,9 @@
    (s/optional-key :from-id)    s/Any
    (s/optional-key :to-id)      s/Any
    (s/optional-key :amount)     s/Num
-   (s/optional-key :transaction-id) s/Str})
+   (s/optional-key :transaction-id) s/Str
+   (s/optional-key :comment) s/Str
+   (s/optional-key :comment-to) s/Str})
 
 (s/defschema BTCTransaction  
   {:account s/Str
