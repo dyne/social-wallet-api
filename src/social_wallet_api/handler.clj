@@ -286,7 +286,8 @@ Creates a transaction.
                                                    (:to-id query)
                                                    (-> query 
                                                        (dissoc :comment :comment-to)
-                                                       (assoc :transaction-id transaction-id)))))))))
+                                                       (assoc :transaction-id transaction-id)
+                                                       (assoc :currency (:blockchain query))))))))))
 
     ;; (context "/wallet/v1/accounts" []
     ;;          :tags ["ACCOUNTS"]
