@@ -89,7 +89,8 @@
                          ;; Control log filtering by
                          ;; namespaces/patterns. Useful for turning off
                          ;; logging in noisy libraries, etc.:
-                         :ns-whitelist  ["social-wallet-api.*"]
+                         :ns-whitelist  ["social-wallet-api.*"
+                                         "freecoin-lib.*"]
                          :ns-blacklist  ["org.eclipse.jetty.*"]}))
 
    ;; TODO a more generic way to go multiple configurations
