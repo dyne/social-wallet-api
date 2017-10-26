@@ -110,9 +110,12 @@
   )
 
 (defn- with-error-responses [blockchains query ok-fn]
-  (if-let [blockchain (get-blockchain blockchains query)]
-    (ok (ok-fn blockchain query))
-    (not-found "No such blockchain can be found.")))
+  (try
+    (if-let [blockchain (get-blockchain blockchains query)]
+      (ok (ok-fn blockchain query))
+      (not-found "No such blockchain can be found."))
+    (catch java.net.ConnectException e
+      (service-unavailable "There was a connection problem with the blockchain."))))
 
 (def rest-api
   (api
@@ -136,7 +139,8 @@
     (context "/" []
              :tags ["LABEL"]
              (POST "/label" request
-                   :responses {status/not-found {:schema s/Str}}
+                   :responses {status/not-found {:schema s/Str}
+                               status/service-unavailable {:schema s/Str}}
                    :return s/Keyword
                    :body [query Query]
                    :summary "Show the blockchain label"
@@ -153,7 +157,8 @@ It returns the label value.
     (context "/" []
              :tags ["ADDRESS"]
              (POST "/address" request
-                   :responses {status/not-found {:schema s/Str}}
+                   :responses {status/not-found {:schema s/Str}
+                               status/service-unavailable {:schema s/Str}}
                    :return [Address]
                    :body [query PerAccountQuery]
                    :summary "List all addresses related to an account"
@@ -170,7 +175,8 @@ It returns a list of addresses for the particular account.
     (context "/" []
              :tags ["BALANCE"]
              (POST "/balance" request
-                   :responses {status/not-found {:schema s/Str}}
+                   :responses {status/not-found {:schema s/Str}
+                               status/service-unavailable {:schema s/Str}}
                    :return Balance
                    :body [query PerAccountQuery]
                    :summary "Returns the balance of an account or the total balance."
@@ -187,7 +193,8 @@ It returns balance for that particular account. If no account is provided it ret
     (context "/wallet/v1/tags" []
              :tags ["TAGS"]
              (POST "/list" request
-                   :responses {status/not-found {:schema s/Str}}
+                   :responses {status/not-found {:schema s/Str}
+                               status/service-unavailable {:schema s/Str}}
                    :return [Tag]
                    :body [query Query]
                    :summary "List all tags"
@@ -205,7 +212,8 @@ It returns a list of tags found on that blockchain.
     (context "/wallet/v1/transactions" []
              :tags ["TRANSACTIONS"]
              (POST "/list" request
-                   :responses {status/not-found {:schema s/Str}}
+                   :responses {status/not-found {:schema s/Str}
+                               status/service-unavailable {:schema s/Str}}
                    :return s/Any #_(s/either [DBTransaction] [BTCTransaction])
                    :body [query ListTransactionsQuery]
                    :summary "List transactions"
@@ -225,7 +233,8 @@ Returns a list of transactions found on that blockchain.
     (context "/wallet/v1/transactions" []
              :tags ["TRANSACTIONS"]
              (POST "/get" request
-                   :responses {status/not-found {:schema s/Str}}
+                   :responses {status/not-found {:schema s/Str}
+                               status/service-unavailable {:schema s/Str}}
                    :return s/Any ;; TODO (either BTCTransaction DBtransaction)
                    :body [query TransactionQuery]
                    :summary "Retieve a transaction by txid"
@@ -242,7 +251,8 @@ Returns the transaction if found on that blockchain.
     (context "/wallet/v1/transactions" []
              :tags ["TRANSACTIONS"]
              (POST "/new" request
-                   :responses {status/not-found {:schema s/Str}}
+                   :responses {status/not-found {:schema s/Str}
+                               status/service-unavailable {:schema s/Str}}
                    :return s/Any
                    :body [query NewTransactionQuery]
                    :summary "Create a new transaction"
