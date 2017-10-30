@@ -37,6 +37,9 @@
                  ;; for rendering of readme etc.
                  [markdown-clj "1.0.1"]
 
+                 ;; error handling
+                 [failjure "1.2.0"]
+                 
                  ;; logging done right with timbre and slf4j
                  [com.taoensso/timbre "4.10.0"]
                  [com.fzakaria/slf4j-timbre "0.3.7"]

@@ -36,7 +36,8 @@
             [freecoin-lib.app :as freecoin]
             [social-wallet-api.schemas :refer [Query Tag DBTransaction BTCTransaction TransactionQuery
                                                Address Balance PerAccountQuery NewTransactionQuery
-                                               ListTransactionsQuery]]))
+                                               ListTransactionsQuery]]
+            [failjure.core :as f]))
 
 (def  app-name "social-wallet-api")
 (defonce config-default (config-read app-name))
@@ -272,13 +273,13 @@ Creates a transaction.
                                                  (:to-id query)
                                                  (-> query 
                                                      (dissoc :comment :comment-to)))
-                         ;; else
-                         (let [transaction-id (lib/create-transaction
-                                               blockchain
-                                               (:from-id query)
-                                               (:amount query)
-                                               (:to-id query)
-                                               (dissoc query :tags))]
+                         ;; else Blockchain transaction
+                         (f/if-let-ok? [transaction-id (lib/create-transaction
+                                                        blockchain
+                                                        (:from-id query)
+                                                        (:amount query)
+                                                        (:to-id query)
+                                                        (dissoc query :tags))]
                            ;; store to db as well with transaction-id
                            (lib/create-transaction (get-db-blockchain blockchains)
                                                    (:from-id query)
@@ -287,7 +288,9 @@ Creates a transaction.
                                                    (-> query 
                                                        (dissoc :comment :comment-to)
                                                        (assoc :transaction-id transaction-id)
-                                                       (assoc :currency (:blockchain query))))))))))
+                                                       (assoc :currency (:blockchain query))))
+                           ;; There was an error
+                           (bad-request (f/message transaction-id))))))))
 
     ;; (context "/wallet/v1/accounts" []
     ;;          :tags ["ACCOUNTS"]
