@@ -237,7 +237,7 @@ Returns a list of transactions found on that blockchain.
              (POST "/get" request
                    :responses {status/not-found {:schema s/Str}
                                status/service-unavailable {:schema s/Str}}
-                   :return s/Any ;; TODO (either BTCTransaction DBtransaction)
+                   :return (s/conditional map? BTCTransaction :else [DBTransaction])
                    :body [query TransactionQuery]
                    :summary "Retieve a transaction by txid"
                    :description "

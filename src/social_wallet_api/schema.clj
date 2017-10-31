@@ -19,7 +19,7 @@
 ;; You should have received a copy of the GNU Affero General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-(ns social-wallet-api.schemas
+(ns social-wallet-api.schema
   (:require [schema.core :as s]
             [ring.swagger.json-schema :as rjs]))
 
@@ -62,31 +62,39 @@
    (s/optional-key :to-id)      s/Any
    (s/optional-key :amount)     s/Num
    (s/optional-key :transaction-id) s/Str
-   (s/optional-key :comment) s/Str
-   (s/optional-key :comment-to) s/Str})
+   (s/optional-key :currency) s/Str})
+
+(s/defschema AccountDetails
+  {(s/required-key "account") s/Str
+   (s/required-key "address") s/Str
+   (s/required-key "category") s/Str
+   (s/required-key "amount") s/Num
+   (s/required-key "label") s/Str
+   (s/required-key "vout") s/Num
+   (s/optional-key "fee") s/Num
+   (s/optional-key "abandoned") s/Bool})
 
 (s/defschema BTCTransaction  
-  {:account s/Str
-   :address s/Str 
-   :amount s/Num
-   (s/optional-key :category) s/Str
-   (s/optional-key :label) s/Str
-   (s/optional-key :vout) s/Num
-   (s/optional-key :fee) s/Num
-   (s/optional-key :confirmations) s/Num
-   (s/optional-key :blockhash) s/Num
-   (s/optional-key :blockindex) s/Num
-   (s/optional-key :blocktime) s/Num
-   (s/optional-key :txid) s/Str
-   (s/optional-key :walletconflicts) [s/Any]
-   (s/optional-key :details) [s/Any]
-   (s/optional-key :time) s/Num
-   (s/optional-key :otheraccount) s/Str
-   (s/optional-key :timereceived) s/Num
-   (s/optional-key :bip125-replaceable) s/Str
-   (s/optional-key :abandoned) s/Bool
-   (s/optional-key :comment) s/Str
-   (s/optional-key :hex) s/Str})
+  {(s/required-key "amount") s/Num
+   (s/optional-key "category") s/Str
+   (s/optional-key "label") s/Str
+   (s/optional-key "vout") s/Num
+   (s/optional-key "fee") s/Num
+   (s/optional-key "confirmations") s/Num
+   (s/optional-key "blockhash") s/Str
+   (s/optional-key "blockindex") s/Num
+   (s/optional-key "blocktime") s/Num
+   (s/optional-key "walletconflicts") [s/Any]
+   (s/optional-key "time") s/Num
+   (s/optional-key "otheraccount") s/Str
+   (s/optional-key "timereceived") s/Num
+   (s/optional-key "bip125-replaceable") s/Str
+   (s/optional-key "abandoned") s/Bool
+   (s/optional-key "comment") s/Str
+   (s/optional-key "hex") s/Str
+   (s/optional-key "txid") s/Str
+   (s/optional-key "details") [AccountDetails] ;; TODO
+   })
 
 (s/defschema TransactionQuery
   (merge Query {:txid s/Str}))
