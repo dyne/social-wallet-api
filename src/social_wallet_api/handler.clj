@@ -34,9 +34,9 @@
             [auxiliary.config :refer [config-read]]
             [freecoin-lib.core :as lib]
             [freecoin-lib.app :as freecoin]
-            [social-wallet-api.schemas :refer [Query Tag DBTransaction BTCTransaction TransactionQuery
-                                               Address Balance PerAccountQuery NewTransactionQuery
-                                               ListTransactionsQuery]]
+            [social-wallet-api.schema :refer [Query Tag DBTransaction BTCTransaction TransactionQuery
+                                              Address Balance PerAccountQuery NewTransactionQuery
+                                              ListTransactionsQuery]]
             [failjure.core :as f]))
 
 (def  app-name "social-wallet-api")
