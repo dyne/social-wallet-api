@@ -1,0 +1,34 @@
+{
+  "confirmations": 414,
+  "hex": "010000000157accc48fd745cadc024e285572172a2f565ad2c5aed4c451830dcd67519fa2c000000006b483045022100ec648d6e0fe775a93985ffd5d8b917ebb3e03e650f60a38c90a3b1ac8d5cdb480220351b3f344816e3e6e5cb5e7490e96f1dfbad8e3322e00d18450e22371bebbf31012103da471468a21ed54ab2668c688f511e94fb481935a17f27f06f37a28b51cda53dfeffffff0200e1f505000000001976a914d8782c56ed39259d57af1935e6dbc8dcefed7d6d88acb8a22331000000001976a914667f134e490caa2f2dfe3a8d93d212f8b80922ee88ac96c20000",
+  "walletconflicts": [],
+  "blockhash": "4480a7967acdaf52a341e9012e7f30ea31fde7711f02aa727984fac2f03e594a",
+  "fee": -0.00226,
+  "time": 1509374127,
+  "amount": 0,
+  "details": [
+    {
+      "account": "test",
+      "address": "fZqtTXqGi9zVJXHBr2pfEZgf4ckr3Ub6vX",
+      "category": "send",
+      "amount": -1,
+      "label": "Aspasia Beneti",
+      "vout": 0,
+      "fee": -0.00226,
+      "abandoned": false
+    },
+    {
+      "account": "Aspasia Beneti",
+      "address": "fZqtTXqGi9zVJXHBr2pfEZgf4ckr3Ub6vX",
+      "category": "receive",
+      "amount": 1,
+      "label": "Aspasia Beneti",
+      "vout": 0
+    }
+  ],
+  "bip125-replaceable": "no",
+  "blocktime": 1509374051,
+  "timereceived": 1509374127,
+  "blockindex": 2,
+  "txid": "a59c0bf2e72dae56bea1194872f554ce52d04c1de0cd99734b6977d11f0577fb"
+}
