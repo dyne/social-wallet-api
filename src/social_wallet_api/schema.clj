@@ -103,12 +103,17 @@
   (merge Query {:txid s/Str}))
 
 (s/defschema NewTransactionQuery
-  (merge Query DBTransaction))
+  (assoc Query
+         (s/optional-key :from-id)    s/Any
+         (s/optional-key :to-id)      s/Any
+         (s/optional-key :amount)     s/Num
+         (s/optional-key :tags)      [s/Str]))
 
 (s/defschema ListTransactionsQuery
   (merge Query {(s/optional-key :account-id) s/Str
-                (s/optional-key :count) s/Num
-                (s/optional-key :from) s/Num}))
+                ;; TODO this way they would only work for Mongo. We need some sort of paging
+                #_(s/optional-key :count) s/Num
+                #_(s/optional-key :from) s/Num}))
 
 ;; Blockchain Address
 (def Address s/Str)
