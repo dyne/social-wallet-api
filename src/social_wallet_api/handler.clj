@@ -39,11 +39,12 @@
                                               ListTransactionsQuery]]
             [failjure.core :as f]))
 
-(def  app-name "social-wallet-api")
-(defonce config-default (config-read app-name))
+(defonce prod-app-name "social-wallet-api")
+(defonce config-default (config-read prod-app-name))
 
 (defonce blockchains (atom {}))
 
+;; TODO: lets see why we need this
 (defn- get-config [obj]
   "sanitize configuration or returns nil if not found"
   (if (contains? obj :config)
@@ -58,6 +59,7 @@
 
 ;; generic wrapper to complete the conf structure if missing
 ;; TODO: may be a good point to insert promises and raise errors
+;; WHat is this for?
 (defn- complete [func obj schema]
   (if-let [conf (get-config obj)]
     {:data (func conf (:data obj))
@@ -80,8 +82,9 @@
 
 (defn init
   ([]
-   (init config-default app-name))
+   (init config-default prod-app-name))
   ([config app-name]
+   (log/debug "Initialising app with name: " app-name)
    ;; TODO: this should be able to read from resources or a specific file path
    (if-let [log-level (get-in config [(keyword app-name) :log-level])]
      (log/merge-config! {:level (keyword log-level)

@@ -6,12 +6,14 @@
             [taoensso.timbre :as log]
             [cheshire.core :as cheshire]))
 
-(def app-name "social-wallet-api-test")
+(def test-app-name "social-wallet-api-test")
 
 (defn parse-body [body]
   (cheshire/parse-string (slurp body) true))
 
-(against-background [(before :contents (h/init (config-read app-name) app-name))
+(against-background [(before :contents (h/init
+                                        (config-read social-wallet-api.test.handler/test-app-name)
+                                        social-wallet-api.test.handler/test-app-name))
                      (after :contents (h/destroy))]
                     (facts "Some basic requests work properly"
                            (fact "Get the label using the blockchain type as string"
