@@ -61,7 +61,8 @@
                                      :creds :gpg}]]
   :ring {:init    social-wallet-api.handler/init
          :handler social-wallet-api.handler/app
-         :destroy social-wallet-api.handler/destroy}
+         :destroy social-wallet-api.handler/destroy
+         :reload-paths ["src"]}
 
   :uberjar-name "social-wallet-api.jar"
   :profiles {:dev {:dependencies [[ring/ring-mock "0.3.1"]
