@@ -117,7 +117,9 @@
 (defn- with-error-responses [blockchains query ok-fn]
   (try
     (if-let [blockchain (get-blockchain blockchains query)]
-      (ok (ok-fn blockchain query))
+      (f/if-let-ok? [response (ok-fn blockchain query)]
+        (ok response)
+        (bad-request (f/message response)))
       (not-found "No such blockchain can be found."))
     (catch java.net.ConnectException e
       (service-unavailable "There was a connection problem with the blockchain."))))
@@ -199,7 +201,8 @@ It returns balance for that particular account. If no account is provided it ret
              :tags ["TAGS"]
              (POST "/list" request
                    :responses {status/not-found {:schema s/Str}
-                               status/service-unavailable {:schema s/Str}}
+                               status/service-unavailable {:schema s/Str}
+                               status/bad-request {:schema s/Str}}
                    :return [Tag]
                    :body [query Query]
                    :summary "List all tags"
@@ -210,8 +213,12 @@ Takes a JSON structure made of a `blockchain` identifier.
 It returns a list of tags found on that blockchain.
 
 "
-                   (with-error-responses blockchains query
-                     (fn [blockchain query] (lib/list-tags blockchain {})))))
+                   (with-error-responses blockchains query 
+                     (fn [blockchain query]
+                       (if (= (-> query :blockchain keyword) :mongo)
+                         (lib/list-tags blockchain {})
+                         ;; TODO replace mongo eith generic DB or storage?
+                         (f/fail "Tags are available only for Mongo requests"))))))
 
     ;; TODO: maye add the mongo filtering parameters too? Like tags and from/to timestamps
     (context "/wallet/v1/transactions" []
@@ -296,7 +303,7 @@ Creates a transaction.
                                                        (assoc :transaction-id transaction-id)
                                                        (assoc :currency (:blockchain query))))
                            ;; There was an error
-                           (bad-request (f/message transaction-id))))))))
+                           (f/fail (f/message transaction-id))))))))
 
     ;; (context "/wallet/v1/accounts" []
     ;;          :tags ["ACCOUNTS"]
