@@ -219,7 +219,9 @@ It returns a list of tags found on that blockchain.
              (POST "/list" request
                    :responses {status/not-found {:schema s/Str}
                                status/service-unavailable {:schema s/Str}}
-                   :return s/Any #_(s/either [DBTransaction] [BTCTransaction])
+                   :return  (s/if #(-> % first (get "amount"))
+                              [BTCTransaction]
+                              [DBTransaction])
                    :body [query ListTransactionsQuery]
                    :summary "List transactions"
                    :description "
@@ -257,8 +259,9 @@ Returns the transaction if found on that blockchain.
              :tags ["TRANSACTIONS"]
              (POST "/new" request
                    :responses {status/not-found {:schema s/Str}
-                               status/service-unavailable {:schema s/Str}}
-                   :return s/Any
+                               status/service-unavailable {:schema s/Str}
+                               status/bad-request {:schema s/Str}}
+                   :return DBTransaction
                    :body [query NewTransactionQuery]
                    :summary "Create a new transaction"
                    :description "

@@ -61,7 +61,7 @@
    (s/optional-key :from-id)    s/Any
    (s/optional-key :to-id)      s/Any
    (s/optional-key :amount)     s/Num
-   (s/optional-key :transaction-id) s/Str
+   (s/optional-key :transaction-id) (s/maybe s/Str)
    (s/optional-key :currency) s/Str})
 
 (s/defschema AccountDetails
@@ -77,6 +77,7 @@
 (s/defschema BTCTransaction  
   {(s/required-key "amount") s/Num
    (s/optional-key "category") s/Str
+   (s/optional-key "trusted") s/Bool
    (s/optional-key "label") s/Str
    (s/optional-key "vout") s/Num
    (s/optional-key "fee") s/Num
@@ -93,6 +94,8 @@
    (s/optional-key "comment") s/Str
    (s/optional-key "hex") s/Str
    (s/optional-key "txid") s/Str
+   (s/optional-key "address") s/Str
+   (s/optional-key "account") s/Str
    (s/optional-key "details") [AccountDetails] ;; TODO
    })
 
