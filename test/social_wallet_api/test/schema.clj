@@ -5,4 +5,8 @@
             [cheshire.core :as json]))
 
 (fact "Check some schemas"
-      (s/validate BTCTransaction (json/parse-string (slurp "test-resources/sample-btc-transaction-response.json")))  => truthy)
+      (s/validate BTCTransaction (json/parse-string (slurp "test-resources/sample-btc-transaction-response.json")))  => truthy
+      
+      (s/validate BTCTransaction (json/parse-string (slurp "test-resources/confirmed-transaction-faircoin.json")))  => truthy
+
+      (s/validate BTCTransaction (json/parse-string (slurp "test-resources/not-confirmed-transaction-faircoin.json")))  => truthy)

@@ -1,0 +1,34 @@
+{
+  "confirmations": 1,
+  "hex": "010000000142a09a216d03985bc93b99036b4e772965fac52bf73fa3e4a1c80d0780e16209010000006b48304502210096ac2c61e0b848c072da7c6e11080ddf7a5b22c1cc3d36243c778c0e9aec45ef0220096f94419a9939f2353a1198cb0fdadd5ea0cdc2fc491c90aeaf0274d5dddf5c012103674e24474fc316dc661cfe7721ab66891e5ced8a7a9cb23844e19ff1b9d42d9ffeffffff0240420f00000000001976a9142ed9b8715e37ed54eb717276285c94eaa230374488ac98322b00000000001976a9142d0f3f6beea171e4a78f79ea0a7aae6e9ca2f33588ac70d10000",
+  "walletconflicts": [],
+  "blockhash": "bd0cc907cc2d27c42e9cd47dfcb4d4b51f7053b8c92f87385ec334ba20328c79",
+  "fee": -0.00374,
+  "time": 1510059868,
+  "amount": 0,
+  "details": [
+    {
+      "account": "test-account",
+      "address": "fJP2SdCdn2mMg4u5SSy9SuK9RaHM4RukpU",
+      "category": "send",
+      "amount": -0.01,
+      "label": "test",
+      "vout": 0,
+      "fee": -0.00374,
+      "abandoned": false
+    },
+    {
+      "account": "test",
+      "address": "fJP2SdCdn2mMg4u5SSy9SuK9RaHM4RukpU",
+      "category": "receive",
+      "amount": 0.01,
+      "label": "test",
+      "vout": 0
+    }
+  ],
+  "bip125-replaceable": "no",
+  "blocktime": 1510059767,
+  "timereceived": 1510059868,
+  "blockindex": 1,
+  "txid": "1f5fd4d3ade5bf7fe78f00cd3005569249e64d5c36417a9a8cf6b8e5b3cf5cdf"
+}
