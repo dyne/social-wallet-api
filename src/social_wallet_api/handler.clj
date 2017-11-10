@@ -80,6 +80,10 @@
 (defn- get-app-conf [config app-name]
   (get-in config [(keyword app-name) :freecoin]))
 
+(defn- number-confirmations [blockchain transaction-id]
+  (-> (lib/get-transaction blockchain transaction-id)
+      (get "confirmations")))
+
 (defn init
   ([]
    (init config-default prod-app-name))
@@ -94,7 +98,8 @@
                          ;; namespaces/patterns. Useful for turning off
                          ;; logging in noisy libraries, etc.:
                          :ns-whitelist  ["social-wallet-api.*"
-                                         "freecoin-lib.*"]
+                                         "freecoin-lib.*"
+                                         "clj-storage.*"]
                          :ns-blacklist  ["org.eclipse.jetty.*"]}))
 
    ;; TODO a more generic way to go multiple configurations
@@ -104,7 +109,9 @@
      (log/warn "MongoDB backend connected."))
 
    (when-let [fair-conf (get-blockchain-conf config app-name :faircoin)]
-     (let [fair (lib/new-btc-rpc (:currency fair-conf) (:rpc-config-path fair-conf))]
+     (let [fair (lib/new-btc-rpc (:currency fair-conf)
+                                 (:number-confirmations fair-conf)
+                                 (:rpc-config-path fair-conf))]
        (swap! blockchains conj {:faircoin fair})
        (log/warn "Faircoin config is loaded")))))
 
@@ -293,15 +300,32 @@ Creates a transaction.
                                                         (:amount query)
                                                         (:to-id query)
                                                         (dissoc query :tags))]
-                           ;; store to db as well with transaction-id
-                           (lib/create-transaction (get-db-blockchain blockchains)
-                                                   (:from-id query)
-                                                   (:amount query)
-                                                   (:to-id query)
-                                                   (-> query 
-                                                       (dissoc :comment :comment-to)
-                                                       (assoc :transaction-id transaction-id)
-                                                       (assoc :currency (:blockchain query))))
+                           (do
+                             ;; Update fee to db when confirmed
+                             ;; The logged-future will return an exception which otherwise would be swallowed till deref
+                             (log/logged-future
+                              (while (> (:number-confirmations blockchain)
+                                        (number-confirmations blockchain transaction-id))
+                                 (log/debug "Not enough confirmations for transaction with id " transaction-id)
+                                 (Thread/sleep 20000))
+                               (let [fee (freecoin-lib.utils/bigdecimal->long
+                                          (get
+                                           (lib/get-transaction blockchain transaction-id)
+                                           "fee"))]
+                                 (log/debug "Updating the amount with the fee")
+                                 (lib/update-transaction
+                                  (get-db-blockchain blockchains) transaction-id
+                                  ;; Here we add the minus fee to the whole transaction when confirmed
+                                  (fn [tr] (update tr :amount #(+ % (- fee)))))))
+                             ;; store to db as well with transaction-id
+                             (lib/create-transaction (get-db-blockchain blockchains)
+                                                     (:from-id query)
+                                                     (:amount query)
+                                                     (:to-id query)
+                                                     (-> query 
+                                                         (dissoc :comment :comment-to)
+                                                         (assoc :transaction-id transaction-id
+                                                                :currency (:blockchain query)))))
                            ;; There was an error
                            (f/fail (f/message transaction-id))))))))
 
