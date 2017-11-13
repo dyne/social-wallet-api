@@ -64,7 +64,9 @@
    (s/optional-key :transaction-id) (s/maybe s/Str)
    (s/optional-key :currency) s/Str
    ;; how many confirmations needed for a transaction to be confirmed
-   (s/optional-key :number-confirmations) s/Num})
+   (s/optional-key :number-confirmations) s/Num
+   ;; and how often should that be checked
+   (s/optional-key :frequency-confirmations) s/Num})
 
 (s/defschema AccountDetails
   {(s/required-key "account") s/Str
