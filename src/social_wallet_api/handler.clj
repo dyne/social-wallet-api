@@ -287,6 +287,8 @@ Creates a transaction.
 "
                    (with-error-responses blockchains query
                      (fn [blockchain query]
+                       ;; -- FOR MONGO DB BOCKCHAIN
+                       ;; TODO: Probably we shoul not have a transaction for MONGO but only a move
                        (if (= (-> query :blockchain keyword) :mongo)
                          (lib/create-transaction blockchain
                                                  (:from-id query)
@@ -294,7 +296,7 @@ Creates a transaction.
                                                  (:to-id query)
                                                  (-> query 
                                                      (dissoc :comment :comment-to)))
-                         ;; else Blockchain transaction
+                         ;; -- FOR ANY OTHER BOCKCHAIN
                          (f/if-let-ok? [transaction-id (lib/create-transaction
                                                         blockchain
                                                         (:from-id query)
@@ -329,6 +331,39 @@ Creates a transaction.
                                                                 :currency (:blockchain query)))))
                            ;; There was an error
                            (f/fail (f/message transaction-id))))))))
+
+    (context "/wallet/v1/transactions" []
+             :tags ["TRANSACTIONS"]
+             (POST "/move" request
+                   :responses {status/not-found {:schema s/Str}
+                               status/service-unavailable {:schema s/Str}}
+                   :return DBTransaction
+                   :body [query NewTransactionQuery]
+                   :summary "Move an amount from one wallet account to another."
+                   :description "
+Takes a JSON structure with a `blockchain` `from-account`, `to-account` query identifiers and optionally `tags` and `comment` as paramaters.
+
+ATTENTION: Move is intended for in wallet transactions. This means that a) no fee is charged b) If the from or no account exist on the wallet they will be CREATED. In case of a from non existing account an account with a negative balance will be created.
+
+Returns the DB entry that was created.
+"
+                   (with-error-responses blockchains query
+                     (fn [blockchain query]
+                       (when-not (= (-> query :blockchain keyword) :mongo)                         
+                         (lib/move
+                          blockchain
+                          (:from-id query)
+                          (:amount query)
+                          (:to-id query)
+                          (dissoc query :tags)))
+                       (lib/create-transaction (get-db-blockchain blockchains)
+                                               (:from-id query)
+                                               (:amount query)
+                                               (:to-id query)
+                                               (-> query 
+                                                   (dissoc :comment :comment-to)
+                                                   (assoc :transaction-id "move"
+                                                          :currency (:blockchain query))))))))
 
     ;; (context "/wallet/v1/accounts" []
     ;;          :tags ["ACCOUNTS"]
