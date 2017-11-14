@@ -84,6 +84,9 @@
   (-> (lib/get-transaction blockchain transaction-id)
       (get "confirmations")))
 
+(defn- path-with-version [path]
+  (str "/wallet/v1" path))
+
 (defn init
   ([]
    (init config-default prod-app-name))
@@ -143,7 +146,7 @@
               :description "Social Wallet REST API backend for webapps"
               :contact {:url "https://github.com/pienews/social-wallet-api"}}}}}
 
-    (context "/" []
+    (context (path-with-version "") []
              :tags ["INFO"]
              (GET "/readme" request
                   {:headers {"Content-Type"
@@ -151,7 +154,7 @@
                    :body (md/md-to-html-string
                           (slurp "README.md"))}))
 
-    (context "/" []
+    (context (path-with-version "") []
              :tags ["LABEL"]
              (POST "/label" request
                    :responses {status/not-found {:schema s/Str}
@@ -169,7 +172,7 @@ It returns the label value.
                    (with-error-responses blockchains query
                      (fn [blockchain query] (lib/label blockchain)))))
 
-    (context "/" []
+    (context (path-with-version "") []
              :tags ["ADDRESS"]
              (POST "/address" request
                    :responses {status/not-found {:schema s/Str}
@@ -187,7 +190,7 @@ It returns a list of addresses for the particular account.
                    (with-error-responses blockchains query
                      (fn [blockchain query] (lib/get-address blockchain (:account-id query))))))
 
-    (context "/" []
+    (context (path-with-version "") []
              :tags ["BALANCE"]
              (POST "/balance" request
                    :responses {status/not-found {:schema s/Str}
@@ -205,7 +208,7 @@ It returns balance for that particular account. If no account is provided it ret
                    (with-error-responses blockchains query
                      (fn [blockchain query] (lib/get-balance blockchain (:account-id query))))))
     
-    (context "/wallet/v1/tags" []
+    (context (path-with-version "/tags") []
              :tags ["TAGS"]
              (POST "/list" request
                    :responses {status/not-found {:schema s/Str}
@@ -229,7 +232,7 @@ It returns a list of tags found on that blockchain.
                          (f/fail "Tags are available only for Mongo requests"))))))
 
     ;; TODO: maye add the mongo filtering parameters too? Like tags and from/to timestamps
-    (context "/wallet/v1/transactions" []
+    (context (path-with-version "/transactions") []
              :tags ["TRANSACTIONS"]
              (POST "/list" request
                    :responses {status/not-found {:schema s/Str}
@@ -252,7 +255,7 @@ Returns a list of transactions found on that blockchain.
                                                (:from query) (assoc :from (:from query))
                                                (:count query) (assoc :count (:count query))))))))
 
-    (context "/wallet/v1/transactions" []
+    (context (path-with-version "/transactions") []
              :tags ["TRANSACTIONS"]
              (POST "/get" request
                    :responses {status/not-found {:schema s/Str}
@@ -270,7 +273,7 @@ Returns the transaction if found on that blockchain.
                                              blockchain
                                              (:txid query))))))
 
-    (context "/wallet/v1/transactions" []
+    (context (path-with-version "/transactions") []
              :tags ["TRANSACTIONS"]
              (POST "/new" request
                    :responses {status/not-found {:schema s/Str}
@@ -332,7 +335,7 @@ Creates a transaction.
                            ;; There was an error
                            (f/fail (f/message transaction-id))))))))
 
-    (context "/wallet/v1/transactions" []
+    (context (path-with-version "/transactions") []
              :tags ["TRANSACTIONS"]
              (POST "/move" request
                    :responses {status/not-found {:schema s/Str}
