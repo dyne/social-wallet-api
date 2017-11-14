@@ -143,7 +143,7 @@
       :data {:info
              {:version (clojure.string/trim (slurp "VERSION"))
               :title "Social-wallet-api"
-              :description "Social Wallet REST API backend for webapps"
+              :description "Social Wallet REST API backend for webapps. All blockchain activity is backed by a DB. For example for any transaction or move that happens on the blockchain side a record will be created on the DB side and the fees will be updated where applicable."
               :contact {:url "https://github.com/pienews/social-wallet-api"}}}}}
 
     (context (path-with-version "") []
@@ -285,7 +285,8 @@ Returns the transaction if found on that blockchain.
                    :description "
 Takes a JSON structure with a `blockchain`, `from-account`, `to-account` query identifiers and optionally `tags`, `comment` and `comment-to` as paramaters.
 
-Creates a transaction.
+Creates a transaction. If fees are charged for this transaction those fees are also updated on the DB when the rtansaction is confirmed.
+Returns the DB entry that was created.
 
 "
                    (with-error-responses blockchains query
@@ -346,13 +347,15 @@ Creates a transaction.
                    :description "
 Takes a JSON structure with a `blockchain` `from-account`, `to-account` query identifiers and optionally `tags` and `comment` as paramaters.
 
-ATTENTION: Move is intended for in wallet transactions. This means that a) no fee is charged b) If the from or no account exist on the wallet they will be CREATED. In case of a from non existing account an account with a negative balance will be created.
+**Attention:** Move is intended for in wallet transactions which means that:
+1. no fee will be charged
+2. if the from or to accounts do not already exist in the wallet they will be *created*. In case of a from non existing account an account with the *negative* balance will be created.
 
 Returns the DB entry that was created.
 "
                    (with-error-responses blockchains query
                      (fn [blockchain query]
-                       (when-not (= (-> query :blockchain keyword) :mongo)                         
+                       (when-not (= (-> query :blockchain keyword) :mongo)                    
                          (lib/move
                           blockchain
                           (:from-id query)
