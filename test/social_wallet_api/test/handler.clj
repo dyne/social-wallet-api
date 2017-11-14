@@ -19,7 +19,7 @@
                            (fact "Get the label using the blockchain type as string"
                                  (let [response (h/app
                                                  (->
-                                                  (mock/request :post "/label")
+                                                  (mock/request :post "/wallet/v1/label")
                                                   (mock/content-type "application/json")
                                                   (mock/body  (cheshire/generate-string {:blockchain "mongo"}))))
                                        body (parse-body (:body response))]
@@ -29,7 +29,7 @@
                            (fact "Get the label using the blockchain type as keyword"
                                  (let [response (h/app
                                                  (->
-                                                  (mock/request :post "/label")
+                                                  (mock/request :post "/wallet/v1/label")
                                                   (mock/content-type "application/json")
                                                   (mock/body  (cheshire/generate-string {:blockchain :mongo}))))
                                        body (parse-body (:body response))]
