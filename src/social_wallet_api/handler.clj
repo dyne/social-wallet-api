@@ -36,7 +36,7 @@
             [freecoin-lib.app :as freecoin]
             [social-wallet-api.schema :refer [Query Tag DBTransaction BTCTransaction TransactionQuery
                                               Address Balance PerAccountQuery NewTransactionQuery
-                                              ListTransactionsQuery]]
+                                              ListTransactionsQuery MaybeAccountQuery]]
             [failjure.core :as f]))
 
 (defonce prod-app-name "social-wallet-api")
@@ -196,7 +196,7 @@ It returns a list of addresses for the particular account.
                    :responses {status/not-found {:schema s/Str}
                                status/service-unavailable {:schema s/Str}}
                    :return Balance
-                   :body [query PerAccountQuery]
+                   :body [query MaybeAccountQuery]
                    :summary "Returns the balance of an account or the total balance."
                    :description "
 

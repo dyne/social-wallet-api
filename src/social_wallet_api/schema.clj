@@ -35,6 +35,10 @@
   "POST Wallet query validator for requests per account"
   (merge Query {:account-id (rjs/field s/Str {:example "account-id"})}))
 
+(s/defschema MaybeAccountQuery
+  "POST Wallet query validator for requests per account, or no account"
+  (merge Query {(s/optional-key :account-id) (rjs/field s/Str {:example "account-id"})}))
+
 (s/defschema Account
   "Account schema validator"
   ;; first-name last-name email password flags
