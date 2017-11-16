@@ -8,5 +8,7 @@ freecoin:
     db:   freecoin
   faircoin:
     currency: fair
+    number-confirmations: 6
+    frequency-confirmations: 20000
     rpc-config-path: /tmp/faircoin.conf
 

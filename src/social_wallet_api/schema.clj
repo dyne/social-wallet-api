@@ -35,6 +35,10 @@
   "POST Wallet query validator for requests per account"
   (merge Query {:account-id (rjs/field s/Str {:example "account-id"})}))
 
+(s/defschema MaybeAccountQuery
+  "POST Wallet query validator for requests per account, or no account"
+  (merge Query {(s/optional-key :account-id) (rjs/field s/Str {:example "account-id"})}))
+
 (s/defschema Account
   "Account schema validator"
   ;; first-name last-name email password flags
@@ -62,7 +66,11 @@
    (s/optional-key :to-id)      s/Any
    (s/optional-key :amount)     s/Num
    (s/optional-key :transaction-id) (s/maybe s/Str)
-   (s/optional-key :currency) s/Str})
+   (s/optional-key :currency) s/Str
+   ;; how many confirmations needed for a transaction to be confirmed
+   (s/optional-key :number-confirmations) s/Num
+   ;; and how often should that be checked
+   (s/optional-key :frequency-confirmations) s/Num})
 
 (s/defschema AccountDetails
   {(s/required-key "account") s/Str

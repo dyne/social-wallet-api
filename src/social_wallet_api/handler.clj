@@ -36,7 +36,7 @@
             [freecoin-lib.app :as freecoin]
             [social-wallet-api.schema :refer [Query Tag DBTransaction BTCTransaction TransactionQuery
                                               Address Balance PerAccountQuery NewTransactionQuery
-                                              ListTransactionsQuery]]
+                                              ListTransactionsQuery MaybeAccountQuery]]
             [failjure.core :as f]))
 
 (defonce prod-app-name "social-wallet-api")
@@ -80,6 +80,13 @@
 (defn- get-app-conf [config app-name]
   (get-in config [(keyword app-name) :freecoin]))
 
+(defn- number-confirmations [blockchain transaction-id]
+  (-> (lib/get-transaction blockchain transaction-id)
+      (get "confirmations")))
+
+(defn- path-with-version [path]
+  (str "/wallet/v1" path))
+
 (defn init
   ([]
    (init config-default prod-app-name))
@@ -94,7 +101,8 @@
                          ;; namespaces/patterns. Useful for turning off
                          ;; logging in noisy libraries, etc.:
                          :ns-whitelist  ["social-wallet-api.*"
-                                         "freecoin-lib.*"]
+                                         "freecoin-lib.*"
+                                         "clj-storage.*"]
                          :ns-blacklist  ["org.eclipse.jetty.*"]}))
 
    ;; TODO a more generic way to go multiple configurations
@@ -104,7 +112,10 @@
      (log/warn "MongoDB backend connected."))
 
    (when-let [fair-conf (get-blockchain-conf config app-name :faircoin)]
-     (let [fair (lib/new-btc-rpc (:currency fair-conf) (:rpc-config-path fair-conf))]
+     (let [fair (lib/new-btc-rpc (:currency fair-conf)
+                                 {:number-confirmations (:number-confirmations fair-conf)
+                                  :frequency-confirmations (:frequency-confirmations fair-conf)}
+                                 (:rpc-config-path fair-conf))]
        (swap! blockchains conj {:faircoin fair})
        (log/warn "Faircoin config is loaded")))))
 
@@ -132,10 +143,10 @@
       :data {:info
              {:version (clojure.string/trim (slurp "VERSION"))
               :title "Social-wallet-api"
-              :description "Social Wallet REST API backend for webapps"
+              :description "Social Wallet REST API backend for webapps. All blockchain activity is backed by a DB. For example for any transaction or move that happens on the blockchain side a record will be created on the DB side and the fees will be updated where applicable."
               :contact {:url "https://github.com/pienews/social-wallet-api"}}}}}
 
-    (context "/" []
+    (context (path-with-version "") []
              :tags ["INFO"]
              (GET "/readme" request
                   {:headers {"Content-Type"
@@ -143,7 +154,7 @@
                    :body (md/md-to-html-string
                           (slurp "README.md"))}))
 
-    (context "/" []
+    (context (path-with-version "") []
              :tags ["LABEL"]
              (POST "/label" request
                    :responses {status/not-found {:schema s/Str}
@@ -161,7 +172,7 @@ It returns the label value.
                    (with-error-responses blockchains query
                      (fn [blockchain query] (lib/label blockchain)))))
 
-    (context "/" []
+    (context (path-with-version "") []
              :tags ["ADDRESS"]
              (POST "/address" request
                    :responses {status/not-found {:schema s/Str}
@@ -179,13 +190,13 @@ It returns a list of addresses for the particular account.
                    (with-error-responses blockchains query
                      (fn [blockchain query] (lib/get-address blockchain (:account-id query))))))
 
-    (context "/" []
+    (context (path-with-version "") []
              :tags ["BALANCE"]
              (POST "/balance" request
                    :responses {status/not-found {:schema s/Str}
                                status/service-unavailable {:schema s/Str}}
                    :return Balance
-                   :body [query PerAccountQuery]
+                   :body [query MaybeAccountQuery]
                    :summary "Returns the balance of an account or the total balance."
                    :description "
 
@@ -197,7 +208,7 @@ It returns balance for that particular account. If no account is provided it ret
                    (with-error-responses blockchains query
                      (fn [blockchain query] (lib/get-balance blockchain (:account-id query))))))
     
-    (context "/wallet/v1/tags" []
+    (context (path-with-version "/tags") []
              :tags ["TAGS"]
              (POST "/list" request
                    :responses {status/not-found {:schema s/Str}
@@ -221,7 +232,7 @@ It returns a list of tags found on that blockchain.
                          (f/fail "Tags are available only for Mongo requests"))))))
 
     ;; TODO: maye add the mongo filtering parameters too? Like tags and from/to timestamps
-    (context "/wallet/v1/transactions" []
+    (context (path-with-version "/transactions") []
              :tags ["TRANSACTIONS"]
              (POST "/list" request
                    :responses {status/not-found {:schema s/Str}
@@ -244,7 +255,7 @@ Returns a list of transactions found on that blockchain.
                                                (:from query) (assoc :from (:from query))
                                                (:count query) (assoc :count (:count query))))))))
 
-    (context "/wallet/v1/transactions" []
+    (context (path-with-version "/transactions") []
              :tags ["TRANSACTIONS"]
              (POST "/get" request
                    :responses {status/not-found {:schema s/Str}
@@ -262,7 +273,7 @@ Returns the transaction if found on that blockchain.
                                              blockchain
                                              (:txid query))))))
 
-    (context "/wallet/v1/transactions" []
+    (context (path-with-version "/transactions") []
              :tags ["TRANSACTIONS"]
              (POST "/new" request
                    :responses {status/not-found {:schema s/Str}
@@ -274,11 +285,14 @@ Returns the transaction if found on that blockchain.
                    :description "
 Takes a JSON structure with a `blockchain`, `from-account`, `to-account` query identifiers and optionally `tags`, `comment` and `comment-to` as paramaters.
 
-Creates a transaction.
+Creates a transaction. If fees are charged for this transaction those fees are also updated on the DB when the rtansaction is confirmed.
+Returns the DB entry that was created.
 
 "
                    (with-error-responses blockchains query
                      (fn [blockchain query]
+                       ;; -- FOR MONGO DB BOCKCHAIN
+                       ;; TODO: Probably we shoul not have a transaction for MONGO but only a move
                        (if (= (-> query :blockchain keyword) :mongo)
                          (lib/create-transaction blockchain
                                                  (:from-id query)
@@ -286,24 +300,76 @@ Creates a transaction.
                                                  (:to-id query)
                                                  (-> query 
                                                      (dissoc :comment :comment-to)))
-                         ;; else Blockchain transaction
+                         ;; -- FOR ANY OTHER BOCKCHAIN
                          (f/if-let-ok? [transaction-id (lib/create-transaction
                                                         blockchain
                                                         (:from-id query)
                                                         (:amount query)
                                                         (:to-id query)
                                                         (dissoc query :tags))]
-                           ;; store to db as well with transaction-id
-                           (lib/create-transaction (get-db-blockchain blockchains)
-                                                   (:from-id query)
-                                                   (:amount query)
-                                                   (:to-id query)
-                                                   (-> query 
-                                                       (dissoc :comment :comment-to)
-                                                       (assoc :transaction-id transaction-id)
-                                                       (assoc :currency (:blockchain query))))
+                           (do
+                             ;; Update fee to db when confirmed
+                             ;; The logged-future will return an exception which otherwise would be swallowed till deref
+                             (log/logged-future
+                              (while (> (-> blockchain :confirmations :number-confirmations)
+                                        (number-confirmations blockchain transaction-id))
+                                 (log/debug "Not enough confirmations for transaction with id " transaction-id)
+                                 (Thread/sleep (-> blockchain :confirmations :frequency-confirmations)))
+                               (let [fee (freecoin-lib.utils/bigdecimal->long
+                                          (get
+                                           (lib/get-transaction blockchain transaction-id)
+                                           "fee"))]
+                                 (log/debug "Updating the amount with the fee")
+                                 (lib/update-transaction
+                                  (get-db-blockchain blockchains) transaction-id
+                                  ;; Here we add the minus fee to the whole transaction when confirmed
+                                  (fn [tr] (update tr :amount #(+ % (- fee)))))))
+                             ;; store to db as well with transaction-id
+                             (lib/create-transaction (get-db-blockchain blockchains)
+                                                     (:from-id query)
+                                                     (:amount query)
+                                                     (:to-id query)
+                                                     (-> query 
+                                                         (dissoc :comment :comment-to)
+                                                         (assoc :transaction-id transaction-id
+                                                                :currency (:blockchain query)))))
                            ;; There was an error
                            (f/fail (f/message transaction-id))))))))
+
+    (context (path-with-version "/transactions") []
+             :tags ["TRANSACTIONS"]
+             (POST "/move" request
+                   :responses {status/not-found {:schema s/Str}
+                               status/service-unavailable {:schema s/Str}}
+                   :return DBTransaction
+                   :body [query NewTransactionQuery]
+                   :summary "Move an amount from one wallet account to another."
+                   :description "
+Takes a JSON structure with a `blockchain` `from-account`, `to-account` query identifiers and optionally `tags` and `comment` as paramaters.
+
+**Attention:** Move is intended for in wallet transactions which means that:
+1. no fee will be charged
+2. if the from or to accounts do not already exist in the wallet they will be *created*. In case of a from non existing account an account with the *negative* balance will be created.
+
+Returns the DB entry that was created.
+"
+                   (with-error-responses blockchains query
+                     (fn [blockchain query]
+                       (when-not (= (-> query :blockchain keyword) :mongo)                    
+                         (lib/move
+                          blockchain
+                          (:from-id query)
+                          (:amount query)
+                          (:to-id query)
+                          (dissoc query :tags)))
+                       (lib/create-transaction (get-db-blockchain blockchains)
+                                               (:from-id query)
+                                               (:amount query)
+                                               (:to-id query)
+                                               (-> query 
+                                                   (dissoc :comment :comment-to)
+                                                   (assoc :transaction-id "move"
+                                                          :currency (:blockchain query))))))))
 
     ;; (context "/wallet/v1/accounts" []
     ;;          :tags ["ACCOUNTS"]
