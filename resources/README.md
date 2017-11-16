@@ -1,24 +1,89 @@
-# social-wallet-api
+# Social Wallet API
 
-FIXME
+<a href="https://www.dyne.org"><img
+src="https://secrets.dyne.org/static/img/swbydyne.png"
+alt="software by Dyne.org"
+title="software by Dyne.org" class="pull-right"></a>
 
-## Usage
+This software is made to facilitate the integration of blockchain
+functions into existing front-end applications, providing an easy
+backend of documented REST API endpoints that are validated and, in
+case of error, report meaningful messages.
 
-### Run the application locally
+This REST API interface is so far meant for low-level access of
+wallets built using the [https://freecoin.dyne.org](Freecoin toolkit).
 
-`lein ring server`
+The Social Wallet API allows to make calls to mongo and to running
+blockchain nodes that are compatibile with Bitcoin Core and support
+the generic Bitcoin RPC.
 
-### Packaging and running as standalone jar
+## Building the Social Wallet API on your own computer
+
+<img class="pull-right"
+src="https://secrets.dyne.org/static/img/clojure.png">
+
+The Social Wallet API is written in Clojure and is fully
+cross-platform: one can run it locally on a GNU/Linux machine, as well
+on Apple/OSX and MS/Windows.
+
+<img class="pull-left" src="https://secrets.dyne.org/static/img/leiningen.jpg"
+style="padding-right: 1.5em">
+
+The following software is
+required:
+[OpenJDK](http://openjdk.java.net),
+[Clojure](http://clojure.org), [Leiningen](http://leiningen.org).
+
+For instance on Devuan systems one can install all necessary
+dependencies using apt and the following packages: `apt-get
+openjdk-7-jdk libversioneer-clojure haveged`.
+
+then install Leiningen which will take care of all Clojure dependencies:
 
 ```
-lein do clean, ring uberjar
-java -jar target/server.jar
+mkdir ~/bin
+wget https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein -O ~/bin/lein
+chmod +x ~/bin/lein
 ```
 
-### Packaging as war
+then from inside the Secrets source directory various commands can run
+`lein ring server` to serve the application from port
+http://localhost:8000, or `lein uberjar` to build a standalone jar
+application, or `lein uberwar` to build a standalone war application
+ready to be served from enterprise infrastructure using JBoss or
+Tomcat.
 
-`lein ring uberwar`
+## Acknowledgements
+
+The Social Wallet API is Free and Open Source research and development
+activity funded by the European Commission in the context of
+the
+[Collective Awareness Platforms for Sustainability and Social Innovation (CAPSSI)](https://ec.europa.eu/digital-single-market/en/collective-awareness) program. Social
+Wallet API uses the
+underlying [Freecoin-lib](https://github.com/dyne/freecoin-lib)
+blockchain implementation library and adopted as a component of the
+social wallet toolkit being developed for
+the [Commonfare project](https://pieproject.eu) (grant nr. 687922) .
+
 
 ## License
 
-Copyright ©  FIXME
+Social Wallet API is Copyright (C) 2017 by the Dyne.org Foundation
+
+This software and its documentation are designed, written and maintained
+by Denis Roio <jaromil@dyne.org> and Aspasia Beneti <aspra@dyne.org>
+
+```
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+```
