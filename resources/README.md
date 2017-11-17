@@ -11,7 +11,9 @@ backend of documented REST API endpoints that are validated and, in
 case of error, report meaningful messages.
 
 This REST API interface is so far meant for low-level access of
-wallets built using the [https://freecoin.dyne.org](Freecoin toolkit).
+wallets built using the [Freecoin toolkit](https://freecoin.dyne.org).
+
+[![Freecoin.dyne.org](https://freecoin.dyne.org/images/freecoin_logo.png)](https://freecoin.dyne.org)
 
 The Social Wallet API allows to make calls to mongo and to running
 blockchain nodes that are compatibile with Bitcoin Core and support
