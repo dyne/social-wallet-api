@@ -32,7 +32,7 @@
                  [org.clojars.dyne/freecoin-lib ~version]
                  
                  ;; auxiliary functions (configuration etc.)
-                 [org.clojars.dyne/auxiliary "0.4.0-SNAPSHOT"]
+                 [org.clojars.dyne/auxiliary "0.4.0"]
 
                  ;; for rendering of readme etc.
                  [markdown-clj "1.0.1"]
