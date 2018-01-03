@@ -10,6 +10,8 @@ functions into existing front-end applications, providing an easy
 backend of documented REST API endpoints that are validated and, in
 case of error, report meaningful messages.
 
+[![Build Status](https://travis-ci.org/Commonfare-net/social-wallet-api.svg?branch=master)](https://travis-ci.org/Commonfare-net/social-wallet-api)
+
 This REST API interface is so far meant for low-level access of
 wallets built using the [Freecoin toolkit](https://freecoin.dyne.org).
 
