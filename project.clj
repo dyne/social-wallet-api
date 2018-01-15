@@ -24,7 +24,7 @@
 (defproject social-wallet-api version
   :description "Freecoin web API for wallet operations"
   :dependencies [[org.clojure/clojure "1.8.0"]
-                 [metosin/compojure-api "1.1.7"]
+                 [metosin/compojure-api "2.0.0-alpha17"]
                  [ring/ring-core "1.6.2"]
                  [ring/ring-defaults "0.3.1"]
 
