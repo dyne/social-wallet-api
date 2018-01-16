@@ -10,8 +10,12 @@ functions into existing front-end applications, providing an easy
 backend of documented REST API endpoints that are validated and, in
 case of error, report meaningful messages.
 
+[![Build Status](https://travis-ci.org/Commonfare-net/social-wallet-api.svg?branch=master)](https://travis-ci.org/Commonfare-net/social-wallet-api)
+
 This REST API interface is so far meant for low-level access of
-wallets built using the [https://freecoin.dyne.org](Freecoin toolkit).
+wallets built using the [Freecoin toolkit](https://freecoin.dyne.org).
+
+[![Freecoin.dyne.org](https://freecoin.dyne.org/images/freecoin_logo.png)](https://freecoin.dyne.org)
 
 The Social Wallet API allows to make calls to mongo and to running
 blockchain nodes that are compatibile with Bitcoin Core and support
@@ -46,12 +50,59 @@ wget https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein -O 
 chmod +x ~/bin/lein
 ```
 
-then from inside the Secrets source directory various commands can run
-`lein ring server` to serve the application from port
-http://localhost:8000, or `lein uberjar` to build a standalone jar
-application, or `lein uberwar` to build a standalone war application
-ready to be served from enterprise infrastructure using JBoss or
-Tomcat.
+## Running the Social Wallet API
+
+First of all check the configuration in
+`resources/social-wallet-api.yaml` and adjust its contents to your
+setup. Here an example complete with comments:
+
+```yaml
+# verbosity level of messages
+log-level: debug
+
+# open freecoin specific section
+freecoin:
+# indentation matters: mind the initial spaces of following sections
+
+# configuration for the database holding local transactions
+  mongo:
+    host: localhost
+    port: 27017
+    db:   freecoin
+
+# configuration of the 'faircoin' blockchain
+  faircoin:
+# visualised name of the currency
+    currency: fair
+# number of confirmations to consider a transaction as valid
+    number-confirmations: 6
+# frequency of confirmations checks in milliseconds
+    frequency-confirmations: 20000
+# path to the rpc configuration holding username and password
+    rpc-config-path: /home/user/.faircoin2/faircoin.conf
+
+# configuration of the 'bitcoin' blockchain
+  bitcoin:
+# visualised name of the currency
+    currency: btc
+# number of confirmations to consider a transaction as valid
+    number-confirmations: 6
+# frequency of confirmations checks in milliseconds
+    frequency-confirmations: 20000
+# path to the rpc configuration holding username and password
+    rpc-config-path: /home/user/.bitcoin/bitcoin.conf
+```
+
+Once correctly configured, from inside the social-wallet-api source
+directory one can use various commands to run it live (refreshing live
+changes to the code) using:
+
+- `lein ring server` (which will start and spawn a browser on it)
+- `lein ring server-headless` (will start without browser)
+
+One can also use `lein uberjar` to build a standalone jar application,
+or `lein uberwar` to build a standalone war application ready to be
+served from enterprise infrastructure using JBoss or Tomcat.
 
 ## Acknowledgements
 
