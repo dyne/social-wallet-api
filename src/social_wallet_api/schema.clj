@@ -105,6 +105,14 @@
    (s/optional-key "details") [AccountDetails] ;; TODO
    })
 
+(s/defschema DecodedRawTransaction
+  {(s/required-key "txid") s/Str
+   (s/required-key "size") s/Num
+   (s/required-key "version") s/Num
+   (s/required-key "locktime") s/Num
+   (s/required-key "vin") [s/Any]
+   (s/required-key "vout") [s/Any]})
+
 (s/defschema TransactionQuery
   (merge Query {:txid s/Str}))
 

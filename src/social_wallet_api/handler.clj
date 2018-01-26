@@ -36,7 +36,7 @@
             [freecoin-lib.app :as freecoin]
             [social-wallet-api.schema :refer [Query Tag DBTransaction BTCTransaction TransactionQuery
                                               Address Balance PerAccountQuery NewTransactionQuery
-                                              ListTransactionsQuery MaybeAccountQuery]]
+                                              ListTransactionsQuery MaybeAccountQuery DecodedRawTransaction]]
             [failjure.core :as f]))
 
 (defonce prod-app-name "social-wallet-api")
@@ -260,7 +260,11 @@ Returns a list of transactions found on that blockchain.
              (POST "/get" request
                    :responses {status/not-found {:schema s/Str}
                                status/service-unavailable {:schema s/Str}}
-                   :return (s/conditional map? BTCTransaction :else [DBTransaction])
+                   :return (s/conditional map?
+                                          (s/if #(get % "amount")
+                                            BTCTransaction
+                                            DecodedRawTransaction)
+                                          :else [DBTransaction])
                    :body [query TransactionQuery]
                    :summary "Retieve a transaction by txid"
                    :description "
