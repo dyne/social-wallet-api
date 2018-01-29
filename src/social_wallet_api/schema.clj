@@ -130,6 +130,14 @@
                 #_(s/optional-key :from) s/Num}))
 
 ;; Blockchain Address
-(def Address s/Str)
+(s/defschema Addresses
+  {:addresses [s/Str]})
 
-(def Balance s/Num)
+(s/defschema Balance
+  {:amount s/Num})
+
+(s/defschema Label
+  {:currency s/Keyword})
+
+(s/defschema Tags
+  {:tags [Tag]})

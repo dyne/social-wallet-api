@@ -34,8 +34,8 @@
             [auxiliary.config :refer [config-read]]
             [freecoin-lib.core :as lib]
             [freecoin-lib.app :as freecoin]
-            [social-wallet-api.schema :refer [Query Tag DBTransaction BTCTransaction TransactionQuery
-                                              Address Balance PerAccountQuery NewTransactionQuery
+            [social-wallet-api.schema :refer [Query Tags DBTransaction BTCTransaction TransactionQuery
+                                              Addresses Balance PerAccountQuery NewTransactionQuery Label
                                               ListTransactionsQuery MaybeAccountQuery DecodedRawTransaction]]
             [failjure.core :as f]))
 
@@ -130,10 +130,10 @@
     (if-let [blockchain (get-blockchain blockchains query)]
       (f/if-let-ok? [response (ok-fn blockchain query)]
         (ok response)
-        (bad-request (f/message response)))
-      (not-found "No such blockchain can be found."))
+        (bad-request {:error (f/message response)}))
+      (not-found {:error "No such blockchain can be found."}))
     (catch java.net.ConnectException e
-      (service-unavailable "There was a connection problem with the blockchain."))))
+      (service-unavailable {:error "There was a connection problem with the blockchain."}))))
 
 (def rest-api
   (api
@@ -151,15 +151,15 @@
              (GET "/readme" request
                   {:headers {"Content-Type"
                              "text/html; charset=utf-8"}
-                   :body (md/md-to-html-string
-                          (slurp "README.md"))}))
+                   :body {:readme (md/md-to-html-string
+                                   (slurp "README.md"))}}))
 
     (context (path-with-version "") []
              :tags ["LABEL"]
              (POST "/label" request
                    :responses {status/not-found {:schema s/Str}
                                status/service-unavailable {:schema s/Str}}
-                   :return s/Keyword
+                   :return Label
                    :body [query Query]
                    :summary "Show the blockchain label"
                    :description "
@@ -170,14 +170,14 @@ It returns the label value.
 
 "
                    (with-error-responses blockchains query
-                     (fn [blockchain query] (lib/label blockchain)))))
+                     (fn [blockchain query] {:currency (lib/label blockchain)}))))
 
     (context (path-with-version "") []
              :tags ["ADDRESS"]
              (POST "/address" request
-                   :responses {status/not-found {:schema s/Str}
-                               status/service-unavailable {:schema s/Str}}
-                   :return [Address]
+               :responses {status/not-found {:schema {:error s/Str}}
+                           status/service-unavailable {:schema {:error s/Str}}}
+                   :return Addresses
                    :body [query PerAccountQuery]
                    :summary "List all addresses related to an account"
                    :description "
@@ -188,33 +188,33 @@ It returns a list of addresses for the particular account.
 
 "
                    (with-error-responses blockchains query
-                     (fn [blockchain query] (lib/get-address blockchain (:account-id query))))))
+                     (fn [blockchain query] {:addresses (lib/get-address blockchain (:account-id query))}))))
 
     (context (path-with-version "") []
-             :tags ["BALANCE"]
-             (POST "/balance" request
-                   :responses {status/not-found {:schema s/Str}
-                               status/service-unavailable {:schema s/Str}}
-                   :return Balance
-                   :body [query MaybeAccountQuery]
-                   :summary "Returns the balance of an account or the total balance."
-                   :description "
+      :tags ["BALANCE"]
+      (POST "/balance" request
+        :responses {status/not-found {:schema {:error s/Str}}
+                    status/service-unavailable {:schema {:error s/Str}}}
+        :return Balance
+        :body [query MaybeAccountQuery]
+        :summary "Returns the balance of an account or the total balance."
+        :description "
 
 Takes a JSON structure made of a `blockchain` identifier and an `account id`.
 
 It returns balance for that particular account. If no account is provided it returns the total balance of the wallet.
 
 "
-                   (with-error-responses blockchains query
-                     (fn [blockchain query] (lib/get-balance blockchain (:account-id query))))))
+        (with-error-responses blockchains query
+          (fn [blockchain query] {:amount (lib/get-balance blockchain (:account-id query))}))))
     
     (context (path-with-version "/tags") []
              :tags ["TAGS"]
              (POST "/list" request
-                   :responses {status/not-found {:schema s/Str}
-                               status/service-unavailable {:schema s/Str}
-                               status/bad-request {:schema s/Str}}
-                   :return [Tag]
+               :responses {status/not-found {:schema {:error s/Str}}
+                               status/service-unavailable {:schema {:error s/Str}}
+                               status/bad-request {:schema {:error s/Str}}}
+                   :return Tags
                    :body [query Query]
                    :summary "List all tags"
                    :description "
@@ -227,7 +227,7 @@ It returns a list of tags found on that blockchain.
                    (with-error-responses blockchains query 
                      (fn [blockchain query]
                        (if (= (-> query :blockchain keyword) :mongo)
-                         (lib/list-tags blockchain {})
+                         {:tags (lib/list-tags blockchain {})}
                          ;; TODO replace mongo eith generic DB or storage?
                          (f/fail "Tags are available only for Mongo requests"))))))
 
@@ -235,8 +235,8 @@ It returns a list of tags found on that blockchain.
     (context (path-with-version "/transactions") []
              :tags ["TRANSACTIONS"]
              (POST "/list" request
-                   :responses {status/not-found {:schema s/Str}
-                               status/service-unavailable {:schema s/Str}}
+               :responses {status/not-found {:schema {:error s/Str}}
+                           status/service-unavailable {:schema {:error s/Str}}}
                    :return  (s/if #(-> % first (get "amount"))
                               [BTCTransaction]
                               [DBTransaction])
@@ -258,8 +258,8 @@ Returns a list of transactions found on that blockchain.
     (context (path-with-version "/transactions") []
              :tags ["TRANSACTIONS"]
              (POST "/get" request
-                   :responses {status/not-found {:schema s/Str}
-                               status/service-unavailable {:schema s/Str}}
+               :responses {status/not-found {:schema {:error s/Str}}
+                           status/service-unavailable {:schema {:error s/Str}}}
                    :return (s/conditional map?
                                           (s/if #(get % "amount")
                                             BTCTransaction
@@ -280,13 +280,13 @@ Returns the transaction if found on that blockchain.
     (context (path-with-version "/transactions") []
              :tags ["TRANSACTIONS"]
              (POST "/new" request
-                   :responses {status/not-found {:schema s/Str}
-                               status/service-unavailable {:schema s/Str}
-                               status/bad-request {:schema s/Str}}
-                   :return DBTransaction
-                   :body [query NewTransactionQuery]
-                   :summary "Create a new transaction"
-                   :description "
+               :responses {status/not-found {:schema {:error s/Str}}
+                           status/service-unavailable {:schema {:error s/Str}}
+                           status/bad-request {:schema {:error s/Str}}}
+               :return DBTransaction
+               :body [query NewTransactionQuery]
+               :summary "Create a new transaction"
+               :description "
 Takes a JSON structure with a `blockchain`, `from-account`, `to-account` query identifiers and optionally `tags`, `comment` and `comment-to` as paramaters.
 
 Creates a transaction. If fees are charged for this transaction those fees are also updated on the DB when the rtansaction is confirmed.
@@ -369,7 +369,7 @@ Returns the DB entry that was created.
                        (lib/create-transaction (get-db-blockchain blockchains)
                                                (:from-id query)
                                                (:amount query)
-                                               (:to-id query)
+                                              (:to-id query)
                                                (-> query 
                                                    (dissoc :comment :comment-to)
                                                    (assoc :transaction-id "move"
