@@ -24,7 +24,7 @@
                                                   (mock/body  (cheshire/generate-string {:blockchain "mongo"}))))
                                        body (parse-body (:body response))]
                                    (:status response) => 200
-                                   body => "MONGO"))
+                                   body => {:currency "MONGO"}))
 
                            (fact "Get the label using the blockchain type as keyword"
                                  (let [response (h/app
@@ -34,4 +34,4 @@
                                                   (mock/body  (cheshire/generate-string {:blockchain :mongo}))))
                                        body (parse-body (:body response))]
                                    (:status response) => 200
-                                   body => "MONGO"))))
+                                   body => {:currency "MONGO"}))))

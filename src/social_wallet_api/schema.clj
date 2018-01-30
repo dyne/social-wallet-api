@@ -137,7 +137,7 @@
   {:amount s/Num})
 
 (s/defschema Label
-  {:currency s/Keyword})
+  {:currency s/Str})
 
 (s/defschema Tags
   {:tags [Tag]})

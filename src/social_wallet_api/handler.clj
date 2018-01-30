@@ -187,8 +187,11 @@ Takes a JSON structure made of a `blockchain` identifier and an `account id`.
 It returns a list of addresses for the particular account.
 
 "
-                   (with-error-responses blockchains query
-                     (fn [blockchain query] {:addresses (lib/get-address blockchain (:account-id query))}))))
+                   (with-error-responses blockchains query 
+                     (fn [blockchain query]
+                       (if (= (-> query :blockchain keyword) :mongo)
+                         (f/fail "Addresses are available only for blockchain requests")
+                         {:addresses (lib/get-address blockchain (:account-id query))})))))
 
     (context (path-with-version "") []
       :tags ["BALANCE"]
