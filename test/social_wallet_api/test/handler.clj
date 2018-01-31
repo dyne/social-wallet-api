@@ -34,4 +34,17 @@
                                                   (mock/body  (cheshire/generate-string {:blockchain :mongo}))))
                                        body (parse-body (:body response))]
                                    (:status response) => 200
-                                   body => {:currency "MONGO"}))))
+                                   body => {:currency "MONGO"}))
+                           (fact "Check that the amount returned after the creation of a transanction in mongo is the same as the input one"
+                                 (let [response (h/app
+                                                 (->
+                                                  (mock/request :post "/wallet/v1/transactions/new")
+                                                  (mock/content-type "application/json")
+                                                  (mock/body  (cheshire/generate-string {:blockchain :mongo
+                                                                                         :from-id "test-1"
+                                                                                         :to-id "test-2"
+                                                                                         :amount 0.1
+                                                                                         :tags ["blabla"]}))))
+                                       body (parse-body (:body response))]
+                                   (:status response) => 200
+                                   (:amount body) => 0.1))))
