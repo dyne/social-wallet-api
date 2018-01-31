@@ -155,14 +155,14 @@
                                    (slurp "README.md"))}}))
 
     (context (path-with-version "") []
-             :tags ["LABEL"]
-             (POST "/label" request
-                   :responses {status/not-found {:schema s/Str}
-                               status/service-unavailable {:schema s/Str}}
-                   :return Label
-                   :body [query Query]
-                   :summary "Show the blockchain label"
-                   :description "
+      :tags ["LABEL"]
+      (POST "/label" request
+        :responses {status/not-found {:schema {:error s/Str}}
+                    status/service-unavailable {:schema {:error s/Str}}}
+        :return Label
+        :body [query Query]
+        :summary "Show the blockchain label"
+        :description "
 
 Takes a JSON structure made of a `blockchain` identifier.
 
@@ -344,14 +344,14 @@ Returns the DB entry that was created.
                            (f/fail (f/message transaction-id))))))))
 
     (context (path-with-version "/transactions") []
-             :tags ["TRANSACTIONS"]
-             (POST "/move" request
-                   :responses {status/not-found {:schema s/Str}
-                               status/service-unavailable {:schema s/Str}}
-                   :return DBTransaction
-                   :body [query NewTransactionQuery]
-                   :summary "Move an amount from one wallet account to another."
-                   :description "
+      :tags ["TRANSACTIONS"]
+      (POST "/move" request
+        :responses {status/not-found {:schema {:error s/Str}}
+                    status/service-unavailable {:schema {:error s/Str}}}
+        :return DBTransaction
+        :body [query NewTransactionQuery]
+        :summary "Move an amount from one wallet account to another."
+        :description "
 Takes a JSON structure with a `blockchain` `from-account`, `to-account` query identifiers and optionally `tags` and `comment` as paramaters.
 
 **Attention:** Move is intended for in wallet transactions which means that:
