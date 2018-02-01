@@ -60,10 +60,10 @@
   "Transaction schema validator"
   {(s/optional-key :tags)      [s/Str]
    (s/optional-key :timestamp)  s/Str
-   (s/optional-key :from-id)    s/Any
-   (s/optional-key :to-id)      s/Any
+   (s/required-key :from-id)    s/Any
+   (s/required-key :to-id)      s/Any
    (s/optional-key :amount)     s/Num
-   (s/optional-key :transaction-id) (s/maybe s/Str)
+   (s/required-key :transaction-id) (s/maybe s/Str)
    (s/optional-key :currency) s/Str
    ;; how many confirmations needed for a transaction to be confirmed
    (s/optional-key :number-confirmations) s/Num

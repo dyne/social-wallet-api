@@ -263,11 +263,11 @@ Returns a list of transactions found on that blockchain.
              (POST "/get" request
                :responses {status/not-found {:schema {:error s/Str}}
                            status/service-unavailable {:schema {:error s/Str}}}
-                   :return (s/conditional map?
-                                          (s/if #(get % "amount")
-                                            BTCTransaction
-                                            DecodedRawTransaction)
-                                          :else [DBTransaction])
+               :return (s/if #(:transaction-id %)
+                         DBTransaction
+                         (s/if #(get % "amount")
+                           BTCTransaction
+                           DecodedRawTransaction))
                    :body [query TransactionQuery]
                    :summary "Retieve a transaction by txid"
                    :description "
