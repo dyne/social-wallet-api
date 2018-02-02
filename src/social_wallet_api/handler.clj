@@ -143,7 +143,7 @@
       :data {:info
              {:version (clojure.string/trim (slurp "VERSION"))
               :title "Social-wallet-api"
-              :description "Social Wallet REST API backend for webapps. All blockchain activity is backed by a DB. For example for any transaction or move that happens on the blockchain side a record will be created on the DB side and the fees will be updated where applicable."
+              :description "Social Wallet REST API backend for webapps. All blockchain activity is backed by a DB. For example for any deposit or withdraw that happens on the blockchain side a record will be created on the DB side and the fees will be updated where applicable."
               :contact {:url "https://github.com/pienews/social-wallet-api"}}}}}
 
     (context (path-with-version "") []
@@ -298,8 +298,7 @@ Returns the DB entry that was created.
 "
                    (with-error-responses blockchains query
                      (fn [blockchain query]
-                       ;; -- FOR MONGO DB BOCKCHAIN
-                       ;; TODO: Probably we shoul not have a transaction for MONGO but only a move
+                       ;; -- FOR MONGO DB BOCKCHAIN 
                        (if (= (-> query :blockchain keyword) :mongo)
                          (lib/create-transaction blockchain
                                                  (:from-id query)
@@ -343,40 +342,7 @@ Returns the DB entry that was created.
                            ;; There was an error
                            (f/fail (f/message transaction-id))))))))
 
-    (context (path-with-version "/transactions") []
-      :tags ["TRANSACTIONS"]
-      (POST "/move" request
-        :responses {status/not-found {:schema {:error s/Str}}
-                    status/service-unavailable {:schema {:error s/Str}}}
-        :return DBTransaction
-        :body [query NewTransactionQuery]
-        :summary "Move an amount from one wallet account to another."
-        :description "
-Takes a JSON structure with a `blockchain` `from-account`, `to-account` query identifiers and optionally `tags` and `comment` as paramaters.
-
-**Attention:** Move is intended for in wallet transactions which means that:
-1. no fee will be charged
-2. if the from or to accounts do not already exist in the wallet they will be *created*. In case of a from non existing account an account with the *negative* balance will be created.
-
-Returns the DB entry that was created.
-"
-                   (with-error-responses blockchains query
-                     (fn [blockchain query]
-                       (when-not (= (-> query :blockchain keyword) :mongo)                    
-                         (lib/move
-                          blockchain
-                          (:from-id query)
-                          (:amount query)
-                          (:to-id query)
-                          (dissoc query :tags)))
-                       (lib/create-transaction (get-db-blockchain blockchains)
-                                               (:from-id query)
-                                               (:amount query)
-                                              (:to-id query)
-                                               (-> query 
-                                                   (dissoc :comment :comment-to)
-                                                   (assoc :transaction-id "move"
-                                                          :currency (:blockchain query))))))))
+    
 
     ;; (context "/wallet/v1/accounts" []
     ;;          :tags ["ACCOUNTS"]
