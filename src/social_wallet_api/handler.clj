@@ -36,7 +36,7 @@
             [freecoin-lib.app :as freecoin]
             [social-wallet-api.schema :refer [Query Tags DBTransaction BTCTransaction TransactionQuery
                                               Addresses Balance PerAccountQuery NewTransactionQuery Label
-                                              ListTransactionsQuery MaybeAccountQuery DecodedRawTransaction]]
+                                              ListTransactionsQuery MaybeAccountQuery DecodedRawTransaction NewWithdraw]]
             [failjure.core :as f]))
 
 (defonce prod-app-name "social-wallet-api")
@@ -290,15 +290,14 @@ Returns the transaction if found on that blockchain.
                :body [query NewTransactionQuery]
                :summary "Create a new transaction"
                :description "
-Takes a JSON structure with a `blockchain`, `from-account`, `to-account` query identifiers and optionally `tags`, `comment` and `comment-to` as paramaters.
+Takes a JSON structure with a `blockchain`, `from-account`, `to-account` query identifiers and optionally `tags` as paramaters.
 
-Creates a transaction. If fees are charged for this transaction those fees are also updated on the DB when the rtansaction is confirmed.
+Creates a transaction. This call is only meant for DBs and not for blockchains.
 Returns the DB entry that was created.
 
 "
                    (with-error-responses blockchains query
                      (fn [blockchain query]
-                       ;; -- FOR MONGO DB BOCKCHAIN 
                        (if (= (-> query :blockchain keyword) :mongo)
                          (lib/create-transaction blockchain
                                                  (:from-id query)
@@ -306,12 +305,33 @@ Returns the DB entry that was created.
                                                  (:to-id query)
                                                  (-> query 
                                                      (dissoc :comment :comment-to)))
-                         ;; -- FOR ANY OTHER BOCKCHAIN
+                         (f/fail "Transactions can only be made for DBs. For BLockchain please look at Deposit and Withdraw"))))))
+
+    (context (path-with-version "/withdrwaws") []
+             :tags ["WITHDRAWS"]
+             (POST "/new" request
+               :responses {status/not-found {:schema {:error s/Str}}
+                           status/service-unavailable {:schema {:error s/Str}}
+                           status/bad-request {:schema {:error s/Str}}}
+               :return DBTransaction
+               :body [query NewWithdraw]
+               :summary "Withdraw from a "
+               :description "
+Takes a JSON structure with a `blockchain`, `to-address`, `amount` query identifiers and optionally `from-id`, `tags`, `comment` and `comment-to` as paramaters.
+
+This calll will deposit an amount to a blockchain address. Also a transaction on the DB will be registered. If fees apply for this transaction those fees will be added to the amount on the DB when the transaction reaches the required amount of confirmations.
+Returns the DB entry that was created.
+
+"
+                   (with-error-responses blockchains query
+                     (fn [blockchain query] 
+                       (if (= (-> query :blockchain keyword) :mongo)
+                         (f/fail "Withdraws are only available for blockchain requests")
                          (f/if-let-ok? [transaction-id (lib/create-transaction
                                                         blockchain
-                                                        (:from-id query)
+                                                        (or (:from-id query) "")
                                                         (:amount query)
-                                                        (:to-id query)
+                                                        (:to-address query)
                                                         (dissoc query :tags))]
                            (do
                              ;; Update fee to db when confirmed
@@ -332,9 +352,9 @@ Returns the DB entry that was created.
                                   (fn [tr] (update tr :amount #(+ % (- fee)))))))
                              ;; store to db as well with transaction-id
                              (lib/create-transaction (get-db-blockchain blockchains)
-                                                     (:from-id query)
+                                                     (or (:from-id query) "")
                                                      (:amount query)
-                                                     (:to-id query)
+                                                     (:to-address query)
                                                      (-> query 
                                                          (dissoc :comment :comment-to)
                                                          (assoc :transaction-id transaction-id

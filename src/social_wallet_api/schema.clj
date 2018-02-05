@@ -75,7 +75,7 @@
    (s/required-key "address") s/Str
    (s/required-key "category") s/Str
    (s/required-key "amount") s/Num
-   (s/required-key "label") s/Str
+   (s/optional-key "label") s/Str
    (s/required-key "vout") s/Num
    (s/optional-key "fee") s/Num
    (s/optional-key "abandoned") s/Bool})
@@ -118,10 +118,19 @@
 
 (s/defschema NewTransactionQuery
   (assoc Query
-         (s/optional-key :from-id)    s/Any
-         (s/optional-key :to-id)      s/Any
-         (s/optional-key :amount)     s/Num
+         (s/required-key :from-id)    s/Any
+         (s/required-key :to-id)      s/Any
+         (s/required-key :amount)     s/Num
          (s/optional-key :tags)      [s/Str]))
+
+(s/defschema NewWithdraw
+  (assoc Query
+         (s/optional-key :from-id)    s/Any
+         (s/required-key :to-address) s/Any
+         (s/required-key :amount)     s/Num
+         (s/optional-key :tags)      [s/Str]
+         (s/optional-key :comment)    s/Str
+         (s/optional-key :comment-to)    s/Str))
 
 (s/defschema ListTransactionsQuery
   (merge Query {(s/optional-key :account-id) s/Str
