@@ -144,7 +144,7 @@
              {:version (clojure.string/trim (slurp "VERSION"))
               :title "Social-wallet-api"
               :description "Social Wallet REST API backend for webapps. All blockchain activity is backed by a DB. For example for any transaction or move that happens on the blockchain side a record will be created on the DB side and the fees will be updated where applicable."
-              :contact {:url "https://github.com/pienews/social-wallet-api"}}}}}
+              :contact {:url "https://github.com/Commonfare-net/social-wallet-api"}}}}}
 
     (context (path-with-version "") []
              :tags ["INFO"]
@@ -207,7 +207,7 @@ It returns balance for that particular account. If no account is provided it ret
 "
                    (with-error-responses blockchains query
                      (fn [blockchain query] (lib/get-balance blockchain (:account-id query))))))
-    
+
     (context (path-with-version "/tags") []
              :tags ["TAGS"]
              (POST "/list" request
@@ -224,7 +224,7 @@ Takes a JSON structure made of a `blockchain` identifier.
 It returns a list of tags found on that blockchain.
 
 "
-                   (with-error-responses blockchains query 
+                   (with-error-responses blockchains query
                      (fn [blockchain query]
                        (if (= (-> query :blockchain keyword) :mongo)
                          (lib/list-tags blockchain {})
@@ -243,9 +243,10 @@ It returns a list of tags found on that blockchain.
                    :body [query ListTransactionsQuery]
                    :summary "List transactions"
                    :description "
-Takes a JSON structure with a `blockchain` query identifier. A number of optional identifiers are available for filtering like `account-id`, `count` and `from` for btc like blockains. 
+Takes a JSON structure with a `blockchain` query identifier. A number of optional identifiers are available for filtering like `account-id`, `count` and `from` for btc like blockains.
 
 Returns a list of transactions found on that blockchain.
+
 "
                    (with-error-responses blockchains query
                      (fn [blockchain query] (lib/list-transactions
@@ -267,6 +268,7 @@ Returns a list of transactions found on that blockchain.
 Takes a JSON structure with a `blockchain` query identifier and a `txid`.
 
 Returns the transaction if found on that blockchain.
+
 "
                    (with-error-responses blockchains query
                      (fn [blockchain query] (lib/get-transaction
@@ -285,7 +287,7 @@ Returns the transaction if found on that blockchain.
                    :description "
 Takes a JSON structure with a `blockchain`, `from-account`, `to-account` query identifiers and optionally `tags`, `comment` and `comment-to` as paramaters.
 
-Creates a transaction. If fees are charged for this transaction those fees are also updated on the DB when the rtansaction is confirmed.
+Creates a transaction. If fees are charged for this transaction those fees are also updated on the DB when the tansaction is confirmed.
 Returns the DB entry that was created.
 
 "
@@ -298,7 +300,7 @@ Returns the DB entry that was created.
                                                  (:from-id query)
                                                  (:amount query)
                                                  (:to-id query)
-                                                 (-> query 
+                                                 (-> query
                                                      (dissoc :comment :comment-to)))
                          ;; -- FOR ANY OTHER BOCKCHAIN
                          (f/if-let-ok? [transaction-id (lib/create-transaction
@@ -329,7 +331,7 @@ Returns the DB entry that was created.
                                                      (:from-id query)
                                                      (:amount query)
                                                      (:to-id query)
-                                                     (-> query 
+                                                     (-> query
                                                          (dissoc :comment :comment-to)
                                                          (assoc :transaction-id transaction-id
                                                                 :currency (:blockchain query)))))
@@ -352,10 +354,11 @@ Takes a JSON structure with a `blockchain` `from-account`, `to-account` query id
 2. if the from or to accounts do not already exist in the wallet they will be *created*. In case of a from non existing account an account with the *negative* balance will be created.
 
 Returns the DB entry that was created.
+
 "
                    (with-error-responses blockchains query
                      (fn [blockchain query]
-                       (when-not (= (-> query :blockchain keyword) :mongo)                    
+                       (when-not (= (-> query :blockchain keyword) :mongo)
                          (lib/move
                           blockchain
                           (:from-id query)
@@ -366,7 +369,7 @@ Returns the DB entry that was created.
                                                (:from-id query)
                                                (:amount query)
                                                (:to-id query)
-                                               (-> query 
+                                               (-> query
                                                    (dissoc :comment :comment-to)
                                                    (assoc :transaction-id "move"
                                                           :currency (:blockchain query))))))))
