@@ -215,10 +215,10 @@ It returns balance for that particular account. If no account is provided it ret
              :tags ["TAGS"]
              (POST "/list" request
                :responses {status/not-found {:schema {:error s/Str}}
-                               status/service-unavailable {:schema {:error s/Str}}
-                               status/bad-request {:schema {:error s/Str}}}
-                   :return Tags
-                   :body [query Query]
+                           status/service-unavailable {:schema {:error s/Str}}
+                           status/bad-request {:schema {:error s/Str}}}
+               :return Tags
+               :body [query Query]
                    :summary "List all tags"
                    :description "
 
@@ -278,34 +278,34 @@ Returns the transaction if found on that blockchain.
                    (with-error-responses blockchains query
                      (fn [blockchain query] (lib/get-transaction
                                              blockchain
-                                             (:txid query))))))
+                                             (:txid query)))))
 
-    (context (path-with-version "/transactions") []
-             :tags ["TRANSACTIONS"]
-             (POST "/new" request
-               :responses {status/not-found {:schema {:error s/Str}}
-                           status/service-unavailable {:schema {:error s/Str}}
-                           status/bad-request {:schema {:error s/Str}}}
-               :return DBTransaction
-               :body [query NewTransactionQuery]
-               :summary "Create a new transaction"
-               :description "
+             (context (path-with-version "/transactions") []
+               :tags ["TRANSACTIONS"]
+               (POST "/new" request
+                 :responses {status/not-found {:schema {:error s/Str}}
+                             status/service-unavailable {:schema {:error s/Str}}
+                             status/bad-request {:schema {:error s/Str}}}
+                 :return DBTransaction
+                 :body [query NewTransactionQuery]
+                 :summary "Create a new transaction"
+                 :description "
 Takes a JSON structure with a `blockchain`, `from-account`, `to-account` query identifiers and optionally `tags` as paramaters.
 
 Creates a transaction. This call is only meant for DBs and not for blockchains.
 Returns the DB entry that was created.
 
 "
-                   (with-error-responses blockchains query
-                     (fn [blockchain query]
-                       (if (= (-> query :blockchain keyword) :mongo)
-                         (lib/create-transaction blockchain
-                                                 (:from-id query)
-                                                 (:amount query)
-                                                 (:to-id query)
-                                                 (-> query 
-                                                     (dissoc :comment :comment-to)))
-                         (f/fail "Transactions can only be made for DBs. For BLockchain please look at Deposit and Withdraw"))))))
+                 (with-error-responses blockchains query
+                   (fn [blockchain query]
+                     (if (= (-> query :blockchain keyword) :mongo)
+                       (lib/create-transaction blockchain
+                                               (:from-id query)
+                                               (:amount query)
+                                               (:to-id query)
+                                               (-> query 
+                                                   (dissoc :comment :comment-to)))
+                       (f/fail "Transactions can only be made for DBs. For BLockchain please look at Deposit and Withdraw")))))))
 
     (context (path-with-version "/withdrwaws") []
              :tags ["WITHDRAWS"]
