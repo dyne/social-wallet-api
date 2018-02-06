@@ -112,10 +112,10 @@
      (log/warn "MongoDB backend connected."))
 
    (when-let [fair-conf (get-blockchain-conf config app-name :faircoin)]
-     (let [fair (lib/new-btc-rpc (:currency fair-conf)
-                                 {:number-confirmations (:number-confirmations fair-conf)
-                                  :frequency-confirmations (:frequency-confirmations fair-conf)}
-                                 (:rpc-config-path fair-conf))]
+     (let [fair (merge (lib/new-btc-rpc (:currency fair-conf) 
+                                        (:rpc-config-path fair-conf))
+                       {:confirmations {:number-confirmations (:number-confirmations fair-conf)
+                                        :frequency-confirmations-millis (:frequency-confirmations-millis fair-conf)}})]
        (swap! blockchains conj {:faircoin fair})
        (log/warn "Faircoin config is loaded")))))
 
@@ -340,7 +340,7 @@ Returns the DB entry that was created.
                               (while (> (-> blockchain :confirmations :number-confirmations)
                                         (number-confirmations blockchain transaction-id))
                                  (log/debug "Not enough confirmations for transaction with id " transaction-id)
-                                 (Thread/sleep (-> blockchain :confirmations :frequency-confirmations)))
+                                 (Thread/sleep (-> blockchain :confirmations :frequency-confirmations-millis)))
                                (let [fee (freecoin-lib.utils/bigdecimal->long
                                           (get
                                            (lib/get-transaction blockchain transaction-id)

@@ -77,7 +77,7 @@ freecoin:
 # number of confirmations to consider a transaction as valid
     number-confirmations: 6
 # frequency of confirmations checks in milliseconds
-    frequency-confirmations: 20000
+    frequency-confirmations-millis: 20000
 # path to the rpc configuration holding username and password
     rpc-config-path: /home/user/.faircoin2/faircoin.conf
 
@@ -88,7 +88,7 @@ freecoin:
 # number of confirmations to consider a transaction as valid
     number-confirmations: 6
 # frequency of confirmations checks in milliseconds
-    frequency-confirmations: 20000
+    frequency-confirmations-millis: 20000
 # path to the rpc configuration holding username and password
     rpc-config-path: /home/user/.bitcoin/bitcoin.conf
 ```
