@@ -64,11 +64,7 @@
    (s/required-key :to-id)      s/Any
    (s/optional-key :amount)     s/Num
    (s/required-key :transaction-id) (s/maybe s/Str)
-   (s/optional-key :currency) s/Str
-   ;; how many confirmations needed for a transaction to be confirmed
-   (s/optional-key :number-confirmations) s/Num
-   ;; and how often should that be checked
-   (s/optional-key :frequency-confirmations) s/Num})
+   (s/optional-key :currency) s/Str})
 
 (s/defschema AccountDetails
   {(s/required-key "account") s/Str
@@ -126,11 +122,17 @@
 (s/defschema NewWithdraw
   (assoc Query
          (s/optional-key :from-id)    s/Any
-         (s/required-key :to-address) s/Any
+         (s/optional-key :from-wallet-account) s/Str
+         (s/required-key :to-address) s/Str
          (s/required-key :amount)     s/Num
          (s/optional-key :tags)      [s/Str]
          (s/optional-key :comment)    s/Str
          (s/optional-key :comment-to)    s/Str))
+
+(s/defschema NewDeposit
+  (assoc Query
+         (s/optional-key :to-id)      s/Any
+         (s/optional-key :tags)       [s/Str]))
 
 (s/defschema ListTransactionsQuery
   (merge Query {(s/optional-key :account-id) s/Str

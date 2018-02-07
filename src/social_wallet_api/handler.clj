@@ -35,9 +35,11 @@
             [freecoin-lib.core :as lib]
             [freecoin-lib.app :as freecoin]
             [social-wallet-api.schema :refer [Query Tags DBTransaction BTCTransaction TransactionQuery
-                                              Addresses Balance PerAccountQuery NewTransactionQuery Label
+                                              Addresses Balance PerAccountQuery NewTransactionQuery Label NewDeposit
                                               ListTransactionsQuery MaybeAccountQuery DecodedRawTransaction NewWithdraw]]
-            [failjure.core :as f]))
+            [failjure.core :as f]
+            [simple-time.core :as time]
+            [dom-top.core :as dom]))
 
 (defonce prod-app-name "social-wallet-api")
 (defonce config-default (config-read prod-app-name))
@@ -115,7 +117,10 @@
      (let [fair (merge (lib/new-btc-rpc (:currency fair-conf) 
                                         (:rpc-config-path fair-conf))
                        {:confirmations {:number-confirmations (:number-confirmations fair-conf)
-                                        :frequency-confirmations-millis (:frequency-confirmations-millis fair-conf)}})]
+                                        :frequency-confirmations-millis (:frequency-confirmations-millis fair-conf)}}
+                       {:deposits {:deposit-expiration-millis (:deposit-expiration-millis fair-conf)
+                                   :frequency-deposit-millis (:frequency-deposit-millis fair-conf)}})]
+       ;; TODO add schema fair
        (swap! blockchains conj {:faircoin fair})
        (log/warn "Faircoin config is loaded")))))
 
@@ -315,11 +320,13 @@ Returns the DB entry that was created.
                            status/bad-request {:schema {:error s/Str}}}
                :return DBTransaction
                :body [query NewWithdraw]
-               :summary "Withdraw from a "
+               :summary "Perform a withrdaw from a blockchain"
                :description "
-Takes a JSON structure with a `blockchain`, `to-address`, `amount` query identifiers and optionally `from-id`, `tags`, `comment` and `comment-to` as paramaters.
+Takes a JSON structure with a `blockchain`, `to-address`, `amount` query identifiers and optionally `from-id`, `from-wallet-account`, `tags`, `comment` and `comment-to` as paramaters.
 
-This calll will deposit an amount to a blockchain address. Also a transaction on the DB will be registered. If fees apply for this transaction those fees will be added to the amount on the DB when the transaction reaches the required amount of confirmations.
+This calll will withdraw an amount from the default account \"\" or optionally a given wallet-account to a provided blockchain address. Also a transaction on the DB will be registered. If fees apply for this transaction those fees will be added to the amount on the DB when the transaction reaches the required amount of confirmations. The number of confirmations and the frequency of the checks are defined in the config as `number-confirmations` and `frequency-confirmations-millis` respectiviely.
+
+
 Returns the DB entry that was created.
 
 "
@@ -329,7 +336,7 @@ Returns the DB entry that was created.
                          (f/fail "Withdraws are only available for blockchain requests")
                          (f/if-let-ok? [transaction-id (lib/create-transaction
                                                         blockchain
-                                                        (or (:from-id query) "")
+                                                        (or (:from-wallet-account query) "")
                                                         (:amount query)
                                                         (:to-address query)
                                                         (dissoc query :tags))]
@@ -352,7 +359,7 @@ Returns the DB entry that was created.
                                   (fn [tr] (update tr :amount #(+ % (- fee)))))))
                              ;; store to db as well with transaction-id
                              (lib/create-transaction (get-db-blockchain blockchains)
-                                                     (or (:from-id query) "")
+                                                     (or (:from-id query) (:from-wallet-account query) "")
                                                      (:amount query)
                                                      (:to-address query)
                                                      (-> query 
@@ -362,8 +369,89 @@ Returns the DB entry that was created.
                            ;; There was an error
                            (f/fail (f/message transaction-id))))))))
 
-    
+        (context (path-with-version "/deposits") []
+             :tags ["DEPOSITS"]
+             (POST "/new" request
+               :responses {status/not-found {:schema {:error s/Str}}
+                           status/service-unavailable {:schema {:error s/Str}}
+                           status/bad-request {:schema {:error s/Str}}}
+               :return s/Any
+               :body [query NewDeposit]
+               :summary "Request a new blockchain address to perform a deposit"
+               :description "
+Takes a JSON structure with a `blockchain` query identifier and optionally `to-id` and `tags`.
 
+This call creates a new address and returns it in order to be able to deposit to it. Then, on a different thread, there will be a watch that until it expires it will check for a transaction done to this address and update the DB. If no transaction is perfromed until expiration a check for that particular address can be triggered via `transactions/check`. The frequency of the transaction checks and the expiration can be set in the config as `frequency-deposit-millis` and `deposit-expiration-millis` respectively.
+
+Returns the blockchain address that was created.
+
+"
+                   (with-error-responses blockchains query
+                     (fn [blockchain query]
+                       (if (= (-> query :blockchain keyword) :mongo)
+                         (f/fail "Deposits are only available for blockchain requests")
+                         (f/if-let-ok? [new-address (lib/create-address blockchain)]
+                           (let [pending (atom true)
+                                 start-time (time/now)
+                                 end-time (time/add-milliseconds start-time (-> blockchain :deposits :deposit-expiration-millis))]
+                             ;; Check whether a transaction to this address was made and update the DB
+                             ;; The logged-future will return an exception which otherwise would be swallowed till deref
+                             (log/logged-future
+                              (while (and (log/spy @pending) (log/spy (time/< (time/now) (log/spy end-time))))
+                                (log/debug "Checking for transactions made to address " new-address)
+                                (dom/letr [transactions (log/spy (lib/list-transactions blockchain {:received-by-address new-address}))
+                                           _ (when-not transactions (return "No transactions found at all"))
+                                           found (log/spy (filter #(= (log/spy new-address) (log/spy (get % "address"))) transactions))
+                                           _ (when (log/spy (empty? found)) (return "No transactions for the new address found yet"))
+                                           transaction-id (log/spy (-> (first found) (log/spy) (get "txids") (log/spy) (first)))
+                                           transaction (lib/get-transaction blockchain transaction-id)
+                                           _ (when-not transaction (str "Somehow could not retrieve transaction for id " transaction-id))]
+                                          ;; When a transaction is made write to DB and interrupt the loop
+                                          (lib/create-transaction (get-db-blockchain blockchains)
+                                                                  ;; from
+                                                                  (log/spy (get (first (filter
+                                                                                        #(= "send" (get % "category"))
+                                                                                        (get transaction "details")))
+                                                                                "address"))
+                                                                  ;; amount
+                                                                  (log/spy (get (first (filter
+                                                                                        #(= "receive" (get % "category"))
+                                                                                        (get transaction "amount")))
+                                                                                "amount"))
+                                                                  ;; to
+                                                                  (or (:to-id query) new-address)
+                                                                  (-> query 
+                                                                      (dissoc :comment :comment-to)
+                                                                      (assoc :transaction-id transaction-id
+                                                                             :currency (:blockchain query))))
+                                          (swap! pending false))
+                                ;; wait
+                                (Thread/sleep (-> blockchain :confirmations :frequency-confirmations-millis))))
+                             new-address)
+                           ;; There was an error
+                           (f/fail (f/message new-address))))))))
+
+        
+        (comment (let [fee (freecoin-lib.utils/bigdecimal->long
+                            (get
+                             (lib/get-transaction blockchain transaction-id)
+                             "fee"))]
+                   (log/debug "Updating the amount with the fee")
+                   ;; store to db as well with transaction-id
+                   (lib/create-transaction (get-db-blockchain blockchains)
+                                           (or (:from-id query) "")
+                                           (:amount query)
+                                           (:to-address query)
+                                           (-> query 
+                                               (dissoc :comment :comment-to)
+                                               (assoc :transaction-id transaction-id
+                                                      :currency (:blockchain query))))
+                   (lib/update-transaction
+                    (get-db-blockchain blockchains) transaction-id
+                    ;; Here we add the minus fee to the whole transaction when confirmed
+                    (fn [tr] (update tr :amount #(+ % (- fee)))))))
+
+        
     ;; (context "/wallet/v1/accounts" []
     ;;          :tags ["ACCOUNTS"]
     ;;          (GET "/list" request
