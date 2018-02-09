@@ -436,26 +436,6 @@ Returns the blockchain address that was created.
                            (f/fail (f/message new-address))))))))
 
         
-        (comment (let [fee (freecoin-lib.utils/bigdecimal->long
-                            (get
-                             (lib/get-transaction blockchain transaction-id)
-                             "fee"))]
-                   (log/debug "Updating the amount with the fee")
-                   ;; store to db as well with transaction-id
-                   (lib/create-transaction (get-db-blockchain blockchains)
-                                           (or (:from-id query) "")
-                                           (:amount query)
-                                           (:to-address query)
-                                           (-> query 
-                                               (dissoc :comment :comment-to)
-                                               (assoc :transaction-id transaction-id
-                                                      :currency (:blockchain query))))
-                   (lib/update-transaction
-                    (get-db-blockchain blockchains) transaction-id
-                    ;; Here we add the minus fee to the whole transaction when confirmed
-                    (fn [tr] (update tr :amount #(+ % (- fee)))))))
-
-        
     ;; (context "/wallet/v1/accounts" []
     ;;          :tags ["ACCOUNTS"]
     ;;          (GET "/list" request
