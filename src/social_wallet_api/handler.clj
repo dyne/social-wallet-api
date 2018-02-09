@@ -33,6 +33,7 @@
 
             [auxiliary.config :refer [config-read]]
             [freecoin-lib.core :as lib]
+            [freecoin-lib.utils :as lib-utils]
             [freecoin-lib.app :as freecoin]
             [social-wallet-api.schema :refer [Query Tags DBTransaction BTCTransaction TransactionQuery
                                               Addresses Balance PerAccountQuery NewTransactionQuery Label NewDeposit
@@ -377,6 +378,7 @@ Returns the DB entry that was created.
                            status/bad-request {:schema {:error s/Str}}}
                :return s/Any
                :body [query NewDeposit]
+
                :summary "Request a new blockchain address to perform a deposit"
                :description "
 Takes a JSON structure with a `blockchain` query identifier and optionally `to-id` and `tags`.
@@ -397,34 +399,36 @@ Returns the blockchain address that was created.
                              ;; Check whether a transaction to this address was made and update the DB
                              ;; The logged-future will return an exception which otherwise would be swallowed till deref
                              (log/logged-future
-                              (while (and (log/spy @pending) (log/spy (time/< (time/now) (log/spy end-time))))
+                              (while (and @pending (time/< (time/now) end-time))
                                 (log/debug "Checking for transactions made to address " new-address)
-                                (dom/letr [transactions (log/spy (lib/list-transactions blockchain {:received-by-address new-address}))
+                                (dom/letr [transactions (lib/list-transactions blockchain {:received-by-address new-address})
                                            _ (when-not transactions (return "No transactions found at all"))
-                                           found (log/spy (filter #(= (log/spy new-address) (log/spy (get % "address"))) transactions))
-                                           _ (when (log/spy (empty? found)) (return "No transactions for the new address found yet"))
-                                           transaction-id (log/spy (-> (first found) (log/spy) (get "txids") (log/spy) (first)))
+                                           found (filter #(= new-address (get % "address")) transactions)
+                                           _ (when (empty? found) (return "No transactions for the new address found yet"))
+                                           transaction-id (-> (first found) (get "txids") (first))
+                                           _ (log/debug "A transaction was made to " new-address " with id " transaction-id)
                                            transaction (lib/get-transaction blockchain transaction-id)
                                            _ (when-not transaction (str "Somehow could not retrieve transaction for id " transaction-id))]
                                           ;; When a transaction is made write to DB and interrupt the loop
                                           (lib/create-transaction (get-db-blockchain blockchains)
                                                                   ;; from
-                                                                  (log/spy (get (first (filter
-                                                                                        #(= "send" (get % "category"))
-                                                                                        (get transaction "details")))
-                                                                                "address"))
+                                                                  (get (first (filter
+                                                                               #(= "send" (get % "category"))
+                                                                               (get transaction "details")))
+                                                                       "address")
                                                                   ;; amount
-                                                                  (log/spy (get (first (filter
-                                                                                        #(= "receive" (get % "category"))
-                                                                                        (get transaction "amount")))
-                                                                                "amount"))
+                                                                  (-> transaction
+                                                                      (get "details")
+                                                                      (as-> details (filter #(= "receive" (get % "category")) details))
+                                                                      first
+                                                                      (get "amount"))
                                                                   ;; to
                                                                   (or (:to-id query) new-address)
                                                                   (-> query 
                                                                       (dissoc :comment :comment-to)
                                                                       (assoc :transaction-id transaction-id
                                                                              :currency (:blockchain query))))
-                                          (swap! pending false))
+                                          (reset! pending false))
                                 ;; wait
                                 (Thread/sleep (-> blockchain :confirmations :frequency-confirmations-millis))))
                              new-address)
