@@ -313,7 +313,7 @@ Returns the DB entry that was created.
                                                      (dissoc :comment :comment-to)))
                          (f/fail "Transactions can only be made for DBs. For BLockchain please look at Deposit and Withdraw"))))))
 
-    (context (path-with-version "/withdrwaws") []
+    (context (path-with-version "/withdraws") []
              :tags ["WITHDRAWS"]
              (POST "/new" request
                :responses {status/not-found {:schema {:error s/Str}}
