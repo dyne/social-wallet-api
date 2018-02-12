@@ -152,3 +152,28 @@
 
 (s/defschema Tags
   {:tags [Tag]})
+
+(s/defschema MongoConfig
+  {:host s/Str, :port s/Num, :db s/Str})
+
+(s/defschema BlockchainConfig
+  {:currency s/Str
+   :number-confirmations s/Num
+   :frequency-confirmations-millis s/Num
+   :rpc-config-path s/Str
+   :deposit-expiration-millis s/Num
+   :frequency-deposit-millis s/Num})
+
+(s/defschema SocialWalletAPIConfig
+  {:log-level s/Str
+   :freecoin {:mongo MongoConfig
+              (s/optional-key :faircoin) BlockchainConfig
+              (s/optional-key :bitcoin) BlockchainConfig
+              (s/optional-key :litecoin) BlockchainConfig
+              (s/optional-key :multichain) BlockchainConfig}})
+
+(s/defschema Config
+  {:appname s/Str
+   :filename s/Str
+   :paths [s/Str]
+   :social-wallet-api SocialWalletAPIConfig})

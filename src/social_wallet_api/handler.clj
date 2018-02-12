@@ -37,7 +37,8 @@
             [freecoin-lib.app :as freecoin]
             [social-wallet-api.schema :refer [Query Tags DBTransaction BTCTransaction TransactionQuery
                                               Addresses Balance PerAccountQuery NewTransactionQuery Label NewDeposit
-                                              ListTransactionsQuery MaybeAccountQuery DecodedRawTransaction NewWithdraw]]
+                                              ListTransactionsQuery MaybeAccountQuery DecodedRawTransaction NewWithdraw
+                                              Config]]
             [failjure.core :as f]
             [simple-time.core :as time]
             [dom-top.core :as dom]))
@@ -90,10 +91,10 @@
 (defn- path-with-version [path]
   (str "/wallet/v1" path))
 
-(defn init
+(s/defn ^:always-validate init
   ([]
    (init config-default prod-app-name))
-  ([config app-name]
+  ([config :- Config app-name] 
    (log/debug "Initialising app with name: " app-name)
    ;; TODO: this should be able to read from resources or a specific file path
    (if-let [log-level (get-in config [(keyword app-name) :log-level])]
