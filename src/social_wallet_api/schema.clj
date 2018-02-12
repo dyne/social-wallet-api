@@ -127,7 +127,7 @@
          (s/required-key :amount)     s/Num
          (s/optional-key :tags)      [s/Str]
          (s/optional-key :comment)    s/Str
-         (s/optional-key :comment-to)    s/Str))
+         (s/optional-key :commentto)    s/Str))
 
 (s/defschema NewDeposit
   (assoc Query

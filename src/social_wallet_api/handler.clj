@@ -310,7 +310,7 @@ Returns the DB entry that was created.
                                                  (:amount query)
                                                  (:to-id query)
                                                  (-> query 
-                                                     (dissoc :comment :comment-to)))
+                                                     (dissoc :comment :commentto)))
                          (f/fail "Transactions can only be made for DBs. For BLockchain please look at Deposit and Withdraw"))))))
 
     (context (path-with-version "/withdraws") []
@@ -364,7 +364,7 @@ Returns the DB entry that was created.
                                                      (:amount query)
                                                      (:to-address query)
                                                      (-> query 
-                                                         (dissoc :comment :comment-to)
+                                                         (dissoc :comment :commentto)
                                                          (assoc :transaction-id transaction-id
                                                                 :currency (:blockchain query)))))
                            ;; There was an error
@@ -425,7 +425,7 @@ Returns the blockchain address that was created.
                                                                   ;; to
                                                                   (or (:to-id query) new-address)
                                                                   (-> query 
-                                                                      (dissoc :comment :comment-to)
+                                                                      (dissoc :comment :commentto)
                                                                       (assoc :transaction-id transaction-id
                                                                              :currency (:blockchain query))))
                                           (reset! pending false))
