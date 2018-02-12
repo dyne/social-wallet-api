@@ -80,6 +80,10 @@ freecoin:
     frequency-confirmations-millis: 20000
 # path to the rpc configuration holding username and password
     rpc-config-path: /home/user/.faircoin2/faircoin.conf
+# deposit to an address watch expiration time in milliseconds
+    deposit-expiration-millis: 3600000
+# frequency of deposit checks in milliseconds
+    frequency-deposit-millis: 60000
 
 # configuration of the 'bitcoin' blockchain
   bitcoin:
