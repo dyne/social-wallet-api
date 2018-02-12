@@ -296,7 +296,7 @@ Returns the transaction if found on that blockchain.
                :body [query NewTransactionQuery]
                :summary "Create a new transaction"
                :description "
-Takes a JSON structure with a `blockchain`, `from-account`, `to-account` query identifiers and optionally `tags` as paramaters.
+Takes a JSON structure with a `blockchain`, `from-account`, `to-account` query identifiers and optionally `tags` as paramaters. Tags are metadata meant to add a category to the transaction and useful for grouping and searching.
 
 Creates a transaction. This call is only meant for DBs and not for blockchains.
 Returns the DB entry that was created.
@@ -309,8 +309,7 @@ Returns the DB entry that was created.
                                                  (:from-id query)
                                                  (:amount query)
                                                  (:to-id query)
-                                                 (-> query 
-                                                     (dissoc :comment :commentto)))
+                                                 query)
                          (f/fail "Transactions can only be made for DBs. For BLockchain please look at Deposit and Withdraw"))))))
 
     (context (path-with-version "/withdraws") []
@@ -323,7 +322,7 @@ Returns the DB entry that was created.
                :body [query NewWithdraw]
                :summary "Perform a withrdaw from a blockchain"
                :description "
-Takes a JSON structure with a `blockchain`, `to-address`, `amount` query identifiers and optionally `from-id`, `from-wallet-account`, `tags`, `comment` and `comment-to` as paramaters.
+Takes a JSON structure with a `blockchain`, `to-address`, `amount` query identifiers and optionally `from-id`, `from-wallet-account`, `tags`, `comment` and `commentto` as paramaters. Comment and commentto are particular to the BTC RCP, for more details look at https://en.bitcoin.it/wiki/Original_Bitcoin_client/API_calls_list. Tags are metadata meant to add a category to the withdraw and useful for grouping and searching.
 
 This calll will withdraw an amount from the default account \"\" or optionally a given wallet-account to a provided blockchain address. Also a transaction on the DB will be registered. If fees apply for this transaction those fees will be added to the amount on the DB when the transaction reaches the required amount of confirmations. The number of confirmations and the frequency of the checks are defined in the config as `number-confirmations` and `frequency-confirmations-millis` respectiviely.
 
@@ -381,9 +380,9 @@ Returns the DB entry that was created.
 
                :summary "Request a new blockchain address to perform a deposit"
                :description "
-Takes a JSON structure with a `blockchain` query identifier and optionally `to-id` and `tags`.
+Takes a JSON structure with a `blockchain` query identifier and optionally `to-id`, `comment`, `commentto` and `tags`. The comment and commentto are particular to the BTC RPC, for more details look at https://en.bitcoin.it/wiki/Original_Bitcoin_client/API_calls_list. Tags are metadata meant to add a category to the withdraw and useful for grouping and searching.
 
-This call creates a new address and returns it in order to be able to deposit to it. Then, on a different thread, there will be a watch that until it expires it will check for a transaction done to this address and update the DB. If no transaction is perfromed until expiration a check for that particular address can be triggered via `transactions/check`. The frequency of the transaction checks and the expiration can be set in the config as `frequency-deposit-millis` and `deposit-expiration-millis` respectively.
+This call creates a new address and returns it in order to be able to deposit to it. Then, on a different thread, there will be a watch that until it expires it will check for a transaction done to this address and update the DB. If no transaction is perfromed until expiration a check for that particular address can be triggered via `deposits/check`. The frequency of the transaction checks and the expiration can be set in the config as `frequency-deposit-millis` and `deposit-expiration-millis` respectively.
 
 Returns the blockchain address that was created.
 
