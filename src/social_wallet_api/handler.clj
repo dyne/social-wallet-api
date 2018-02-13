@@ -38,7 +38,7 @@
             [social-wallet-api.schema :refer [Query Tags DBTransaction BTCTransaction TransactionQuery
                                               Addresses Balance PerAccountQuery NewTransactionQuery Label NewDeposit
                                               ListTransactionsQuery MaybeAccountQuery DecodedRawTransaction NewWithdraw
-                                              Config]]
+                                              Config DepositCheck]]
             [failjure.core :as f]
             [simple-time.core :as time]
             [dom-top.core :as dom]))
@@ -141,6 +141,42 @@
       (not-found {:error "No such blockchain can be found."}))
     (catch java.net.ConnectException e
       (service-unavailable {:error "There was a connection problem with the blockchain."}))))
+
+
+(defn- blockchain-deposit->db-entry [blockchain query address]
+  (log/debug "Checking for transactions made to address " address)
+  (dom/letr [transactions (lib/list-transactions blockchain {:received-by-address address})
+             _ (when-not transactions (return "No transactions found at all"))
+             found (filter #(= address (get % "address")) transactions)
+             _ (when (empty? found) (return "No transactions for the new address found yet"))
+             transaction-ids (first (mapv #(get % "txids") found))
+             _ (log/debug "Transaction was made to " address " with ids " transaction-ids)
+             blockchain-transactions (mapv #(lib/get-transaction blockchain %) transaction-ids)
+             _ (when (empty? blockchain-transactions) (str "Somehow could not retrieve transactions for the ids " transaction-ids))]
+            ;; When a transaction is made write to DB and interrupt the loop
+            (mapv
+             (fn [transaction]
+               (let [transaction-id (get transaction "txid")]
+                 (f/when-let-failed? [fail (lib/get-transaction (get-db-blockchain blockchains) transaction-id)]
+                   (lib/create-transaction (get-db-blockchain blockchains)
+                                           ;; from
+                                           (get (first (filter
+                                                        #(= "send" (get % "category"))
+                                                        (get transaction "details")))
+                                                "address")
+                                           ;; amount
+                                           (-> transaction
+                                               (get "details")
+                                               (as-> details (filter #(= "receive" (get % "category")) details))
+                                               first
+                                               (get "amount"))
+                                           ;; to
+                                           (or (:to-id query) address)
+                                           (-> query 
+                                               (dissoc :comment :commentto)
+                                               (assoc :transaction-id transaction-id
+                                                      :currency (:blockchain query)))))))
+             blockchain-transactions)))
 
 (def rest-api
   (api
@@ -376,7 +412,7 @@ Returns the DB entry that was created.
                :responses {status/not-found {:schema {:error s/Str}}
                            status/service-unavailable {:schema {:error s/Str}}
                            status/bad-request {:schema {:error s/Str}}}
-               :return s/Any
+               :return s/Str
                :body [query NewDeposit]
 
                :summary "Request a new blockchain address to perform a deposit"
@@ -400,40 +436,41 @@ Returns the blockchain address that was created.
                              ;; The logged-future will return an exception which otherwise would be swallowed till deref
                              (log/logged-future
                               (while (and @pending (time/< (time/now) end-time))
-                                (log/debug "Checking for transactions made to address " new-address)
-                                (dom/letr [transactions (lib/list-transactions blockchain {:received-by-address new-address})
-                                           _ (when-not transactions (return "No transactions found at all"))
-                                           found (filter #(= new-address (get % "address")) transactions)
-                                           _ (when (empty? found) (return "No transactions for the new address found yet"))
-                                           transaction-id (-> (first found) (get "txids") (first))
-                                           _ (log/debug "A transaction was made to " new-address " with id " transaction-id)
-                                           transaction (lib/get-transaction blockchain transaction-id)
-                                           _ (when-not transaction (str "Somehow could not retrieve transaction for id " transaction-id))]
-                                          ;; When a transaction is made write to DB and interrupt the loop
-                                          (lib/create-transaction (get-db-blockchain blockchains)
-                                                                  ;; from
-                                                                  (get (first (filter
-                                                                               #(= "send" (get % "category"))
-                                                                               (get transaction "details")))
-                                                                       "address")
-                                                                  ;; amount
-                                                                  (-> transaction
-                                                                      (get "details")
-                                                                      (as-> details (filter #(= "receive" (get % "category")) details))
-                                                                      first
-                                                                      (get "amount"))
-                                                                  ;; to
-                                                                  (or (:to-id query) new-address)
-                                                                  (-> query 
-                                                                      (dissoc :comment :commentto)
-                                                                      (assoc :transaction-id transaction-id
-                                                                             :currency (:blockchain query))))
-                                          (reset! pending false))
+                                (when-not (empty? (blockchain-deposit->db-entry blockchain query new-address))
+                                  (reset! pending false))
                                 ;; wait
                                 (Thread/sleep (-> blockchain :confirmations :frequency-confirmations-millis))))
                              new-address)
                            ;; There was an error
                            (f/fail (f/message new-address))))))))
+
+        (context (path-with-version "/deposits") []
+          :tags ["DEPOSITS"]
+          (POST "/check" request
+            :responses {status/not-found {:schema {:error s/Str}}
+                        status/service-unavailable {:schema {:error s/Str}}
+                        status/bad-request {:schema {:error s/Str}}}
+            :return (s/if #(coll? %)
+                        (s/if #(first %)
+                          [DBTransaction]
+                          [])
+                        s/Str) 
+            :body [query DepositCheck]
+
+            :summary "Manually check if a given address has received any deposits"
+            :description "
+Takes a JSON structure with a `blockchain` and an `address` query identifier.
+
+This call will check if any deposits were made to this particular address and will update the DB if it is not already updated. It is meant to be used only for blockchains and the purpose is to update the db for deposits that were made after the deposit watch for the address has expired before a deposit was made. If it is called even though the deposits have been registerd no changes will be made.
+
+Returns the DB entries that were created.
+
+"
+            (with-error-responses blockchains query
+              (fn [blockchain query]
+                (if (= (-> query :blockchain keyword) :mongo)
+                  (f/fail "Deposit checks are only available for blockchain requests")
+                  (blockchain-deposit->db-entry blockchain query (:address query)))))))
 
         
     ;; (context "/wallet/v1/accounts" []

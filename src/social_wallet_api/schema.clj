@@ -140,6 +140,11 @@
                 #_(s/optional-key :count) s/Num
                 #_(s/optional-key :from) s/Num}))
 
+
+(s/defschema DepositCheck
+  (assoc Query
+         :address s/Str))
+
 ;; Blockchain Address
 (s/defschema Addresses
   {:addresses [s/Str]})
