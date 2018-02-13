@@ -176,4 +176,6 @@
   {:appname s/Str
    :filename s/Str
    :paths [s/Str]
-   :social-wallet-api SocialWalletAPIConfig})
+   ;; FIXME: one of the two keys bellow have to be present. How to do withough either/both???
+   (s/optional-key :social-wallet-api) SocialWalletAPIConfig
+   (s/optional-key :social-wallet-api-test) SocialWalletAPIConfig})
