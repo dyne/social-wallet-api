@@ -60,22 +60,18 @@
   "Transaction schema validator"
   {(s/optional-key :tags)      [s/Str]
    (s/optional-key :timestamp)  s/Str
-   (s/optional-key :from-id)    s/Any
-   (s/optional-key :to-id)      s/Any
+   (s/required-key :from-id)    s/Any
+   (s/required-key :to-id)      s/Any
    (s/optional-key :amount)     s/Num
-   (s/optional-key :transaction-id) (s/maybe s/Str)
-   (s/optional-key :currency) s/Str
-   ;; how many confirmations needed for a transaction to be confirmed
-   (s/optional-key :number-confirmations) s/Num
-   ;; and how often should that be checked
-   (s/optional-key :frequency-confirmations) s/Num})
+   (s/required-key :transaction-id) (s/maybe s/Str)
+   (s/optional-key :currency) s/Str})
 
 (s/defschema AccountDetails
   {(s/required-key "account") s/Str
    (s/required-key "address") s/Str
    (s/required-key "category") s/Str
    (s/required-key "amount") s/Num
-   (s/required-key "label") s/Str
+   (s/optional-key "label") s/Str
    (s/required-key "vout") s/Num
    (s/optional-key "fee") s/Num
    (s/optional-key "abandoned") s/Bool})
@@ -105,15 +101,38 @@
    (s/optional-key "details") [AccountDetails] ;; TODO
    })
 
+(s/defschema DecodedRawTransaction
+  {(s/required-key "txid") s/Str
+   (s/required-key "size") s/Num
+   (s/required-key "version") s/Num
+   (s/required-key "locktime") s/Num
+   (s/required-key "vin") [s/Any]
+   (s/required-key "vout") [s/Any]})
+
 (s/defschema TransactionQuery
   (merge Query {:txid s/Str}))
 
 (s/defschema NewTransactionQuery
   (assoc Query
-         (s/optional-key :from-id)    s/Any
-         (s/optional-key :to-id)      s/Any
-         (s/optional-key :amount)     s/Num
+         (s/required-key :from-id)    s/Any
+         (s/required-key :to-id)      s/Any
+         (s/required-key :amount)     s/Num
          (s/optional-key :tags)      [s/Str]))
+
+(s/defschema NewWithdraw
+  (assoc Query
+         (s/optional-key :from-id)    s/Any
+         (s/optional-key :from-wallet-account) s/Str
+         (s/required-key :to-address) s/Str
+         (s/required-key :amount)     s/Num
+         (s/optional-key :tags)      [s/Str]
+         (s/optional-key :comment)    s/Str
+         (s/optional-key :commentto)    s/Str))
+
+(s/defschema NewDeposit
+  (assoc Query
+         (s/optional-key :to-id)      s/Any
+         (s/optional-key :tags)       [s/Str]))
 
 (s/defschema ListTransactionsQuery
   (merge Query {(s/optional-key :account-id) s/Str
@@ -121,7 +140,47 @@
                 #_(s/optional-key :count) s/Num
                 #_(s/optional-key :from) s/Num}))
 
-;; Blockchain Address
-(def Address s/Str)
 
-(def Balance s/Num)
+(s/defschema DepositCheck
+  (assoc Query
+         :address s/Str))
+
+;; Blockchain Address
+(s/defschema Addresses
+  {:addresses [s/Str]})
+
+(s/defschema Balance
+  {:amount s/Num})
+
+(s/defschema Label
+  {:currency s/Str})
+
+(s/defschema Tags
+  {:tags [Tag]})
+
+(s/defschema MongoConfig
+  {:host s/Str, :port s/Num, :db s/Str})
+
+(s/defschema BlockchainConfig
+  {:currency s/Str
+   :number-confirmations s/Num
+   :frequency-confirmations-millis s/Num
+   :rpc-config-path s/Str
+   :deposit-expiration-millis s/Num
+   :frequency-deposit-millis s/Num})
+
+(s/defschema SocialWalletAPIConfig
+  {:log-level s/Str
+   :freecoin {:mongo MongoConfig
+              (s/optional-key :faircoin) BlockchainConfig
+              (s/optional-key :bitcoin) BlockchainConfig
+              (s/optional-key :litecoin) BlockchainConfig
+              (s/optional-key :multichain) BlockchainConfig}})
+
+(s/defschema Config
+  {:appname s/Str
+   :filename s/Str
+   :paths [s/Str]
+   ;; FIXME: one of the two keys bellow have to be present. How to do withough either/both???
+   (s/optional-key :social-wallet-api) SocialWalletAPIConfig
+   (s/optional-key :social-wallet-api-test) SocialWalletAPIConfig})

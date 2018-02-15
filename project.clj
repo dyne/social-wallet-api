@@ -46,7 +46,10 @@
                  [org.slf4j/slf4j-api "1.7.25"]
                  [org.slf4j/log4j-over-slf4j "1.7.25"]
                  [org.slf4j/jul-to-slf4j "1.7.25"]
-                 [org.slf4j/jcl-over-slf4j "1.7.25"]]
+                 [org.slf4j/jcl-over-slf4j "1.7.25"]
+
+                 ;; Convinence fns for better control flow
+                 [dom-top "1.0.2"]]
 
   :jvm-opts ["-Djava.security.egd=file:/dev/random" ;use a proper random source
              "-XX:-OmitStackTraceInFastThrow" ; stacktrace JVM exceptions

@@ -77,9 +77,13 @@ freecoin:
 # number of confirmations to consider a transaction as valid
     number-confirmations: 6
 # frequency of confirmations checks in milliseconds
-    frequency-confirmations: 20000
+    frequency-confirmations-millis: 20000
 # path to the rpc configuration holding username and password
     rpc-config-path: /home/user/.faircoin2/faircoin.conf
+# deposit to an address watch expiration time in milliseconds
+    deposit-expiration-millis: 3600000
+# frequency of deposit checks in milliseconds
+    frequency-deposit-millis: 60000
 
 # configuration of the 'bitcoin' blockchain
   bitcoin:
@@ -88,7 +92,7 @@ freecoin:
 # number of confirmations to consider a transaction as valid
     number-confirmations: 6
 # frequency of confirmations checks in milliseconds
-    frequency-confirmations: 20000
+    frequency-confirmations-millis: 20000
 # path to the rpc configuration holding username and password
     rpc-config-path: /home/user/.bitcoin/bitcoin.conf
 ```
