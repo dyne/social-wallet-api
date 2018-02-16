@@ -116,15 +116,17 @@
      (log/warn "MongoDB backend connected."))
 
    (when-let [fair-conf (get-blockchain-conf config app-name :faircoin)]
-     (let [fair (merge (lib/new-btc-rpc (:currency fair-conf) 
-                                        (:rpc-config-path fair-conf))
-                       {:confirmations {:number-confirmations (:number-confirmations fair-conf)
-                                        :frequency-confirmations-millis (:frequency-confirmations-millis fair-conf)}}
-                       {:deposits {:deposit-expiration-millis (:deposit-expiration-millis fair-conf)
-                                   :frequency-deposit-millis (:frequency-deposit-millis fair-conf)}})]
+     (f/if-let-ok? [fair (log/spy (merge (lib/new-btc-rpc (:currency fair-conf) 
+                                                          (:rpc-config-path fair-conf))
+                                         {:confirmations {:number-confirmations (:number-confirmations fair-conf)
+                                                          :frequency-confirmations-millis (:frequency-confirmations-millis fair-conf)}}
+                                         {:deposits {:deposit-expiration-millis (:deposit-expiration-millis fair-conf)
+                                                     :frequency-deposit-millis (:frequency-deposit-millis fair-conf)}}))]
        ;; TODO add schema fair
-       (swap! blockchains conj {:faircoin fair})
-       (log/warn "Faircoin config is loaded")))))
+       (do
+         (swap! blockchains conj {:faircoin fair})
+         (log/info "Faircoin config is loaded"))
+       (log/error (f/message fair))))))
 
 (defn destroy []
   (log/warn "Stopping the Social Wallet API.")
