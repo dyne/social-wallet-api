@@ -33,22 +33,20 @@ on Apple/OSX and MS/Windows.
 <img class="pull-left" src="https://secrets.dyne.org/static/img/leiningen.jpg"
 style="padding-right: 1.5em">
 
-The following software is
-required:
-[OpenJDK](http://openjdk.java.net),
-[Clojure](http://clojure.org), [Leiningen](http://leiningen.org).
-
-For instance on Devuan systems one can install all necessary
-dependencies using apt and the following packages: `apt-get
-openjdk-7-jdk libversioneer-clojure haveged`.
-
-then install Leiningen which will take care of all Clojure dependencies:
-
+### Prerequisites:
+Please install
+1. A JDK. The software is tested on [openJDK](http://openjdk.java.net/) versions 7 and 8 as well as with [oracleJDK 8](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html). Make sure that the env var JAVA_HOME is set to the JDK install dir like [mentioned here](https://docs.oracle.com/cd/E19182-01/820-7851/inst_cli_jdk_javahome_t/index.html).
+2. [MongoDB community edition](https://docs.mongodb.com/manual/administration/install-community/)
+3. [leiningen](https://leiningen.org/) which is used for dependency management like:
 ```
 mkdir ~/bin
 wget https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein -O ~/bin/lein
 chmod +x ~/bin/lein
 ```
+
+For instance on Devuan systems one can install all necessary
+dependencies using apt and the following packages: `apt-get
+openjdk-7-jdk libversioneer-clojure haveged`.
 
 ## Running the Social Wallet API
 
