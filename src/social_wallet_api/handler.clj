@@ -188,8 +188,8 @@
       :data {:info
              {:version (clojure.string/trim (slurp "VERSION"))
               :title "Social-wallet-api"
-              :description "Social Wallet REST API backend for webapps. All blockchain activity is backed by a DB. For example for any deposit or withdraw that happens on the blockchain side a record will be created on the DB side and the fees will be updated where applicable."
-              :contact {:url "https://github.com/pienews/social-wallet-api"}}}}}
+              :description "Social Wallet REST API backend for webapps. All blockchain activity is backed by a DB. For example for any transaction or move that happens on the blockchain side a record will be created on the DB side and the fees will be updated where applicable."
+              :contact {:url "https://github.com/Commonfare-net/social-wallet-api"}}}}}
 
     (context (path-with-version "") []
              :tags ["INFO"]
@@ -255,7 +255,7 @@ It returns balance for that particular account. If no account is provided it ret
 "
         (with-error-responses blockchains query
           (fn [blockchain query] {:amount (lib/get-balance blockchain (:account-id query))}))))
-    
+
     (context (path-with-version "/tags") []
              :tags ["TAGS"]
              (POST "/list" request
@@ -272,7 +272,7 @@ Takes a JSON structure made of a `blockchain` identifier.
 It returns a list of tags found on that blockchain.
 
 "
-                   (with-error-responses blockchains query 
+                   (with-error-responses blockchains query
                      (fn [blockchain query]
                        (if (= (-> query :blockchain keyword) :mongo)
                          {:tags (lib/list-tags blockchain {})}
@@ -291,9 +291,10 @@ It returns a list of tags found on that blockchain.
                    :body [query ListTransactionsQuery]
                    :summary "List transactions"
                    :description "
-Takes a JSON structure with a `blockchain` query identifier. A number of optional identifiers are available for filtering like `account-id`, `count` and `from` for btc like blockains. 
+Takes a JSON structure with a `blockchain` query identifier. A number of optional identifiers are available for filtering like `account-id`, `count` and `from` for btc like blockains.
 
 Returns a list of transactions found on that blockchain.
+
 "
                    (with-error-responses blockchains query
                      (fn [blockchain query] (lib/list-transactions
@@ -319,6 +320,7 @@ Returns a list of transactions found on that blockchain.
 Takes a JSON structure with a `blockchain` query identifier and a `txid`.
 
 Returns the transaction if found on that blockchain.
+
 "
                    (with-error-responses blockchains query
                      (fn [blockchain query] (lib/get-transaction
@@ -338,6 +340,7 @@ Returns the transaction if found on that blockchain.
 Takes a JSON structure with a `blockchain`, `from-account`, `to-account` query identifiers and optionally `tags` as paramaters. Tags are metadata meant to add a category to the transaction and useful for grouping and searching.
 
 Creates a transaction. This call is only meant for DBs and not for blockchains.
+
 Returns the DB entry that was created.
 
 "
@@ -401,8 +404,8 @@ Returns the DB entry that was created.
                                                      (or (:from-id query) (:from-wallet-account query) "")
                                                      (:amount query)
                                                      (:to-address query)
-                                                     (-> query 
-                                                         (dissoc :comment :commentto)
+                                                     (-> query
+                                                         (dissoc :comment :comment-to)
                                                          (assoc :transaction-id transaction-id
                                                                 :currency (:blockchain query)))))
                            ;; There was an error
@@ -474,6 +477,7 @@ Returns the DB entries that were created.
                 (if (= (-> query :blockchain keyword) :mongo)
                   (f/fail "Deposit checks are only available for blockchain requests")
                   (blockchain-deposit->db-entry blockchain query (:address query)))))))
+
 
         
     ;; (context "/wallet/v1/accounts" []
