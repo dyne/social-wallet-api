@@ -131,8 +131,9 @@
 
 (s/defschema NewDeposit
   (assoc Query
-         (s/optional-key :to-id)      s/Any
-         (s/optional-key :tags)       [s/Str]))
+         (s/optional-key :to-wallet-id) s/Str
+         (s/optional-key :to-id)      s/Str
+         (s/optional-key :tags)      [s/Str]))
 
 (s/defschema ListTransactionsQuery
   (merge Query {(s/optional-key :account-id) s/Str
@@ -157,6 +158,9 @@
 
 (s/defschema Tags
   {:tags [Tag]})
+
+(s/defschema AddressNew
+  {:address s/Str})
 
 (s/defschema MongoConfig
   {:host s/Str, :port s/Num, :db s/Str})

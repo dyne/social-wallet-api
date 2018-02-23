@@ -38,7 +38,7 @@
             [social-wallet-api.schema :refer [Query Tags DBTransaction BTCTransaction TransactionQuery
                                               Addresses Balance PerAccountQuery NewTransactionQuery Label NewDeposit
                                               ListTransactionsQuery MaybeAccountQuery DecodedRawTransaction NewWithdraw
-                                              Config DepositCheck]]
+                                              Config DepositCheck AddressNew]]
             [failjure.core :as f]
             [simple-time.core :as time]
             [dom-top.core :as dom]))
@@ -148,13 +148,13 @@
 (defn- blockchain-deposit->db-entry [blockchain query address]
   (log/debug "Checking for transactions made to address " address)
   (dom/letr [transactions (lib/list-transactions blockchain {:received-by-address address})
-             _ (when-not transactions (return "No transactions found at all"))
+             _ (when-not transactions (return (f/fail "No transactions found at all")))
              found (filter #(= address (get % "address")) transactions)
-             _ (when (empty? found) (return "No transactions for the new address found yet"))
+             _ (when (empty? found) (return (f/fail "No transactions for the new address found yet")))
              transaction-ids (first (mapv #(get % "txids") found))
              _ (log/debug "Transaction was made to " address " with ids " transaction-ids)
              blockchain-transactions (mapv #(lib/get-transaction blockchain %) transaction-ids)
-             _ (when (empty? blockchain-transactions) (str "Somehow could not retrieve transactions for the ids " transaction-ids))]
+             _ (when (empty? blockchain-transactions) (f/fail (str "Somehow could not retrieve transactions for the ids " transaction-ids)))]
             ;; When a transaction is made write to DB and interrupt the loop
             (mapv
              (fn [transaction]
@@ -361,7 +361,7 @@ Returns the DB entry that was created.
                :body [query NewWithdraw]
                :summary "Perform a withrdaw from a blockchain"
                :description "
-Takes a JSON structure with a `blockchain`, `to-address`, `amount` query identifiers and optionally `from-id`, `from-wallet-account`, `tags`, `comment` and `commentto` as paramaters. Comment and commentto are particular to the BTC RCP, for more details look at https://en.bitcoin.it/wiki/Original_Bitcoin_client/API_calls_list. Tags are metadata meant to add a category to the withdraw and useful for grouping and searching.
+Takes a JSON structure with a `blockchain`, `to-address`, `amount` query identifiers and optionally `from-id`, `from-wallet-account`, `tags`, `comment` and `commentto` as paramaters. Comment and commentto are particular to the BTC RCP, for more details look at https://en.bitcoin.it/wiki/Original_Bitcoin_client/API_calls_list. Tags are metadata meant to add a `label` to the withdraw and useful for grouping and searching. The parameter `from-id` is metadata not used in the actual blockchain transaction but stored on the db and useful to identify which account initiated the withdraw. Finally `from-wallet-account` if used will make the withdraw from the particular account in the wallet instead of the default. If not found an error will be returned.
 
 This calll will withdraw an amount from the default account \"\" or optionally a given wallet-account to a provided blockchain address. Also a transaction on the DB will be registered. If fees apply for this transaction those fees will be added to the amount on the DB when the transaction reaches the required amount of confirmations. The number of confirmations and the frequency of the checks are defined in the config as `number-confirmations` and `frequency-confirmations-millis` respectiviely.
 
@@ -414,12 +414,12 @@ Returns the DB entry that was created.
                :responses {status/not-found {:schema {:error s/Str}}
                            status/service-unavailable {:schema {:error s/Str}}
                            status/bad-request {:schema {:error s/Str}}}
-               :return s/Str
+               :return AddressNew
                :body [query NewDeposit]
 
                :summary "Request a new blockchain address to perform a deposit"
                :description "
-Takes a JSON structure with a `blockchain` query identifier and optionally `to-id`, `comment`, `commentto` and `tags`. The comment and commentto are particular to the BTC RPC, for more details look at https://en.bitcoin.it/wiki/Original_Bitcoin_client/API_calls_list. Tags are metadata meant to add a category to the withdraw and useful for grouping and searching.
+Takes a JSON structure with a `blockchain` query identifier and optionally `to-id`, `to-wallet-id` and `tags`. `to-id` is metadata that will be added to the DB once a deposit to the address is detected. Same goes for `tags` which are metadata meant to add a `label` to the deposit and they are useful for grouping and searching. When `to-wallet-id` is used it will create the address for a particular account in the wallet and the default otherwise. If the account is not found the address will be created on the default account.
 
 This call creates a new address and returns it in order to be able to deposit to it. Then, on a different thread, there will be a watch that until it expires it will check for a transaction done to this address and update the DB. If no transaction is perfromed until expiration a check for that particular address can be triggered via `deposits/check`. The frequency of the transaction checks and the expiration can be set in the config as `frequency-deposit-millis` and `deposit-expiration-millis` respectively.
 
@@ -430,7 +430,8 @@ Returns the blockchain address that was created.
                      (fn [blockchain query]
                        (if (= (-> query :blockchain keyword) :mongo)
                          (f/fail "Deposits are only available for blockchain requests")
-                         (f/if-let-ok? [new-address (lib/create-address blockchain)]
+                         (f/if-let-ok? [new-address (lib/create-address blockchain
+                                                                        (-> query :to-wallet-id))]
                            (let [pending (atom true)
                                  start-time (time/now)
                                  end-time (time/add-milliseconds start-time (-> blockchain :deposits :deposit-expiration-millis))]
@@ -442,7 +443,7 @@ Returns the blockchain address that was created.
                                   (reset! pending false))
                                 ;; wait
                                 (Thread/sleep (-> blockchain :confirmations :frequency-confirmations-millis))))
-                             new-address)
+                             {:address new-address})
                            ;; There was an error
                            (f/fail (f/message new-address))))))))
 
@@ -456,7 +457,7 @@ Returns the blockchain address that was created.
                         (s/if #(first %)
                           [DBTransaction]
                           [])
-                        s/Str) 
+                        {:error s/Str}) 
             :body [query DepositCheck]
 
             :summary "Manually check if a given address has received any deposits"
