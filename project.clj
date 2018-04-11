@@ -72,9 +72,12 @@
 
   :uberjar-name "social-wallet-api.jar"
   :profiles {:dev {:dependencies [[ring/ring-mock "0.3.1"]
-                                  [midje "1.8.3"]
+                                  ;; this is necessary to use the for-all midje support
+                                  [midje "1.9.2-alpha3"]
                                   ;; json
-                                  [cheshire "5.8.0"]]
+                                  [cheshire "5.8.0"]
+                                  ;; generative testing
+                                  [org.clojure/test.check "0.10.0-alpha2"]]
                    :repl-options {:init-ns social-wallet-api.handler}
                    :plugins [[lein-ring "0.12.0"]
                              [lein-midje "3.2"]]}})

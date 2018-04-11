@@ -344,15 +344,17 @@ Creates a transaction. This call is only meant for DBs and not for blockchains.
 Returns the DB entry that was created.
 
 "
-                   (with-error-responses blockchains query
-                     (fn [blockchain query]
-                       (if (= (-> query :blockchain keyword) :mongo)
-                         (lib/create-transaction blockchain
-                                                 (:from-id query)
-                                                 (:amount query)
-                                                 (:to-id query)
-                                                 query)
-                         (f/fail "Transactions can only be made for DBs. For BLockchain please look at Deposit and Withdraw"))))))
+               (with-error-responses blockchains query
+                 (fn [blockchain query]
+                   (if (= (-> query :blockchain keyword) :mongo)
+                     (f/if-let-ok? [parsed-amount (lib-utils/validate-input-amount (:amount query))]
+                       (lib/create-transaction blockchain
+                                               (:from-id query)
+                                               (log/spy parsed-amount)
+                                               (:to-id query)
+                                               query)
+                       (f/fail (log/spy (f/message parsed-amount))))
+                     (f/fail "Transactions can only be made for DBs. For BLockchain please look at Deposit and Withdraw"))))))
 
     (context (path-with-version "/withdraws") []
              :tags ["WITHDRAWS"]
