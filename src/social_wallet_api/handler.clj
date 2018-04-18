@@ -171,7 +171,7 @@
                                                (get "details")
                                                (as-> details (filter #(= "receive" (get % "category")) details))
                                                first
-                                               (get "amount"))
+                                               (log/spy (get "amount")))
                                            ;; to
                                            (or (:to-id query) address)
                                            (-> query 
@@ -350,10 +350,10 @@ Returns the DB entry that was created.
                      (f/if-let-ok? [parsed-amount (lib-utils/validate-input-amount (:amount query))]
                        (lib/create-transaction blockchain
                                                (:from-id query)
-                                               (log/spy parsed-amount)
+                                               parsed-amount
                                                (:to-id query)
                                                query)
-                       (f/fail (log/spy (f/message parsed-amount))))
+                       (f/fail (f/message parsed-amount)))
                      (f/fail "Transactions can only be made for DBs. For BLockchain please look at Deposit and Withdraw"))))))
 
     (context (path-with-version "/withdraws") []

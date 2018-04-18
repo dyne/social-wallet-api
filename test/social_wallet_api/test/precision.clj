@@ -14,6 +14,7 @@
   (cheshire/parse-string (slurp body) true))
 
 (def Satoshi 0.00000001)
+(def int16-fr8 (BigDecimal. 9999999999999999.99999999) )
 
 (defn new-transaction-request [amount]
   (h/app
@@ -30,18 +31,34 @@
                                         (config-read social-wallet-api.test.handler/test-app-name)
                                         social-wallet-api.test.handler/test-app-name))
                      (after :contents (h/destroy))]
-                    (facts "Check specific amounts"
-                           )
+                    (facts "Check specific amounts" 
+                           (fact "Check one Satochi (8 decimal)"
+                                 (let [response (new-transaction-request (str Satoshi))
+                                       body (parse-body (:body response))]
+                                   (:status response) => 200
+                                   (:amount body) => Satoshi
+                                   (:amount-text body) => (str Satoshi)))
+                           (fact "16 integer digits and 8 decimal)"
+                                 (let [response (new-transaction-request (str int16-fr8))
+                                       body (parse-body (:body response))]
+                                   (:status response) => 200
+                                   (:amount body) => int16-fr8
+                                   (:amount-text body) => (.toString int16-fr8)))
+                           (fact "Negative amounts not allowed)"
+                                 (let [some-negative -16.5
+                                       response (new-transaction-request (str some-negative))
+                                       body (parse-body (:body response))]
+                                   (:status response) => 400
+                                   (:error body) => "Negative values not allowed."
+                                   (:amount-text body) => nil)))
                     
                     (facts "Check different doubles"
                            (for-all
                             [rand-double (gen/double* {:min Satoshi
-                                                       :max 9999999999999999.99999999
+                                                       :max int16-fr8
                                                        :NaN? false
                                                        :infinite? false})]
-                            {:num-tests 1000
-                             :max-size 200
-                             #_:seed #_1510160943861}
+                            {:num-tests 500}
                             (fact "A really large number with 16,8 digits"
                                   (let [amount (str rand-double)  
                                         response (new-transaction-request amount)
