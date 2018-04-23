@@ -392,10 +392,9 @@ Returns the DB entry that was created.
                                         (number-confirmations blockchain transaction-id))
                                  (log/debug "Not enough confirmations for transaction with id " transaction-id)
                                  (Thread/sleep (-> blockchain :confirmations :frequency-confirmations-millis)))
-                               (let [fee (freecoin-lib.utils/bigdecimal->long
-                                          (get
-                                           (lib/get-transaction blockchain transaction-id)
-                                           "fee"))]
+                               (let [fee (get
+                                          (lib/get-transaction blockchain transaction-id)
+                                          "fee")]
                                  (log/debug "Updating the amount with the fee")
                                  (lib/update-transaction
                                   (get-db-blockchain blockchains) transaction-id
