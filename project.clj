@@ -49,7 +49,10 @@
                  [org.slf4j/jcl-over-slf4j "1.7.25"]
 
                  ;; Convinence fns for better control flow
-                 [dom-top "1.0.2"]]
+                 [dom-top "1.0.2"]
+
+                 ;; Use mongo bson data types like Decimal128
+                 [org.mongodb/mongodb-driver "3.6.0-beta2"]]
 
   :jvm-opts ["-Djava.security.egd=file:/dev/random" ;use a proper random source
              "-XX:-OmitStackTraceInFastThrow" ; stacktrace JVM exceptions

@@ -14,8 +14,8 @@
 (defn parse-body [body]
   (cheshire/parse-string (slurp body) true))
 
-(def Satoshi 0.00000001)
-(def int16-fr8 (BigDecimal. 9999999999999999.99999999) )
+(def Satoshi (BigDecimal. "0.00000001"))
+(def int16-fr8 (BigDecimal. "9999999999999999.99999999"))
 
 (defn new-transaction-request [amount]
   (h/app
@@ -35,14 +35,15 @@
                                         (config-read social-wallet-api.test.handler/test-app-name)
                                         social-wallet-api.test.handler/test-app-name))
                      (after :contents (h/destroy))]
-                    (facts "Check specific amounts" 
+                    #_(facts "Check specific amounts" 
                            (fact "Check one Satochi (8 decimal)"
-                                 (let [response (new-transaction-request (str Satoshi))
+                                 (let [response (new-transaction-request (.toString Satoshi))
                                        body (parse-body (:body response))]
                                    (:status response) => 200
                                    (:amount body) => Satoshi
                                    (:amount-text body) => (str Satoshi)
                                    (:amount (get-latest-transaction "test-1")) => Satoshi
+                                   (class (:amount (get-latest-transaction "test-1"))) => java.math.BigDecimal
                                    (:amount-text (get-latest-transaction "test-1")) => (.toString Satoshi)))
                            (fact "16 integer digits and 8 decimal)"
                                  (let [response (new-transaction-request (str int16-fr8))
@@ -61,24 +62,34 @@
                                    (:amount-text body) => nil)))
                     
                     (facts "Check different doubles" :slow
-                           (for-all
-                            [rand-double (gen/double* {:min Satoshi
-                                                       :max int16-fr8
-                                                       :NaN? false
-                                                       :infinite? false})]
-                            {:num-tests 200
-                             :seed 1524497634230}
-                            (fact "Generative tests"
-                                  (let [amount (.toString (BigDecimal. rand-double))  
-                                        response (new-transaction-request amount)
-                                        body (parse-body (:body response))]
-                                    (:status response) => 200
-                                    (:amount body) => rand-double
-                                    (:amount (get-latest-transaction "test-1")) => (BigDecimal. rand-double)
-                                    (:amount-text (get-latest-transaction "test-1")) => amount)))
+                           (let [sum-test-2 (atom (BigDecimal. 0))]
+                             (for-all
+                              [rand-double (gen/double* {:min Satoshi
+                                                         :max int16-fr8
+                                                         :NaN? false
+                                                         :infinite? false})]
+                              {:num-tests 100}
+                              (fact "Generative tests"
+                                    (let [amount (.toString (BigDecimal. (.toString (log/spy rand-double))))  
+                                          response (new-transaction-request (log/spy amount))
+                                          body (parse-body (:body response))
+                                          _ (swap! sum-test-2 #(.add % (BigDecimal. rand-double)))]
+                                      (:status response) => 200
+                                      (:amount body) => rand-double
+                                      (:amount (get-latest-transaction "test-1")) => (BigDecimal. amount)
+                                      (:amount-text (get-latest-transaction "test-1")) => amount)))
+                             #_(fact "Balance works properly"
+                                   (let [response (h/app
+                                                   (->
+                                                    (mock/request :post "/wallet/v1/balance")
+                                                    (mock/content-type "application/json")
+                                                    (mock/body  (cheshire/generate-string {:blockchain :mongo
+                                                                                           :account-id "test-2"}))))
+                                         body (parse-body (:body response))]
+                                     (:amount body) => @sum-test-2)))
                            
 
-                           (fact "Check other inputs" :slow
+                           #_(fact "Check other inputs" :slow
                                  (for-all
                                   [other (gen/one-of [gen/string gen/boolean gen/uuid])]
                                   {:num-tests 200}

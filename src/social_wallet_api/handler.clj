@@ -171,7 +171,7 @@
                                                (get "details")
                                                (as-> details (filter #(= "receive" (get % "category")) details))
                                                first
-                                               (log/spy (get "amount")))
+                                               (get "amount"))
                                            ;; to
                                            (or (:to-id query) address)
                                            (-> query 
