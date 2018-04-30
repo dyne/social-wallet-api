@@ -113,7 +113,7 @@
                                      (:amount body) => @sum-to-account)))
                            
 
-                           #_(fact "Check other inputs" :slow
+                           (fact "Check other inputs" :slow
                                  (for-all
                                   [other (gen/one-of [gen/string gen/boolean gen/uuid])]
                                   {:num-tests 200}
@@ -131,4 +131,4 @@
                                               body (parse-body (:body response))]
                                           (:status response) => 400
                                           (class (:error body)) => String
-                                          (:error body) => truthy))))))
+                                          (:error body) => "The amount is not valid."))))))
