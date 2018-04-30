@@ -337,7 +337,7 @@ Returns the transaction if found on that blockchain.
                :body [query NewTransactionQuery]
                :summary "Create a new transaction"
                :description "
-Takes a JSON structure with a `blockchain`, `from-account`, `to-account` query identifiers and optionally `tags` as paramaters. Tags are metadata meant to add a category to the transaction and useful for grouping and searching.
+Takes a JSON structure with a `blockchain`, `from-account`, `to-account`, `amount` query identifiers and optionally `tags` as paramaters. Tags are metadata meant to add a category to the transaction and useful for grouping and searching. The amount has been tested for values between `0.00000001` and `9999999999999999.99999999`.
 
 Creates a transaction. This call is only meant for DBs and not for blockchains.
 

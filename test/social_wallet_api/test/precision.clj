@@ -124,8 +124,8 @@
                                                          (mock/request :post "/wallet/v1/transactions/new")
                                                          (mock/content-type "application/json")
                                                          (mock/body  (cheshire/generate-string {:blockchain :mongo
-                                                                                                :from-id from-account
-                                                                                                :to-id to-account
+                                                                                                :from-id "from account"
+                                                                                                :to-id "to account"
                                                                                                 :amount amount
                                                                                                 :tags ["blabla"]}))))
                                               body (parse-body (:body response))]
