@@ -21,7 +21,7 @@
 (def some-from-account "some-from")
 (def some-to-account "some-to-account")
 
-(defn new-transaction-request [amount from-account to-account]
+(defn new-transaction-request [big-number from-account to-account]
   (h/app
    (->
     (mock/request :post "/wallet/v1/transactions/new")
@@ -29,7 +29,7 @@
     (mock/body  (cheshire/generate-string {:blockchain :mongo
                                            :from-id from-account
                                            :to-id to-account
-                                           :amount amount
+                                           :amount big-number
                                            :tags ["blabla"]})))))
 
 (defn get-latest-transaction [account-id]
@@ -67,6 +67,19 @@
                                    (:amount (get-latest-transaction some-from-account)) => int16-fr8
                                    (class (:amount (get-latest-transaction some-from-account))) => java.math.BigDecimal                    
                                    (:amount-text (get-latest-transaction some-from-account)) => (.toString int16-fr8)))
+                           (fact "Some other amount 23423454565.45645645"
+                                 (let [big-number (BigDecimal. "23423454565.45645645")
+                                       response (new-transaction-request (.toString big-number)
+                                                                         some-from-account
+                                                                         some-to-account)
+                                       body (parse-body (:body response))]
+                                   (:status response) => 200
+                                   (:amount body) => big-number
+                                   (:amount-text body) => (.toString big-number)
+                                   (:amount (get-latest-transaction some-from-account)) => big-number
+                                   (class (:amount (get-latest-transaction some-from-account))) => java.math.BigDecimal                    
+                                   (:amount-text (get-latest-transaction some-from-account)) => (.toString big-number)))
+                           
                            (fact "Negative amounts not allowed)"
                                  (let [some-negative -16.5
                                        response (new-transaction-request (str some-negative)
