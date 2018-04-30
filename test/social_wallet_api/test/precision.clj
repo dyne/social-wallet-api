@@ -17,14 +17,17 @@
 (def Satoshi (BigDecimal. "0.00000001"))
 (def int16-fr8 (BigDecimal. "9999999999999999.99999999"))
 
+(def from-account "test-prec-1")
+(def to-account "test-prec-2")
+
 (defn new-transaction-request [amount]
   (h/app
    (->
     (mock/request :post "/wallet/v1/transactions/new")
     (mock/content-type "application/json")
     (mock/body  (cheshire/generate-string {:blockchain :mongo
-                                           :from-id "test-1"
-                                           :to-id "test-2"
+                                           :from-id from-account
+                                           :to-id to-account
                                            :amount amount
                                            :tags ["blabla"]})))))
 
@@ -35,24 +38,25 @@
                                         (config-read social-wallet-api.test.handler/test-app-name)
                                         social-wallet-api.test.handler/test-app-name))
                      (after :contents (h/destroy))]
-                    #_(facts "Check specific amounts" 
+                    (facts "Check specific amounts" 
                            (fact "Check one Satochi (8 decimal)"
                                  (let [response (new-transaction-request (.toString Satoshi))
                                        body (parse-body (:body response))]
                                    (:status response) => 200
                                    (:amount body) => Satoshi
                                    (:amount-text body) => (str Satoshi)
-                                   (:amount (get-latest-transaction "test-1")) => Satoshi
-                                   (class (:amount (get-latest-transaction "test-1"))) => java.math.BigDecimal
-                                   (:amount-text (get-latest-transaction "test-1")) => (.toString Satoshi)))
+                                   (:amount (get-latest-transaction from-account)) => Satoshi
+                                   (class (:amount (get-latest-transaction from-account))) => java.math.BigDecimal
+                                   (:amount-text (get-latest-transaction from-account)) => (.toString Satoshi)))
                            (fact "16 integer digits and 8 decimal)"
                                  (let [response (new-transaction-request (str int16-fr8))
                                        body (parse-body (:body response))]
                                    (:status response) => 200
                                    (:amount body) => int16-fr8
                                    (:amount-text body) => (.toString int16-fr8)
-                                   (:amount (get-latest-transaction "test-1")) => int16-fr8
-                                   (:amount-text (get-latest-transaction "test-1")) => (.toString int16-fr8)))
+                                   (:amount (get-latest-transaction from-account)) => int16-fr8
+                                   (class (:amount (get-latest-transaction from-account))) => java.math.BigDecimal                    
+                                   (:amount-text (get-latest-transaction from-account)) => (.toString int16-fr8)))
                            (fact "Negative amounts not allowed)"
                                  (let [some-negative -16.5
                                        response (new-transaction-request (str some-negative))
@@ -62,31 +66,38 @@
                                    (:amount-text body) => nil)))
                     
                     (facts "Check different doubles" :slow
-                           (let [sum-test-2 (atom (BigDecimal. 0))]
+                           (let [sum-to-account (atom (BigDecimal. 0))]
                              (for-all
                               [rand-double (gen/double* {:min Satoshi
                                                          :max int16-fr8
                                                          :NaN? false
                                                          :infinite? false})]
-                              {:num-tests 100}
+                              {:num-tests 100
+                               :seed 1525087600100}
                               (fact "Generative tests"
-                                    (let [amount (.toString (BigDecimal. (.toString (log/spy rand-double))))  
-                                          response (new-transaction-request (log/spy amount))
+                                    (let [amount (.toString rand-double)  
+                                          response (new-transaction-request amount)
                                           body (parse-body (:body response))
-                                          _ (swap! sum-test-2 #(.add % (BigDecimal. rand-double)))]
+                                          _ (swap! sum-to-account #(.add % (BigDecimal. amount)))]
                                       (:status response) => 200
-                                      (:amount body) => rand-double
-                                      (:amount (get-latest-transaction "test-1")) => (BigDecimal. amount)
-                                      (:amount-text (get-latest-transaction "test-1")) => amount)))
+                                      ;; To create a BigDecimal parse from string otherwise
+                                      ;; (BigDecimal.  0.5000076293945312) => 0.50000762939453125M
+                                      ;; whereas:  "0.5000076293945312") =>   0.5000076293945312M
+                                      (BigDecimal. (str (:amount body))) => (BigDecimal. amount)
+                                      (-> (get-latest-transaction from-account)
+                                                   :amount
+                                                   .toString
+                                                   BigDecimal.) => (BigDecimal. amount) 
+                                      (:amount-text (get-latest-transaction from-account)) => amount)))
                              #_(fact "Balance works properly"
                                    (let [response (h/app
                                                    (->
                                                     (mock/request :post "/wallet/v1/balance")
                                                     (mock/content-type "application/json")
                                                     (mock/body  (cheshire/generate-string {:blockchain :mongo
-                                                                                           :account-id "test-2"}))))
+                                                                                           :account-id to-account}))))
                                          body (parse-body (:body response))]
-                                     (:amount body) => @sum-test-2)))
+                                     (:amount body) => @sum-to-account)))
                            
 
                            #_(fact "Check other inputs" :slow
@@ -94,14 +105,14 @@
                                   [other (gen/one-of [gen/string gen/boolean gen/uuid])]
                                   {:num-tests 200}
                                   (fact "A really large number with 16,8 digits"
-                                        (let [amount (log/spy (str other)) 
+                                        (let [amount (str other) 
                                               response (h/app
                                                         (->
                                                          (mock/request :post "/wallet/v1/transactions/new")
                                                          (mock/content-type "application/json")
                                                          (mock/body  (cheshire/generate-string {:blockchain :mongo
-                                                                                                :from-id "test-1"
-                                                                                                :to-id "test-2"
+                                                                                                :from-id from-account
+                                                                                                :to-id to-account
                                                                                                 :amount amount
                                                                                                 :tags ["blabla"]}))))
                                               body (parse-body (:body response))]
