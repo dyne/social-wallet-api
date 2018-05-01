@@ -399,14 +399,17 @@ Returns the DB entry that was created.
                                   (fn [tr] (let [updated-transaction (update tr :amount #(+ % (- fee)))]
                                              (assoc updated-transaction :amount-text (-> updated-transaction :amount str)))))))
                              ;; store to db as well with transaction-id
-                             (lib/create-transaction (get-db-blockchain blockchains)
-                                                     (or (:from-id query) (:from-wallet-account query) "")
-                                                     (:amount query)
-                                                     (:to-address query)
-                                                     (-> query
-                                                         (dissoc :comment :comment-to)
-                                                         (assoc :transaction-id transaction-id
-                                                                :currency (:blockchain query)))))
+                             (f/if-let-ok? [db-transaction
+                                            (lib/create-transaction (get-db-blockchain blockchains)
+                                                                    (or (:from-id query) (:from-wallet-account query) "")
+                                                                    (:amount query)
+                                                                    (:to-address query)
+                                                                    (-> query
+                                                                        (dissoc :comment :comment-to)
+                                                                        (assoc :transaction-id transaction-id
+                                                                               :currency (:blockchain query))))]
+                               db-transaction
+                               (f/fail (f/message (str "Did not write transaction " transaction-id " on the DB because: " (f/message db-transaction))))))
                            ;; There was an error
                            (f/fail (f/message transaction-id))))))))
 
