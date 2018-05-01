@@ -125,7 +125,7 @@
          (s/optional-key :from-id)    s/Any
          (s/optional-key :from-wallet-account) s/Str
          (s/required-key :to-address) s/Str
-         (s/required-key :amount)     s/Num
+         (s/required-key :amount)     s/Str
          (s/optional-key :tags)      [s/Str]
          (s/optional-key :comment)    s/Str
          (s/optional-key :commentto)    s/Str))

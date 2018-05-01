@@ -379,7 +379,7 @@ Returns the DB entry that was created.
                          (f/if-let-ok? [transaction-id (lib/create-transaction
                                                         blockchain
                                                         (or (:from-wallet-account query) "")
-                                                        (:amount query)
+                                                        (-> query :amount str (BigDecimal.))
                                                         (:to-address query)
                                                         (dissoc query :tags))]
                            (do
@@ -390,14 +390,14 @@ Returns the DB entry that was created.
                                         (number-confirmations blockchain transaction-id))
                                  (log/debug "Not enough confirmations for transaction with id " transaction-id)
                                  (Thread/sleep (-> blockchain :confirmations :frequency-confirmations-millis)))
-                               (let [fee (get
-                                          (lib/get-transaction blockchain transaction-id)
-                                          "fee")]
+                              (let [transaction (lib/get-transaction blockchain transaction-id)
+                                    fee (get transaction "fee")]
                                  (log/debug "Updating the amount with the fee")
                                  (lib/update-transaction
                                   (get-db-blockchain blockchains) transaction-id
                                   ;; Here we add the minus fee to the whole transaction when confirmed
-                                  (fn [tr] (update tr :amount #(+ % (- fee)))))))
+                                  (fn [tr] (let [updated-transaction (update tr :amount #(+ % (- fee)))]
+                                             (assoc updated-transaction :amount-text (-> updated-transaction :amount str)))))))
                              ;; store to db as well with transaction-id
                              (lib/create-transaction (get-db-blockchain blockchains)
                                                      (or (:from-id query) (:from-wallet-account query) "")
