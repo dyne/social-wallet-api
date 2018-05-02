@@ -49,7 +49,10 @@
                  [org.slf4j/jcl-over-slf4j "1.7.25"]
 
                  ;; Convinence fns for better control flow
-                 [dom-top "1.0.2"]]
+                 [dom-top "1.0.2"]
+
+                 ;; Use mongo bson data types like Decimal128
+                 [org.mongodb/mongodb-driver "3.6.0-beta2"]]
 
   :jvm-opts ["-Djava.security.egd=file:/dev/random" ;use a proper random source
              "-XX:-OmitStackTraceInFastThrow" ; stacktrace JVM exceptions
@@ -72,9 +75,12 @@
 
   :uberjar-name "social-wallet-api.jar"
   :profiles {:dev {:dependencies [[ring/ring-mock "0.3.1"]
-                                  [midje "1.8.3"]
+                                  ;; this is necessary to use the for-all midje support
+                                  [midje "1.9.2-alpha3"]
                                   ;; json
-                                  [cheshire "5.8.0"]]
+                                  [cheshire "5.8.0"]
+                                  ;; generative testing
+                                  [org.clojure/test.check "0.10.0-alpha2"]]
                    :repl-options {:init-ns social-wallet-api.handler}
                    :plugins [[lein-ring "0.12.0"]
                              [lein-midje "3.2"]]}})

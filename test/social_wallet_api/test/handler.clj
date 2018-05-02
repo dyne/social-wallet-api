@@ -43,7 +43,7 @@
                                                   (mock/body  (cheshire/generate-string {:blockchain :mongo
                                                                                          :from-id "test-1"
                                                                                          :to-id "test-2"
-                                                                                         :amount 0.1
+                                                                                         :amount "0.1"
                                                                                          :tags ["blabla"]}))))
                                        body (parse-body (:body response))]
                                    (:status response) => 200

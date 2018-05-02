@@ -36,7 +36,7 @@ style="padding-right: 1.5em">
 ### Prerequisites:
 Please install
 1. A JDK. The software is tested on [openJDK](http://openjdk.java.net/) versions 7 and 8 as well as with [oracleJDK 8](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html). Make sure that the env var JAVA_HOME is set to the JDK install dir like [mentioned here](https://docs.oracle.com/cd/E19182-01/820-7851/inst_cli_jdk_javahome_t/index.html).
-2. [MongoDB community edition](https://docs.mongodb.com/manual/administration/install-community/)
+2. [MongoDB community edition](https://docs.mongodb.com/manual/administration/install-community/). The software has been tested on Mongo v3.6.4. Earlier versions might not work due to loss of precision (Decimal128 was not introduced).
 3. [leiningen](https://leiningen.org/) which is used for dependency management like:
 ```
 mkdir ~/bin
