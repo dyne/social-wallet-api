@@ -63,7 +63,7 @@
    (s/required-key :from-id)    s/Any
    (s/required-key :to-id)      s/Any
    (s/optional-key :amount)     s/Num
-   (s/required-key :amount-text) s/Str
+   (s/optional-key :amount-text) s/Str
    (s/required-key :transaction-id) (s/maybe s/Str)
    (s/optional-key :currency) s/Str})
 
