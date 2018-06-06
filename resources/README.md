@@ -5,7 +5,7 @@ src="https://secrets.dyne.org/static/img/swbydyne.png"
 alt="software by Dyne.org"
 title="software by Dyne.org" class="pull-right"></a>
 
-[Intro](#Intro) | [Building](#Building the Social Wallet API on your own computer) | [Prerequisites] (#Prerequisites:) | [Running] (#Running the Social Wallet) | [Acknowledgements] (#Acknowledgements) | [Licence] (#Licence) | [change log](https://github.com/Commonfare-net/social-wallet-api/blob/master/CHANGELOG.markdown) 
+[Intro](#Intro) | [Building](#Building-the-Social-Wallet-API-on-your-own-computer) | [Prerequisites](#Prerequisites) | [Running](#Running-the-Social-Wallet) | [Acknowledgements](#Acknowledgements) | [Licence](#Licence) | [change log](https://github.com/Commonfare-net/social-wallet-api/blob/master/CHANGELOG.markdown) 
 
 ## Intro
 
