@@ -5,12 +5,17 @@ src="https://secrets.dyne.org/static/img/swbydyne.png"
 alt="software by Dyne.org"
 title="software by Dyne.org" class="pull-right"></a>
 
+[Intro](#Intro) | [Building](#Building the Social Wallet API on your own computer) | [Prerequisites] (#Prerequisites:) | [Running] (#Running the Social Wallet) | [Acknowledgements] (#Acknowledgements) | [Licence] (#Licence) | [change log](https://github.com/Commonfare-net/social-wallet-api/blob/master/CHANGELOG.markdown) 
+
+## Intro
+
 This software is made to facilitate the integration of blockchain
 functions into existing front-end applications, providing an easy
 backend of documented REST API endpoints that are validated and, in
 case of error, report meaningful messages.
 
 [![Build Status](https://travis-ci.org/Commonfare-net/social-wallet-api.svg?branch=master)](https://travis-ci.org/Commonfare-net/social-wallet-api)
+[![Clojars Project](https://img.shields.io/clojars/v/social-wallet-api.svg)](https://clojars.org/social-wallet-api)
 
 This REST API interface is so far meant for low-level access of
 wallets built using the [Freecoin toolkit](https://freecoin.dyne.org).
