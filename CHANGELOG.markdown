@@ -1,4 +1,7 @@
 # Changelog
+
+## social-wallet-api 0.9.4
+* Jetty host can be picked up as a env var
 	
 ## social-wallet-api 0.9.3
 * Arithmetic precision testing and fixes
