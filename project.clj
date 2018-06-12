@@ -69,7 +69,7 @@
          :handler social-wallet-api.handler/app
          ;; Accessible only from localhost
          ;; https://stackoverflow.com/questions/24467539/lein-ring-server-headless-only-listen-to-localhost
-         :host "localhost"
+         :host ~(or (System/getenv "SWAPI_HOST") "localhost")
          :destroy social-wallet-api.handler/destroy
          :reload-paths ["src"]}
 
