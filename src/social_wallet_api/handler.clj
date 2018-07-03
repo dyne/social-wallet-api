@@ -254,7 +254,7 @@ It returns balance for that particular account. If no account is provided it ret
 
 "
         (with-error-responses blockchains query
-          (fn [blockchain query] {:amount (lib/get-balance blockchain (:account-id query))}))))
+          (fn [blockchain query] (log/spy :info {:amount (lib/get-balance blockchain (:account-id query))})))))
 
     (context (path-with-version "/tags") []
              :tags ["TAGS"]
@@ -297,6 +297,7 @@ Returns a list of transactions found on that blockchain.
 
 "
                    (with-error-responses blockchains query
+                     (log/info "List all transactions " query)
                      (fn [blockchain query] (lib/list-transactions
                                              blockchain
                                              (cond-> {}
@@ -347,11 +348,11 @@ Returns the DB entry that was created.
                (with-error-responses blockchains query
                  (fn [blockchain query]
                    (if (= (-> query :blockchain keyword) :mongo)
-                     (lib/create-transaction blockchain
-                                             (:from-id query)
-                                             (:amount query)
-                                             (:to-id query)
-                                             query) 
+                     (log/spy :info (lib/create-transaction blockchain
+                                                            (:from-id query)
+                                                            (:amount query)
+                                                            (:to-id query)
+                                                            query)) 
                      (f/fail "Transactions can only be made for DBs. For BLockchain please look at Deposit and Withdraw"))))))
 
     (context (path-with-version "/withdraws") []
