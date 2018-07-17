@@ -296,14 +296,15 @@ Takes a JSON structure with a `blockchain` query identifier. A number of optiona
 Returns a list of transactions found on that blockchain.
 
 "
-                   (with-error-responses blockchains query
-                     (log/info "List all transactions " query)
-                     (fn [blockchain query] (lib/list-transactions
-                                             blockchain
-                                             (cond-> {}
-                                               (:account-id query) (assoc :account-id (:account-id query))
-                                               (:from query) (assoc :from (:from query))
-                                               (:count query) (assoc :count (:count query))))))))
+                   (with-error-responses blockchains query 
+                     (fn [blockchain query]
+                       (log/info "List all transactions " query)
+                       (lib/list-transactions
+                        blockchain
+                        (cond-> {}
+                          (:account-id query) (assoc :account-id (:account-id query))
+                          (:from query) (assoc :from (:from query))
+                          (:count query) (assoc :count (:count query))))))))
 
     (context (path-with-version "/transactions") []
              :tags ["TRANSACTIONS"]
