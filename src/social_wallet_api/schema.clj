@@ -138,9 +138,10 @@
 
 (s/defschema ListTransactionsQuery
   (merge Query {(s/optional-key :account-id) s/Str
-                ;; TODO this way they would only work for Mongo. We need some sort of paging
-                #_(s/optional-key :count) s/Num
-                #_(s/optional-key :from) s/Num}))
+                (s/optional-key :count) s/Num
+                (s/optional-key :from) s/Num
+                (s/optional-key :page) s/Num
+                (s/optional-key :per-page) s/Num}))
 
 
 (s/defschema DepositCheck

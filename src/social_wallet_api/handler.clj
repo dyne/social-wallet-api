@@ -291,18 +291,19 @@ It returns a list of tags found on that blockchain.
                    :body [query ListTransactionsQuery]
                    :summary "List transactions"
                    :description "
-Takes a JSON structure with a `blockchain` query identifier. A number of optional identifiers are available for filtering like `account-id`, `count` and `from` for btc like blockains.
+Takes a JSON structure with a `blockchain` query identifier. Both mongo and btc transactions can be filtered by `account-id`. A number of optional identifiers are available for filtering like `count` and `from` for btc like blockains. For mongo queries paging can be used with the `page` and `per-page` identifiers which default to 1 and 10 respectively (first page, ten per page). 
 
 Returns a list of transactions found on that blockchain.
 
 "
                    (with-error-responses blockchains query
-                     (fn [blockchain query] (lib/list-transactions
-                                             blockchain
-                                             (cond-> {}
-                                               (:account-id query) (assoc :account-id (:account-id query))
-                                               (:from query) (assoc :from (:from query))
-                                               (:count query) (assoc :count (:count query))))))))
+                     (fn [blockchain {:keys [account-id from count page per-page]}] (lib/list-transactions
+                                                                                     blockchain
+                                                                                     (cond-> {}
+                                                                                       account-id  (assoc :account-id account-id(:account-id query))                                                                             from  (assoc :from from)
+                                                                                       count (assoc :count count)
+                                                                                       ;; TODO add paging arguments and check that are used for the right blockchain
+                                                                                       ))))))
 
     (context (path-with-version "/transactions") []
              :tags ["TRANSACTIONS"]
