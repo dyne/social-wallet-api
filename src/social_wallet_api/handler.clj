@@ -300,8 +300,10 @@ Returns a list of transactions found on that blockchain.
                      (fn [blockchain {:keys [account-id from count page per-page]}] (lib/list-transactions
                                                                                      blockchain
                                                                                      (cond-> {}
-                                                                                       account-id  (assoc :account-id account-id(:account-id query))                                                                             from  (assoc :from from)
+                                                                                       account-id  (assoc :account-id account-id)                           from  (assoc :from from)
                                                                                        count (assoc :count count)
+                                                                                       page (assoc :page page)
+                                                                                       per-page (assoc :per-page per-page)
                                                                                        ;; TODO add paging arguments and check that are used for the right blockchain
                                                                                        ))))))
 
