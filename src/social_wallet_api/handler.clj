@@ -291,7 +291,7 @@ It returns a list of tags found on that blockchain.
                    :body [query ListTransactionsQuery]
                    :summary "List transactions"
                    :description "
-Takes a JSON structure with a `blockchain` query identifier. Both mongo and btc transactions can be filtered by `account-id`. A number of optional identifiers are available for filtering like `count` and `from` for btc like blockains. For mongo queries paging can be used with the `page` and `per-page` identifiers which default to 1 and 10 respectively (first page, ten per page). 
+Takes a JSON structure with a `blockchain` query identifier. Both mongo and btc transactions can be filtered by `account-id`. For blockchains, a number of optional identifiers are available for filtering like `count`: Returns up to [count] most recent transactions skipping the first [from] transactions for account [account]. For mongo queries paging can be used with the `page` and `per-page` identifiers which default to 1 and 10 respectively (first page, ten per page). Finally mongo queries can be also filtered by `currency`. 
 
 Returns a list of transactions found on that blockchain.
 
