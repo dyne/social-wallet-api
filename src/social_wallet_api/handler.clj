@@ -297,13 +297,15 @@ Returns a list of transactions found on that blockchain.
 
 "
                    (with-error-responses blockchains query
-                     (fn [blockchain {:keys [account-id from count page per-page]}] (lib/list-transactions
-                                                                                     blockchain
-                                                                                     (cond-> {}
-                                                                                       account-id  (assoc :account-id account-id)                           from  (assoc :from from)
-                                                                                       count (assoc :count count)
-                                                                                       page (assoc :page page)
-                                                                                       per-page (assoc :per-page per-page)
+                     (fn [blockchain {:keys [account-id from count page per-page currency]}]
+                       (lib/list-transactions
+                        blockchain
+                        (cond-> {}
+                          account-id  (assoc :account-id account-id)                           from  (assoc :from from)
+                          count (assoc :count count)
+                          page (assoc :page page)
+                          per-page (assoc :per-page per-page)
+                          currency (assoc :currency currency)
                                                                                        ;; TODO add paging arguments and check that are used for the right blockchain
                                                                                        ))))))
 

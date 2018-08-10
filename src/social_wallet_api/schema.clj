@@ -60,8 +60,8 @@
   "Transaction schema validator"
   {(s/optional-key :tags)      [s/Str]
    (s/optional-key :timestamp)  s/Str
-   (s/required-key :from-id)    s/Any
-   (s/required-key :to-id)      s/Any
+   (s/required-key :from-id)    s/Str
+   (s/required-key :to-id)      s/Str
    (s/optional-key :amount)     s/Num
    (s/optional-key :amount-text) s/Str
    (s/required-key :transaction-id) (s/maybe s/Str)
@@ -115,14 +115,14 @@
 
 (s/defschema NewTransactionQuery
   (assoc Query
-         (s/required-key :from-id)    s/Any
-         (s/required-key :to-id)      s/Any
+         (s/required-key :from-id)    s/Str
+         (s/required-key :to-id)      s/Str
          (s/required-key :amount)     s/Str
          (s/optional-key :tags)      [s/Str]))
 
 (s/defschema NewWithdraw
   (assoc Query
-         (s/optional-key :from-id)    s/Any
+         (s/optional-key :from-id)    s/Str
          (s/optional-key :from-wallet-account) s/Str
          (s/required-key :to-address) s/Str
          (s/required-key :amount)     s/Str
@@ -141,7 +141,8 @@
                 (s/optional-key :count) s/Num
                 (s/optional-key :from) s/Num
                 (s/optional-key :page) s/Num
-                (s/optional-key :per-page) s/Num}))
+                (s/optional-key :per-page) s/Num
+                (s/optional-key :currency) s/Str}))
 
 
 (s/defschema DepositCheck
