@@ -285,9 +285,10 @@ It returns a list of tags found on that blockchain.
              (POST "/list" request
                :responses {status/not-found {:schema {:error s/Str}}
                            status/service-unavailable {:schema {:error s/Str}}}
-                   :return  (s/if #(-> % first (get "amount"))
-                              [BTCTransaction]
-                              [DBTransaction])
+                   :return  (s/if #(map? %)
+                              {:total-count s/Num
+                               :transactions [DBTransaction]}
+                              [BTCTransaction])
                    :body [query ListTransactionsQuery]
                    :summary "List transactions"
                    :description "
@@ -298,16 +299,19 @@ Returns a list of transactions found on that blockchain.
 "
                    (with-error-responses blockchains query
                      (fn [blockchain {:keys [account-id from count page per-page currency]}]
-                       (lib/list-transactions
-                        blockchain
-                        (cond-> {}
-                          account-id  (assoc :account-id account-id)                           from  (assoc :from from)
-                          count (assoc :count count)
-                          page (assoc :page page)
-                          per-page (assoc :per-page per-page)
-                          currency (assoc :currency currency)
-                                                                                       ;; TODO add paging arguments and check that are used for the right blockchain
-                                                                                       ))))))
+                       (let [transaction-list (lib/list-transactions
+                                            blockchain
+                                            (cond-> {}
+                                              account-id  (assoc :account-id account-id)
+                                              from  (assoc :from from)
+                                              count (assoc :count count)
+                                              page (assoc :page page)
+                                              per-page (assoc :per-page per-page)
+                                              currency (assoc :currency currency)))]
+                         (if (= (-> query :blockchain keyword) :mongo)
+                           {:total-count (lib/count-transactions blockchain {})
+                            :transactions transaction-list}
+                           transaction-list))))))
 
     (context (path-with-version "/transactions") []
              :tags ["TRANSACTIONS"]
