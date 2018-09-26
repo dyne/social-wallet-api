@@ -75,6 +75,7 @@
 
   :uberjar-name "social-wallet-api.jar"
   :profiles {:dev {:dependencies [[ring/ring-mock "0.3.1"]
+  :alias {"test" ["midje"]}
                                   ;; this is necessary to use the for-all midje support
                                   [midje "1.9.2-alpha3"]
                                   ;; json
