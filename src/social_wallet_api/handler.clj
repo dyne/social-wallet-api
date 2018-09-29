@@ -41,7 +41,8 @@
                                               Config DepositCheck AddressNew]]
             [failjure.core :as f]
             [simple-time.core :as time]
-            [dom-top.core :as dom]))
+            [dom-top.core :as dom]
+            [ring.middleware.cors :refer [wrap-cors]]))
 
 (defonce prod-app-name "social-wallet-api")
 (defonce config-default (config-read prod-app-name))
@@ -524,4 +525,6 @@ Returns the DB entries that were created.
       (assoc-in [:security :hsts] true)))
 
 (def app
-  (wrap-defaults rest-api rest-api-defaults))
+  (wrap-cors (wrap-defaults rest-api rest-api-defaults)
+             :access-control-allow-origin [#".*"]
+             :access-control-allow-methods [:get :post]))

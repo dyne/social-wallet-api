@@ -27,6 +27,7 @@
                  [metosin/compojure-api "2.0.0-alpha17"]
                  [ring/ring-core "1.7.0"]
                  [ring/ring-defaults "0.3.2"]
+                 [ring-cors "0.1.12"]
 
                  ;; core freecoin toolkit library
                  [org.clojars.dyne/freecoin-lib ~version]
