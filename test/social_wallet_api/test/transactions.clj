@@ -2,7 +2,7 @@
   (:require [midje.sweet :refer :all]
             [ring.mock.request :as mock]
             [social-wallet-api.handler :as h]
-            [social-wallet-api.test.handler :refer [test-app-name parse-body]]
+            [social-wallet-api.test.handler :refer [test-app-name parse-body mongo-db-only]]
             [auxiliary.config :refer [config-read]]
             [taoensso.timbre :as log]
             [cheshire.core :as cheshire]
@@ -14,19 +14,21 @@
 (def Satoshi (BigDecimal. "0.00000001"))
 (def int16-fr8 (BigDecimal. "9999999999999999.99999999"))
 
+(def some-from-account "some-from")
+(def some-to-account "some-to-account")
+
 (defn new-transaction-request [big-number from-account to-account]
   (h/app
    (->
     (mock/request :post "/wallet/v1/transactions/new")
     (mock/content-type "application/json")
-    (mock/body  (cheshire/generate-string {:blockchain :mongo
-                                           :from-id from-account
-                                           :to-id to-account
-                                           :amount big-number
-                                           :tags ["blabla"]})))))
+    (mock/body  (cheshire/generate-string (merge mongo-db-only {:from-id from-account
+                                                                :to-id to-account
+                                                                :amount big-number
+                                                                :tags ["blabla"]}))))))
 
 (defn empty-transactions []
-  (store/delete-all! (-> @h/blockchains :mongo :stores-m :transaction-store)))
+  (store/delete-all! (-> @h/connections :mongo :stores-m :transaction-store)))
 
 (against-background [(before :contents (h/init
                                         (config-read test-app-name)
@@ -42,8 +44,8 @@
                                                          :max int16-fr8
                                                          :NaN? false
                                                          :infinite? false})
-                               from-account gen/string-alphanumeric
-                               to-account gen/string-alphanumeric]
+                               from-account gen/uuid
+                               to-account gen/uuid]
                               {:num-tests 200}
                               (fact "Insert 200 transactions."
                                     (let [amount (.toString rand-double)  
@@ -52,16 +54,17 @@
                                                                             to-account)
                                           body (parse-body (:body response))
                                           _ (swap! sum-to-account #(.add % (BigDecimal. amount)))]
-                                      (:status response) => 200)))
-                             (fact "There are 200 transactions inserted."
-                                   (lib/count-transactions (:mongo @h/blockchains) {}) => 200)
+                                      (:status response) => 200
+                                      )))
+                               (fact "There are 200 transactions inserted."
+                                   (lib/count-transactions (:mongo @h/connections) {}) => 200)
                              (facts "Retrieving transactions limited by pagination."
                                     (fact "Retrieing results without pagination whould default to 10"
                                           (let [response (h/app
                                                           (->
                                                            (mock/request :post "/wallet/v1/transactions/list")
                                                            (mock/content-type "application/json")
-                                                           (mock/body  (cheshire/generate-string {:blockchain :mongo}))))
+                                                           (mock/body  (cheshire/generate-string mongo-db-only))))
                                                 body (parse-body (:body response))] 
                                             (count (:transactions body)) => 10
                                             (:total-count body) => 200))
@@ -70,9 +73,9 @@
                                                           (->
                                                            (mock/request :post "/wallet/v1/transactions/list")
                                                            (mock/content-type "application/json")
-                                                           (mock/body  (cheshire/generate-string {:blockchain :mongo
-                                                                                                  :page 1
-                                                                                                  :per-page 100}))))
+                                                           (mock/body  (cheshire/generate-string (merge mongo-db-only
+                                                                                                        {:page 1
+                                                                                                         :per-page 100})))))
                                                 body (parse-body (:body response))] 
                                             (count (:transactions body)) => 100
                                             (:total-count body) => 200))
@@ -81,9 +84,9 @@
                                                           (->
                                                            (mock/request :post "/wallet/v1/transactions/list")
                                                            (mock/content-type "application/json")
-                                                           (mock/body  (cheshire/generate-string {:blockchain :mongo
-                                                                                                  :page 2
-                                                                                                  :per-page 100}))))
+                                                           (mock/body  (cheshire/generate-string (merge mongo-db-only
+                                                                                                        {:page 2
+                                                                                                         :per-page 100})))))
                                                 body (parse-body (:body response))] 
                                             (count (:transactions body)) => 100
                                             (:total-count body) => 200))
@@ -92,9 +95,8 @@
                                                           (->
                                                            (mock/request :post "/wallet/v1/transactions/list")
                                                            (mock/content-type "application/json")
-                                                           (mock/body  (cheshire/generate-string {:blockchain :mongo
-                                                                                                  :page 3
-                                                                                                  :per-page 100}))))
+                                                           (mock/body  (cheshire/generate-string (merge mongo-db-only {:page 3
+                                                                                                                       :per-page 100})))))
                                                 body (parse-body (:body response))] 
                                             (count (:transactions body)) => 0
                                             (:total-count body) => 200))
@@ -103,9 +105,8 @@
                                                           (->
                                                            (mock/request :post "/wallet/v1/transactions/list")
                                                            (mock/content-type "application/json")
-                                                           (mock/body  (cheshire/generate-string {:blockchain :mongo
-                                                                                                  :page 1
-                                                                                                  :per-page 200}))))
+                                                           (mock/body  (cheshire/generate-string (merge mongo-db-only {:page 1
+                                                                                                                       :per-page 200})))))
                                                 body (parse-body (:body response))] 
                                             (:error body) => "Cannot request more than 100 transactions."))
                                     (fact "What happens when requesting 0 transactions?"
@@ -114,9 +115,8 @@
                                                           (->
                                                            (mock/request :post "/wallet/v1/transactions/list")
                                                            (mock/content-type "application/json")
-                                                           (mock/body  (cheshire/generate-string {:blockchain :mongo
-                                                                                                  :page 0
-                                                                                                  :per-page 0}))))
+                                                           (mock/body  (cheshire/generate-string (merge mongo-db-only {:page 0
+                                                                                                                       :per-page 0})))))
                                                 body (parse-body (:body response))] 
                                             (count (:transactions body)) => 200
                                             (:total-count body) => 200)))
@@ -125,7 +125,7 @@
                                                                    (->
                                                                     (mock/request :post "/wallet/v1/transactions/list")
                                                                     (mock/content-type "application/json")
-                                                                    (mock/body  (cheshire/generate-string {:blockchain :mongo}))))
+                                                                    (mock/body  (cheshire/generate-string mongo-db-only))))
                                                                   :body
                                                                   parse-body)
                                           last-transaction (first (:transactions latest-transactions))
@@ -136,8 +136,7 @@
                                                           (->
                                                            (mock/request :post "/wallet/v1/transactions/list")
                                                            (mock/content-type "application/json")
-                                                           (mock/body  (cheshire/generate-string {:blockchain :mongo
-                                                                                                  :account-id last-from-account}))))
+                                                           (mock/body  (cheshire/generate-string (assoc mongo-db-only :account-id last-from-account)))))
                                                 body (parse-body (:body response))] 
                                               (>= (count (:transactions body)) 1) => true
                                               (-> body :transactions first :from-id) => last-from-account))
@@ -146,8 +145,7 @@
                                                           (->
                                                            (mock/request :post "/wallet/v1/transactions/list")
                                                            (mock/content-type "application/json")
-                                                           (mock/body  (cheshire/generate-string {:blockchain :mongo
-                                                                                                  :currency "other"}))))
+                                                           (mock/body  (cheshire/generate-string (assoc mongo-db-only :currency "other")))))
                                                 body (parse-body (:body response))] 
                                               (count (:transactions body)) => 0
                                               (empty? (:transactions body)) => true))
@@ -156,8 +154,7 @@
                                                           (->
                                                            (mock/request :post "/wallet/v1/transactions/list")
                                                            (mock/content-type "application/json")
-                                                           (mock/body  (cheshire/generate-string {:blockchain :mongo
-                                                                                                  :count 10
-                                                                                                  :from 10}))))
+                                                           (mock/body  (cheshire/generate-string (merge mongo-db-only {:count 10
+                                                                                                                       :from 10})))))
                                                 body (parse-body (:body response))] 
                                               (count (:transactions body)) => 10)))))))
