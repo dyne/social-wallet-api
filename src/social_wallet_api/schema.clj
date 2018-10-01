@@ -27,9 +27,12 @@
 (defn- k [type key default]
   (rjs/field type {:example (get default key)}))
 
+(s/defschema Type (s/enum "db-only" "blockchain-and-db"))
+
 (s/defschema Query
   "POST Wallet query validator"
-  {:blockchain (rjs/field s/Str {:example "mongo"})})
+  {:connection (rjs/field s/Str {:example "mongo"})
+   :type (rjs/field Type {:example "db-only"})})
 
 (s/defschema PerAccountQuery
   "POST Wallet query validator for requests per account"

@@ -47,7 +47,7 @@
 (defonce prod-app-name "social-wallet-api")
 (defonce config-default (config-read prod-app-name))
 
-(defonce blockchains (atom {}))
+(defonce connections (atom {}))
 
 ;; TODO: lets see why we need this
 (defn- get-config [obj]
@@ -72,21 +72,21 @@
     {:data (func config-default (:data obj))
      :config config-default}))
 
-;; TODO: pass blockchains as arg?
-(defn- get-blockchain [blockchains query]
-  (get @blockchains (-> query :blockchain keyword)))
+;; TODO: pass conncetion as arg?
+(defn- get-connection [connections query]
+  (get @connections (-> query :connection keyword)))
 
-(defn- get-db-blockchain [blockchains]
-  (:mongo @blockchains))
+(defn- get-db-connection [connections]
+  (:mongo @connections))
 
-(defn- get-blockchain-conf [config app-name blockchain]
-  (get-in config [(keyword app-name) :freecoin blockchain]))
+(defn- get-connection-conf [config app-name connection]
+  (get-in config [(keyword app-name) :freecoin connection]))
 
 (defn- get-app-conf [config app-name]
   (get-in config [(keyword app-name) :freecoin]))
 
-(defn- number-confirmations [blockchain transaction-id]
-  (-> (lib/get-transaction blockchain transaction-id)
+(defn- number-confirmations [connection transaction-id]
+  (-> (lib/get-transaction connection transaction-id)
       (get "confirmations")))
 
 (defn- path-with-version [path]
@@ -113,10 +113,10 @@
    ;; TODO a more generic way to go multiple configurations
    (let [mongo (->> (get-app-conf config app-name)
                     freecoin/connect-mongo lib/new-mongo)]
-     (swap! blockchains conj {:mongo mongo})
+     (swap! connections conj {:mongo mongo})
      (log/warn "MongoDB backend connected."))
 
-   (when-let [fair-conf (get-blockchain-conf config app-name :faircoin)]
+   (when-let [fair-conf (get-connection-conf config app-name :faircoin)]
      (f/if-let-ok? [fair (merge (lib/new-btc-rpc (:currency fair-conf) 
                                                  (:rpc-config-path fair-conf))
                                 {:confirmations {:number-confirmations (:number-confirmations fair-conf)
@@ -125,43 +125,43 @@
                                             :frequency-deposit-millis (:frequency-deposit-millis fair-conf)}})]
        ;; TODO add schema fair
        (do
-         (swap! blockchains conj {:faircoin fair})
+         (swap! connections conj {:faircoin fair})
          (log/info "Faircoin config is loaded"))
        (log/error (f/message fair))))))
 
 (defn destroy []
   (log/warn "Stopping the Social Wallet API.")
-  (freecoin/disconnect-mongo (:mongo @blockchains))
+  (freecoin/disconnect-mongo (:mongo @connections))
   ;; TODO: fair?
   )
 
-(defn- with-error-responses [blockchains query ok-fn]
+(defn- with-error-responses [connections query ok-fn]
   (try
-    (if-let [blockchain (get-blockchain blockchains query)]
-      (f/if-let-ok? [response (ok-fn blockchain query)]
+    (if-let [connection (get-connection connections query)]
+      (f/if-let-ok? [response (ok-fn connection query)]
         (ok response)
         (bad-request {:error (f/message response)}))
-      (not-found {:error "No such blockchain can be found."}))
+      (not-found {:error "No such connection can be established."}))
     (catch java.net.ConnectException e
-      (service-unavailable {:error "There was a connection problem with the blockchain."}))))
+      (service-unavailable {:error "There was a connection issue."}))))
 
 
-(defn- blockchain-deposit->db-entry [blockchain query address]
+(defn- blockchain-deposit->db-entry [connection query address]
   (log/debug "Checking for transactions made to address " address)
-  (dom/letr [transactions (lib/list-transactions blockchain {:received-by-address address})
+  (dom/letr [transactions (lib/list-transactions connection {:received-by-address address})
              _ (when-not transactions (return (f/fail "No transactions found at all")))
              found (filter #(= address (get % "address")) transactions)
              _ (when (empty? found) (return (f/fail "No transactions for the new address found yet")))
              transaction-ids (first (mapv #(get % "txids") found))
              _ (log/debug "Transaction was made to " address " with ids " transaction-ids)
-             blockchain-transactions (mapv #(lib/get-transaction blockchain %) transaction-ids)
+             blockchain-transactions (mapv #(lib/get-transaction connection %) transaction-ids)
              _ (when (empty? blockchain-transactions) (f/fail (str "Somehow could not retrieve transactions for the ids " transaction-ids)))]
             ;; When a transaction is made write to DB and interrupt the loop
             (mapv
              (fn [transaction]
                (let [transaction-id (get transaction "txid")]
-                 (f/when-let-failed? [fail (lib/get-transaction (get-db-blockchain blockchains) transaction-id)]
-                   (lib/create-transaction (get-db-blockchain blockchains)
+                 (f/when-let-failed? [fail (lib/get-transaction (get-db-connection connections) transaction-id)]
+                   (lib/create-transaction (get-db-connection connections)
                                            ;; from
                                            (get (first (filter
                                                         #(= "send" (get % "category"))
@@ -178,7 +178,7 @@
                                            (-> query 
                                                (dissoc :comment :commentto)
                                                (assoc :transaction-id transaction-id
-                                                      :currency (:blockchain query)))))))
+                                                      :currency (:connection query)))))))
              blockchain-transactions)))
 
 (def rest-api
@@ -189,7 +189,7 @@
       :data {:info
              {:version (clojure.string/trim (slurp "VERSION"))
               :title "Social-wallet-api"
-              :description "Social Wallet REST API backend for webapps. All blockchain activity is backed by a DB. For example for any transaction or move that happens on the blockchain side a record will be created on the DB side and the fees will be updated where applicable."
+              :description "Social Wallet REST API backend for webapps. All blockchain activity is backed by a DB. For example for any transaction that happens on the blockchain side a record will be created on the DB side and the fees will be updated where applicable."
               :contact {:url "https://github.com/Commonfare-net/social-wallet-api"}}}}}
 
     (context (path-with-version "") []
@@ -207,16 +207,16 @@
                     status/service-unavailable {:schema {:error s/Str}}}
         :return Label
         :body [query Query]
-        :summary "Show the blockchain label"
+        :summary "Show the label"
         :description "
 
-Takes a JSON structure made of a `blockchain` identifier.
+Takes a JSON structure made of a `connection` and a `type` identifier.
 
-It returns the label value.
+It returns the label value which contains the name of the currency.
 
 "
-                   (with-error-responses blockchains query
-                     (fn [blockchain query] {:currency (lib/label blockchain)}))))
+                   (with-error-responses connections query
+                     (fn [connection query] {:currency (lib/label connection)}))))
 
     (context (path-with-version "") []
              :tags ["ADDRESS"]
@@ -228,16 +228,16 @@ It returns the label value.
                    :summary "List all addresses related to an account"
                    :description "
 
-Takes a JSON structure made of a `blockchain` identifier and an `account id`.
+Takes a JSON structure made of a `connection` identifier and an `account id`.
 
 It returns a list of addresses for the particular account.
 
 "
-                   (with-error-responses blockchains query 
-                     (fn [blockchain query]
-                       (if (= (-> query :blockchain keyword) :mongo)
+                   (with-error-responses connections query 
+                     (fn [connection query]
+                       (if (= (-> query :connection keyword) :mongo)
                          (f/fail "Addresses are available only for blockchain requests")
-                         {:addresses (lib/get-address blockchain (:account-id query))})))))
+                         {:addresses (lib/get-address connection (:account-id query))})))))
 
     (context (path-with-version "") []
       :tags ["BALANCE"]
@@ -249,13 +249,13 @@ It returns a list of addresses for the particular account.
         :summary "Returns the balance of an account or the total balance."
         :description "
 
-Takes a JSON structure made of a `blockchain` identifier and an `account id`.
+Takes a JSON structure made of a `connection` identifier and an `account id`.
 
 It returns balance for that particular account. If no account is provided it returns the total balance of the wallet.
 
 "
-        (with-error-responses blockchains query
-          (fn [blockchain query] {:amount (lib/get-balance blockchain (:account-id query))}))))
+        (with-error-responses connections query
+          (fn [connection query] {:amount (lib/get-balance connection (:account-id query))}))))
 
     (context (path-with-version "/tags") []
              :tags ["TAGS"]
@@ -268,15 +268,15 @@ It returns balance for that particular account. If no account is provided it ret
                    :summary "List all tags"
                    :description "
 
-Takes a JSON structure made of a `blockchain` identifier.
+Takes a JSON structure made of a `connection` identifier.
 
-It returns a list of tags found on that blockchain.
+It returns a list of tags found on the database.
 
 "
-                   (with-error-responses blockchains query
-                     (fn [blockchain query]
-                       (if (= (-> query :blockchain keyword) :mongo)
-                         {:tags (lib/list-tags blockchain {})}
+                   (with-error-responses connections query
+                     (fn [connection query]
+                       (if (= (-> query :connection keyword) :mongo)
+                         {:tags (lib/list-tags connection {})}
                          ;; TODO replace mongo eith generic DB or storage?
                          (f/fail "Tags are available only for Mongo requests"))))))
 
@@ -293,24 +293,24 @@ It returns a list of tags found on that blockchain.
                    :body [query ListTransactionsQuery]
                    :summary "List transactions"
                    :description "
-Takes a JSON structure with a `blockchain` query identifier. Both mongo and btc transactions can be filtered by `account-id`. For blockchains, a number of optional identifiers are available for filtering like `count`: Returns up to [count] most recent transactions skipping the first [from] transactions for account [account]. For mongo queries paging can be used with the `page` and `per-page` identifiers which default to 1 and 10 respectively (first page, ten per page). Finally mongo queries can be also filtered by `currency`. 
+Takes a JSON structure with a `connection` query identifier. Both mongo and btc transactions can be filtered by `account-id`. For blockchains, a number of optional identifiers are available for filtering like `count`: Returns up to [count] most recent transactions skipping the first [from] transactions for account [account]. For mongo queries paging can be used with the `page` and `per-page` identifiers which default to 1 and 10 respectively (first page, ten per page). Finally mongo queries can be also filtered by `currency`. 
 
-Returns a list of transactions found on that blockchain.
+Returns a list of transactions found on that connection.
 
 "
-                   (with-error-responses blockchains query
-                     (fn [blockchain {:keys [account-id from count page per-page currency]}]
+                   (with-error-responses connections query
+                     (fn [connection {:keys [account-id from count page per-page currency]}]
                        (f/if-let-ok? [transaction-list (lib/list-transactions
-                                                        blockchain
-                                                        (cond-> {}
-                                                          account-id  (assoc :account-id account-id)
-                                                          from  (assoc :from from)
-                                                          count (assoc :count count)
-                                                          page (assoc :page page)
-                                                          per-page (assoc :per-page per-page)
-                                                          currency (assoc :currency currency)))]
-                         (if (= (-> query :blockchain keyword) :mongo)
-                           {:total-count (lib/count-transactions blockchain {})
+                                            connection
+                                            (cond-> {}
+                                              account-id  (assoc :account-id account-id)
+                                              from  (assoc :from from)
+                                              count (assoc :count count)
+                                              page (assoc :page page)
+                                              per-page (assoc :per-page per-page)
+                                              currency (assoc :currency currency)))]
+                         (if (= (-> query :connection keyword) :mongo)
+                           {:total-count (lib/count-transactions connection {})
                             :transactions transaction-list}
                            transaction-list)
                          transaction-list)))))
@@ -328,14 +328,14 @@ Returns a list of transactions found on that blockchain.
                    :body [query TransactionQuery]
                    :summary "Retieve a transaction by txid"
                    :description "
-Takes a JSON structure with a `blockchain` query identifier and a `txid`.
+Takes a JSON structure with a `connection` query identifier and a `txid`.
 
-Returns the transaction if found on that blockchain.
+Returns the transaction if found on that connection.
 
 "
-                   (with-error-responses blockchains query
-                     (fn [blockchain query] (lib/get-transaction
-                                             blockchain
+                   (with-error-responses connections query
+                     (fn [connection query] (lib/get-transaction
+                                             connection
                                              (:txid query))))))
 
     (context (path-with-version "/transactions") []
@@ -348,22 +348,22 @@ Returns the transaction if found on that blockchain.
                :body [query NewTransactionQuery]
                :summary "Create a new transaction"
                :description "
-Takes a JSON structure with a `blockchain`, `from-account`, `to-account`, `amount` query identifiers and optionally `tags` as paramaters. Tags are metadata meant to add a category to the transaction and useful for grouping and searching. The amount has been tested for values between `0.00000001` and `9999999999999999.99999999`.
+Takes a JSON structure with a `connection`, `from-account`, `to-account`, `amount` query identifiers and optionally `tags` as paramaters. Tags are metadata meant to add a category to the transaction and useful for grouping and searching. The amount has been tested for values between `0.00000001` and `9999999999999999.99999999`.
 
 Creates a transaction. This call is only meant for DBs and not for blockchains.
 
 Returns the DB entry that was created.
 
 "
-               (with-error-responses blockchains query
-                 (fn [blockchain query]
-                   (if (= (-> query :blockchain keyword) :mongo)
-                     (lib/create-transaction blockchain
+               (with-error-responses connections query
+                 (fn [connection query]
+                   (if (= (-> query :connection keyword) :mongo)
+                     (lib/create-transaction connection
                                              (:from-id query)
                                              (:amount query)
                                              (:to-id query)
                                              query) 
-                     (f/fail "Transactions can only be made for DBs. For BLockchain please look at Deposit and Withdraw"))))))
+                     (f/fail "Transactions can only be made for DBs. For blockchains please look at Deposit and Withdraw"))))))
 
     (context (path-with-version "/withdraws") []
              :tags ["WITHDRAWS"]
@@ -375,7 +375,7 @@ Returns the DB entry that was created.
                :body [query NewWithdraw]
                :summary "Perform a withrdaw from a blockchain"
                :description "
-Takes a JSON structure with a `blockchain`, `to-address`, `amount` query identifiers and optionally `from-id`, `from-wallet-account`, `tags`, `comment` and `commentto` as paramaters. Comment and commentto are particular to the BTC RCP, for more details look at https://en.bitcoin.it/wiki/Original_Bitcoin_client/API_calls_list. Tags are metadata meant to add a `label` to the withdraw and useful for grouping and searching. The parameter `from-id` is metadata not used in the actual blockchain transaction but stored on the db and useful to identify which account initiated the withdraw. Finally `from-wallet-account` if used will make the withdraw from the particular account in the wallet instead of the default. If not found an error will be returned.
+Takes a JSON structure with a `connection`, `to-address`, `amount` query identifiers and optionally `from-id`, `from-wallet-account`, `tags`, `comment` and `commentto` as paramaters. Comment and commentto are particular to the BTC RCP, for more details look at https://en.bitcoin.it/wiki/Original_Bitcoin_client/API_calls_list. Tags are metadata meant to add a `label` to the withdraw and useful for grouping and searching. The parameter `from-id` is metadata not used in the actual blockchain transaction but stored on the db and useful to identify which account initiated the withdraw. Finally `from-wallet-account` if used will make the withdraw from the particular account in the wallet instead of the default. If not found an error will be returned.
 
 This call will withdraw an amount from the default account \"\" or optionally a given wallet-account to a provided blockchain address. Also a transaction on the DB will be registered. If fees apply for this transaction those fees will be added to the amount on the DB when the transaction reaches the required amount of confirmations. The number of confirmations and the frequency of the checks are defined in the config as `number-confirmations` and `frequency-confirmations-millis` respectiviely.
 
@@ -383,12 +383,12 @@ This call will withdraw an amount from the default account \"\" or optionally a 
 Returns the DB entry that was created.
 
 "
-                   (with-error-responses blockchains query
-                     (fn [blockchain query] 
-                       (if (= (-> query :blockchain keyword) :mongo)
+                   (with-error-responses connections query
+                     (fn [connection query] 
+                       (if (= (-> query :connection keyword) :mongo)
                          (f/fail "Withdraws are only available for blockchain requests")
                          (f/if-let-ok? [transaction-id (lib/create-transaction
-                                                        blockchain
+                                                        connection
                                                         (or (:from-wallet-account query) "")
                                                         (-> query :amount str (BigDecimal.))
                                                         (:to-address query)
@@ -397,28 +397,28 @@ Returns the DB entry that was created.
                              ;; Update fee to db when confirmed
                              ;; The logged-future will return an exception which otherwise would be swallowed till deref
                              (log/logged-future
-                              (while (> (-> blockchain :confirmations :number-confirmations)
-                                        (number-confirmations blockchain transaction-id))
+                              (while (> (-> connection :confirmations :number-confirmations)
+                                        (number-confirmations connection transaction-id))
                                  (log/debug "Not enough confirmations for transaction with id " transaction-id)
-                                 (Thread/sleep (-> blockchain :confirmations :frequency-confirmations-millis)))
-                              (let [transaction (lib/get-transaction blockchain transaction-id)
+                                 (Thread/sleep (-> connection :confirmations :frequency-confirmations-millis)))
+                              (let [transaction (lib/get-transaction connection transaction-id)
                                     fee (get transaction "fee")]
                                  (log/debug "Updating the amount with the fee")
                                  (lib/update-transaction
-                                  (get-db-blockchain blockchains) transaction-id
+                                  (get-db-connection connections) transaction-id
                                   ;; Here we add the minus fee to the whole transaction when confirmed
                                   (fn [tr] (let [updated-transaction (update tr :amount #(+ % (- fee)))]
                                              (assoc updated-transaction :amount-text (-> updated-transaction :amount str)))))))
                              ;; store to db as well with transaction-id
                              (f/if-let-ok? [db-transaction
-                                            (lib/create-transaction (get-db-blockchain blockchains)
+                                            (lib/create-transaction (get-db-connection connections)
                                                                     (or (:from-id query) (:from-wallet-account query) "")
                                                                     (:amount query)
                                                                     (:to-address query)
                                                                     (-> query
                                                                         (dissoc :comment :comment-to)
                                                                         (assoc :transaction-id transaction-id
-                                                                               :currency (:blockchain query))))]
+                                                                               :currency (:connection query))))]
                                db-transaction
                                (f/fail (f/message (str "Did not write transaction " transaction-id " on the DB because: " (f/message db-transaction))))))
                            ;; There was an error
@@ -435,30 +435,30 @@ Returns the DB entry that was created.
 
                :summary "Request a new blockchain address to perform a deposit"
                :description "
-Takes a JSON structure with a `blockchain` query identifier and optionally `to-id`, `to-wallet-id` and `tags`. `to-id` is metadata that will be added to the DB once a deposit to the address is detected. Same goes for `tags` which are metadata meant to add a `label` to the deposit and they are useful for grouping and searching. When `to-wallet-id` is used it will create the address for a particular account in the wallet and the default otherwise. If the account is not found the address will be created on the default account.
+Takes a JSON structure with a `connection` query identifier and optionally `to-id`, `to-wallet-id` and `tags`. `to-id` is metadata that will be added to the DB once a deposit to the address is detected. Same goes for `tags` which are metadata meant to add a `label` to the deposit and they are useful for grouping and searching. When `to-wallet-id` is used it will create the address for a particular account in the wallet and the default otherwise. If the account is not found the address will be created on the default account.
 
 This call creates a new address and returns it in order to be able to deposit to it. Then, on a different thread, there will be a watch that until it expires it will check for a transaction done to this address and update the DB. If no transaction is perfromed until expiration a check for that particular address can be triggered via `deposits/check`. The frequency of the transaction checks and the expiration can be set in the config as `frequency-deposit-millis` and `deposit-expiration-millis` respectively.
 
 Returns the blockchain address that was created.
 
 "
-                   (with-error-responses blockchains query
-                     (fn [blockchain query]
-                       (if (= (-> query :blockchain keyword) :mongo)
+                   (with-error-responses connections query
+                     (fn [connection query]
+                       (if (= (-> query :connection keyword) :mongo)
                          (f/fail "Deposits are only available for blockchain requests")
-                         (f/if-let-ok? [new-address (lib/create-address blockchain
+                         (f/if-let-ok? [new-address (lib/create-address connection
                                                                         (-> query :to-wallet-id))]
                            (let [pending (atom true)
                                  start-time (time/now)
-                                 end-time (time/add-milliseconds start-time (-> blockchain :deposits :deposit-expiration-millis))]
+                                 end-time (time/add-milliseconds start-time (-> connection :deposits :deposit-expiration-millis))]
                              ;; Check whether a transaction to this address was made and update the DB
                              ;; The logged-future will return an exception which otherwise would be swallowed till deref
                              (log/logged-future
                               (while (and @pending (time/< (time/now) end-time))
-                                (when-not (empty? (blockchain-deposit->db-entry blockchain query new-address))
+                                (when-not (empty? (blockchain-deposit->db-entry connection query new-address))
                                   (reset! pending false))
                                 ;; wait
-                                (Thread/sleep (-> blockchain :confirmations :frequency-confirmations-millis))))
+                                (Thread/sleep (-> connection :confirmations :frequency-confirmations-millis))))
                              {:address new-address})
                            ;; There was an error
                            (f/fail (f/message new-address))))))))
@@ -478,18 +478,18 @@ Returns the blockchain address that was created.
 
             :summary "Manually check if a given address has received any deposits"
             :description "
-Takes a JSON structure with a `blockchain` and an `address` query identifier.
+Takes a JSON structure with a `connection` and an `address` query identifier.
 
 This call will check if any deposits were made to this particular address and will update the DB if it is not already updated. It is meant to be used only for blockchains and the purpose is to update the db for deposits that were made after the deposit watch for the address has expired before a deposit was made. If it is called even though the deposits have been registerd no changes will be made.
 
 Returns the DB entries that were created.
 
 "
-            (with-error-responses blockchains query
-              (fn [blockchain query]
-                (if (= (-> query :blockchain keyword) :mongo)
+            (with-error-responses connections query
+              (fn [connection query]
+                (if (= (-> query :connection keyword) :mongo)
                   (f/fail "Deposit checks are only available for blockchain requests")
-                  (blockchain-deposit->db-entry blockchain query (:address query)))))))
+                  (blockchain-deposit->db-entry connection query (:address query)))))))
 
 
         
