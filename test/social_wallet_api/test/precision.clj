@@ -11,6 +11,9 @@
             [freecoin-lib.core :as lib] 
             [clj-storage.core :as store]))
 
+(def mongo-db-only {:connection "mongo"
+                    :type "db-only"})
+
 (def Satoshi (BigDecimal. "0.00000001"))
 (def int16-fr8 (BigDecimal. "9999999999999999.99999999"))
 
@@ -22,17 +25,18 @@
    (->
     (mock/request :post "/wallet/v1/transactions/new")
     (mock/content-type "application/json")
-    (mock/body  (cheshire/generate-string {:blockchain :mongo
-                                           :from-id from-account
-                                           :to-id to-account
-                                           :amount big-number
-                                           :tags ["blabla"]})))))
+    (mock/body  (cheshire/generate-string (merge
+                                           mongo-db-only
+                                           {:from-id from-account
+                                            :to-id to-account
+                                            :amount big-number
+                                            :tags ["blabla"]}))))))
 
 (defn get-latest-transaction [account-id]
-  (first (lib/list-transactions (:mongo @h/blockchains) {:account-id account-id})))
+  (first (lib/list-transactions (:mongo @h/connections) {:account-id account-id})))
 
 (defn empty-transactions []
-  (store/delete-all! (-> @h/blockchains :mongo :stores-m :transaction-store)))
+  (store/delete-all! (-> @h/connections :mongo :stores-m :transaction-store)))
 
 (against-background [(before :contents (h/init
                                         (config-read test-app-name)
@@ -116,8 +120,9 @@
                                                    (->
                                                     (mock/request :post "/wallet/v1/balance")
                                                     (mock/content-type "application/json")
-                                                    (mock/body  (cheshire/generate-string {:blockchain :mongo
-                                                                                           :account-id "other-to-account"}))))
+                                                    (mock/body  (cheshire/generate-string (assoc
+                                                                                           mongo-db-only
+                                                                                           :account-id "other-to-account")))))
                                          body (parse-body (:body response))]
                                      (:amount body) => @sum-to-account)))
                            
@@ -132,11 +137,12 @@
                                                         (->
                                                          (mock/request :post "/wallet/v1/transactions/new")
                                                          (mock/content-type "application/json")
-                                                         (mock/body  (cheshire/generate-string {:blockchain :mongo
-                                                                                                :from-id "from account"
-                                                                                                :to-id "to account"
-                                                                                                :amount amount
-                                                                                                :tags ["blabla"]}))))
+                                                         (mock/body  (cheshire/generate-string (merge
+                                                                                                mongo-db-only
+                                                                                                {:from-id "from account"
+                                                                                                 :to-id "to account"
+                                                                                                 :amount amount
+                                                                                                 :tags ["blabla"]})))))
                                               body (parse-body (:body response))]
                                           (:status response) => 400
                                           (class (:error body)) => String
