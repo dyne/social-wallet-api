@@ -27,7 +27,7 @@
                                                   (mock/body  (cheshire/generate-string mongo-db-only))))
                                        body (parse-body (:body response))]
                                    (:status response) => 200
-                                   (log/spy body) => {:currency "MONGO"}))
+                                   body => {:currency "MONGO"}))
 
                            (fact "Get the label using the blockchain type as keyword"
                                  (let [response (h/app
