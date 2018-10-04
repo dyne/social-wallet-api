@@ -1,4 +1,4 @@
-(ns social-wallet-api.test.precision
+(ns social-wallet-api.test.transactions
   (:require [midje.sweet :refer :all]
             [ring.mock.request :as mock]
             [social-wallet-api.handler :as h]
@@ -14,6 +14,9 @@
 
 (defn parse-body [body]
   (cheshire/parse-string (slurp body) true))
+
+(def Satoshi (BigDecimal. "0.00000001"))
+(def int16-fr8 (BigDecimal. "9999999999999999.99999999"))
 
 (def some-from-account "some-from")
 (def some-to-account "some-to-account")
@@ -56,8 +59,9 @@
                                                                             (log/spy to-account))
                                           body (parse-body (:body response))
                                           _ (swap! sum-to-account #(.add % (BigDecimal. amount)))]
-                                      (:status response) => 200
-                                      )))
+                                      (:status response) => 200)))
+                             (fact "There are 200 transactions inserted."
+                                   (log/spy (lib/count-transactions (log/spy (:mongo @h/blockchains)) {})) => 200)
                              (facts "Retrieving transactions limited by pagination."
                                     (fact "Retrieing results without pagination whould default to 10"
                                           (let [response (h/app
@@ -107,7 +111,7 @@
                                                                                                   :per-page 200}))))
                                                 body (parse-body (:body response))] 
                                             (:error body) => "Cannot request more than 100 transactions.")))
-                             (facts "Retrieving transactions using other identifiers."
+                             #_(facts "Retrieving transactions using other identifiers."
                                     (let [latest-transactions (-> (h/app
                                                                    (->
                                                                     (mock/request :post "/wallet/v1/transactions/list")
