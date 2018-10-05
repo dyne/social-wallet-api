@@ -18,9 +18,6 @@
 (def Satoshi (BigDecimal. "0.00000001"))
 (def int16-fr8 (BigDecimal. "9999999999999999.99999999"))
 
-(def some-from-account "some-from")
-(def some-to-account "some-to-account")
-
 (defn new-transaction-request [big-number from-account to-account]
   (h/app
    (->
@@ -54,14 +51,14 @@
                               {:num-tests 200}
                               (fact "Insert 200 transactions."
                                     (let [amount (.toString rand-double)  
-                                          response (new-transaction-request (log/spy amount)
-                                                                            (log/spy from-account)
-                                                                            (log/spy to-account))
+                                          response (new-transaction-request amount
+                                                                            from-account
+                                                                            to-account)
                                           body (parse-body (:body response))
                                           _ (swap! sum-to-account #(.add % (BigDecimal. amount)))]
                                       (:status response) => 200)))
                              (fact "There are 200 transactions inserted."
-                                   (log/spy (lib/count-transactions (log/spy (:mongo @h/blockchains)) {})) => 200)
+                                   (lib/count-transactions (:mongo @h/blockchains) {}) => 200)
                              (facts "Retrieving transactions limited by pagination."
                                     (fact "Retrieing results without pagination whould default to 10"
                                           (let [response (h/app
@@ -70,7 +67,8 @@
                                                            (mock/content-type "application/json")
                                                            (mock/body  (cheshire/generate-string {:blockchain :mongo}))))
                                                 body (parse-body (:body response))] 
-                                            (count body) => 10))
+                                            (count (:transactions body)) => 10
+                                            (:total-count body) => 200))
                                     (fact "Retrieving the first 100 transactions"
                                           (let [response (h/app
                                                           (->
@@ -80,7 +78,8 @@
                                                                                                   :page 1
                                                                                                   :per-page 100}))))
                                                 body (parse-body (:body response))] 
-                                            (count body) => 100))
+                                            (count (:transactions body)) => 100
+                                            (:total-count body) => 200))
                                     (fact "Retrieving the next 100 transactions."
                                           (let [response (h/app
                                                           (->
@@ -90,7 +89,8 @@
                                                                                                   :page 2
                                                                                                   :per-page 100}))))
                                                 body (parse-body (:body response))] 
-                                            (count body) => 100))
+                                            (count (:transactions body)) => 100
+                                            (:total-count body) => 200))
                                     (fact "Third page should be empty."
                                           (let [response (h/app
                                                           (->
@@ -100,7 +100,8 @@
                                                                                                   :page 3
                                                                                                   :per-page 100}))))
                                                 body (parse-body (:body response))] 
-                                            (count body) => 0))
+                                            (count (:transactions body)) => 0
+                                            (:total-count body) => 200))
                                     (fact "Cannot request all 200 in the same time."
                                           (let [response (h/app
                                                           (->
@@ -111,7 +112,7 @@
                                                                                                   :per-page 200}))))
                                                 body (parse-body (:body response))] 
                                             (:error body) => "Cannot request more than 100 transactions.")))
-                             #_(facts "Retrieving transactions using other identifiers."
+                             (facts "Retrieving transactions using other identifiers."
                                     (let [latest-transactions (-> (h/app
                                                                    (->
                                                                     (mock/request :post "/wallet/v1/transactions/list")
@@ -119,7 +120,7 @@
                                                                     (mock/body  (cheshire/generate-string {:blockchain :mongo}))))
                                                                   :body
                                                                   parse-body)
-                                          last-transaction (first latest-transactions)
+                                          last-transaction (first (:transactions latest-transactions))
                                           last-from-account (:from-id last-transaction)
                                           last-to-account (:to-id last-transaction)]
                                       (fact "Retrieve all transactions from last from account (should be minimum 1)."
@@ -130,8 +131,8 @@
                                                            (mock/body  (cheshire/generate-string {:blockchain :mongo
                                                                                                   :account-id last-from-account}))))
                                                 body (parse-body (:body response))] 
-                                              (>= (count body) 1) => true
-                                              (-> body first :from-id) => last-from-account))
+                                              (>= (count (:transactions body)) 1) => true
+                                              (-> body :transactions first :from-id) => last-from-account))
                                       (fact "Trying to retrieve transactions different than mongo returns an empty collection."
                                             (let [response (h/app
                                                           (->
@@ -140,8 +141,8 @@
                                                            (mock/body  (cheshire/generate-string {:blockchain :mongo
                                                                                                   :currency "other"}))))
                                                 body (parse-body (:body response))] 
-                                              (count body) => 0
-                                              (empty? body) => true))
+                                              (count (:transactions body)) => 0
+                                              (empty? (:transactions body)) => true))
                                       (fact "Not applicable identifiers to mongo queries are just ignored."
                                             (let [response (h/app
                                                           (->
@@ -151,4 +152,4 @@
                                                                                                   :count 10
                                                                                                   :from 10}))))
                                                 body (parse-body (:body response))] 
-                                              (count body) => 10)))))))
+                                              (count (:transactions body)) => 10)))))))
