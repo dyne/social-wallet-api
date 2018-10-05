@@ -299,19 +299,20 @@ Returns a list of transactions found on that blockchain.
 "
                    (with-error-responses blockchains query
                      (fn [blockchain {:keys [account-id from count page per-page currency]}]
-                       (let [transaction-list (lib/list-transactions
-                                            blockchain
-                                            (cond-> {}
-                                              account-id  (assoc :account-id account-id)
-                                              from  (assoc :from from)
-                                              count (assoc :count count)
-                                              page (assoc :page page)
-                                              per-page (assoc :per-page per-page)
-                                              currency (assoc :currency currency)))]
+                       (f/if-let-ok? [transaction-list (lib/list-transactions
+                                                        blockchain
+                                                        (cond-> {}
+                                                          account-id  (assoc :account-id account-id)
+                                                          from  (assoc :from from)
+                                                          count (assoc :count count)
+                                                          page (assoc :page page)
+                                                          per-page (assoc :per-page per-page)
+                                                          currency (assoc :currency currency)))]
                          (if (= (-> query :blockchain keyword) :mongo)
                            {:total-count (lib/count-transactions blockchain {})
                             :transactions transaction-list}
-                           transaction-list))))))
+                           transaction-list)
+                         transaction-list)))))
 
     (context (path-with-version "/transactions") []
              :tags ["TRANSACTIONS"]
