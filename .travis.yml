@@ -5,6 +5,6 @@ jdk:
   - openjdk7
   - oraclejdk8
   - openjdk8
-  - openjdk9
+  - oraclejdk9
 services:
   - mongod
