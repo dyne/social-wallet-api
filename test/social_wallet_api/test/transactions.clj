@@ -107,7 +107,19 @@
                                                                                                   :page 1
                                                                                                   :per-page 200}))))
                                                 body (parse-body (:body response))] 
-                                            (:error body) => "Cannot request more than 100 transactions.")))
+                                            (:error body) => "Cannot request more than 100 transactions."))
+                                    (fact "What happens when requesting 0 transactions?"
+                                          ;; TODO: this is mongo behaviour to get all transazctions despite using paging. Maybe we want to block this.
+                                          (let [response (h/app
+                                                          (->
+                                                           (mock/request :post "/wallet/v1/transactions/list")
+                                                           (mock/content-type "application/json")
+                                                           (mock/body  (cheshire/generate-string {:blockchain :mongo
+                                                                                                  :page 0
+                                                                                                  :per-page 0}))))
+                                                body (parse-body (:body response))] 
+                                            (count (:transactions body)) => 200
+                                            (:total-count body) => 200)))
                              (facts "Retrieving transactions using other identifiers."
                                     (let [latest-transactions (-> (h/app
                                                                    (->
