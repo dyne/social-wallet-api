@@ -1,9 +1,10 @@
 language: clojure
-lein: lein
+lein: 2.8.1
 script: lein midje
 jdk:
   - openjdk7
-  - oraclejdk7
   - oraclejdk8
+  - openjdk8
+  - oraclejdk9
 services:
   - mongod
