@@ -2,7 +2,7 @@
   (:require [midje.sweet :refer :all]
             [ring.mock.request :as mock]
             [social-wallet-api.handler :as h]
-            [social-wallet-api.test.handler :refer [test-app-name parse-body]]
+            [social-wallet-api.test.handler :refer [test-app-name parse-body mongo-db-only]]
             [auxiliary.config :refer [config-read]]
             [taoensso.timbre :as log]
             [cheshire.core :as cheshire]
@@ -10,9 +10,6 @@
             [midje.experimental :refer [for-all]]
             [freecoin-lib.core :as lib] 
             [clj-storage.core :as store]))
-
-(def mongo-db-only {:connection "mongo"
-                    :type "db-only"})
 
 (def Satoshi (BigDecimal. "0.00000001"))
 (def int16-fr8 (BigDecimal. "9999999999999999.99999999"))
