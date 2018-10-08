@@ -2,6 +2,7 @@
   (:require [midje.sweet :refer :all]
             [ring.mock.request :as mock]
             [social-wallet-api.handler :as h]
+            [social-wallet-api.test.handler :refer [test-app-name parse-body]]
             [auxiliary.config :refer [config-read]]
             [taoensso.timbre :as log]
             [cheshire.core :as cheshire]
@@ -9,11 +10,6 @@
             [midje.experimental :refer [for-all]]
             [freecoin-lib.core :as lib] 
             [clj-storage.core :as store]))
-
-(def test-app-name "social-wallet-api-test")
-
-(defn parse-body [body]
-  (cheshire/parse-string (slurp body) true))
 
 (def Satoshi (BigDecimal. "0.00000001"))
 (def int16-fr8 (BigDecimal. "9999999999999999.99999999"))
@@ -33,8 +29,8 @@
   (store/delete-all! (-> @h/blockchains :mongo :stores-m :transaction-store)))
 
 (against-background [(before :contents (h/init
-                                        (config-read social-wallet-api.test.handler/test-app-name)
-                                        social-wallet-api.test.handler/test-app-name))
+                                        (config-read test-app-name)
+                                        test-app-name))
                      (after :contents (do
                                         (empty-transactions)
                                         (h/destroy)))] 
