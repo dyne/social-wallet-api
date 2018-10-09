@@ -6,4 +6,5 @@ freecoin:
     host: localhost
     port: 27017
     db:   test-freecoin
+    currency: Testcoin
 
