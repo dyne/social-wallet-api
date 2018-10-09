@@ -111,8 +111,9 @@
                          :ns-blacklist  ["org.eclipse.jetty.*"]}))
 
    ;; TODO a more generic way to go multiple configurations
-   (let [mongo (->> (get-app-conf config app-name)
-                    freecoin/connect-mongo lib/new-mongo)]
+   (let [mongo-conf (get-app-conf config app-name) 
+         mongo (lib/new-mongo (->  mongo-conf :mongo :currency)
+                              (freecoin/connect-mongo (dissoc mongo-conf :currency)))]
      (swap! connections conj {:mongo mongo})
      (log/warn "MongoDB backend connected."))
 

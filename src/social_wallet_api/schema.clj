@@ -169,7 +169,7 @@
   {:address s/Str})
 
 (s/defschema MongoConfig
-  {:host s/Str, :port s/Num, :db s/Str})
+  {:host s/Str, :port s/Num, :db s/Str :currency s/Str})
 
 (s/defschema BlockchainConfig
   {:currency s/Str
