@@ -139,9 +139,11 @@
 (defn- with-error-responses [connections query ok-fn]
   (try
     (if-let [connection (get-connection connections query)]
-      (f/if-let-ok? [response (ok-fn connection query)]
-        (ok response)
-        (bad-request {:error (f/message response)}))
+      (if (and (not (instance? freecoin_lib.core.Mongo connection)) (= "db-only" (:type query)))
+        (not-found {:error "The connection is not of type db-only."})
+        (f/if-let-ok? [response (ok-fn connection query)]
+          (ok response)
+          (bad-request {:error (f/message response)})))
       (not-found {:error "No such connection can be established."}))
     (catch java.net.ConnectException e
       (service-unavailable {:error "There was a connection issue."}))))
