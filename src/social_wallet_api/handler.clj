@@ -258,7 +258,7 @@ It returns balance for that particular account. If no account is provided it ret
 
 "
         (with-error-responses connections query
-          (fn [connection query] {:amount (lib/get-balance connection (:account-id query))}))))
+          (fn [connection query] {:amount (lib/get-balance connection (log/spy query))}))))
 
     (context (path-with-version "/tags") []
              :tags ["TAGS"]

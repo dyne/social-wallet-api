@@ -32,7 +32,8 @@
 (s/defschema Query
   "POST Wallet query validator"
   {:connection (rjs/field s/Str {:example "mongo"})
-   :type (rjs/field Type {:example "db-only"})})
+   :type (rjs/field Type {:example "db-only"})
+   (s/optional-key :currency) (rjs/field s/Str {:example "Commoncoin"})})
 
 (s/defschema PerAccountQuery
   "POST Wallet query validator for requests per account"
