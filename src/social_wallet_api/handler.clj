@@ -351,7 +351,7 @@ Returns the transaction if found on that connection.
                :body [query NewTransactionQuery]
                :summary "Create a new transaction"
                :description "
-Takes a JSON structure with a `connection`, `from-account`, `to-account`, `amount` query identifiers and optionally `tags` as paramaters. Tags are metadata meant to add a category to the transaction and useful for grouping and searching. The amount has been tested for values between `0.00000001` and `9999999999999999.99999999`.
+Takes a JSON structure with a `connection`, `from-account`, `to-account`, `amount` query identifiers and optionally `tags` and `description` as paramaters. Tags are metadata meant to add a category to the transaction and useful for grouping and searching. The amount has been tested for values between `0.00000001` and `9999999999999999.99999999`.
 
 Creates a transaction. This call is only meant for DBs and not for blockchains.
 
@@ -378,7 +378,7 @@ Returns the DB entry that was created.
                :body [query NewWithdraw]
                :summary "Perform a withrdaw from a blockchain"
                :description "
-Takes a JSON structure with a `connection`, `to-address`, `amount` query identifiers and optionally `from-id`, `from-wallet-account`, `tags`, `comment` and `commentto` as paramaters. Comment and commentto are particular to the BTC RCP, for more details look at https://en.bitcoin.it/wiki/Original_Bitcoin_client/API_calls_list. Tags are metadata meant to add a `label` to the withdraw and useful for grouping and searching. The parameter `from-id` is metadata not used in the actual blockchain transaction but stored on the db and useful to identify which account initiated the withdraw. Finally `from-wallet-account` if used will make the withdraw from the particular account in the wallet instead of the default. If not found an error will be returned.
+Takes a JSON structure with a `connection`, `to-address`, `amount` query identifiers and optionally `from-id`, `from-wallet-account`, `tags`, `comment`, `commentto` and `description` as paramaters. Comment and commentto are particular to the BTC RCP, for more details look at https://en.bitcoin.it/wiki/Original_Bitcoin_client/API_calls_list. Tags are metadata meant to add a `label` to the withdraw and useful for grouping and searching. The parameter `from-id` is metadata not used in the actual blockchain transaction but stored on the db and useful to identify which account initiated the withdraw. Finally `from-wallet-account` if used will make the withdraw from the particular account in the wallet instead of the default. If not found an error will be returned.
 
 This call will withdraw an amount from the default account \"\" or optionally a given wallet-account to a provided blockchain address. Also a transaction on the DB will be registered. If fees apply for this transaction those fees will be added to the amount on the DB when the transaction reaches the required amount of confirmations. The number of confirmations and the frequency of the checks are defined in the config as `number-confirmations` and `frequency-confirmations-millis` respectiviely.
 
@@ -393,9 +393,9 @@ Returns the DB entry that was created.
                          (f/if-let-ok? [transaction-id (lib/create-transaction
                                                         connection
                                                         (or (:from-wallet-account query) "")
-                                                        (-> query :amount str (BigDecimal.))
+                                                        (-> query :amount)
                                                         (:to-address query)
-                                                        (dissoc query :tags))]
+                                                        (dissoc query :tags :description))]
                            (do
                              ;; Update fee to db when confirmed
                              ;; The logged-future will return an exception which otherwise would be swallowed till deref

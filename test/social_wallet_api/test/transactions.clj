@@ -25,7 +25,8 @@
     (mock/body  (cheshire/generate-string (merge mongo-db-only {:from-id from-account
                                                                 :to-id to-account
                                                                 :amount big-number
-                                                                :tags ["blabla"]}))))))
+                                                                :tags ["blabla"]
+                                                                :description "lalala"}))))))
 
 (defn empty-transactions []
   (store/delete-all! (-> @h/connections :mongo :stores-m :transaction-store)))
@@ -139,7 +140,8 @@
                                                            (mock/body  (cheshire/generate-string (assoc mongo-db-only :account-id last-from-account)))))
                                                 body (parse-body (:body response))] 
                                               (>= (count (:transactions body)) 1) => true
-                                              (-> body :transactions first :from-id) => last-from-account))
+                                              (-> body :transactions first :from-id) => last-from-account
+                                              (-> body :transactions first :description) => "lalala"))
                                       (fact "Trying to retrieve transactions different than mongo returns an empty collection."
                                             (let [response (h/app
                                                           (->

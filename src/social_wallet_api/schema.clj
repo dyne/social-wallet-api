@@ -68,7 +68,8 @@
    (s/optional-key :amount)     s/Num
    (s/optional-key :amount-text) s/Str
    (s/required-key :transaction-id) (s/maybe s/Str)
-   (s/optional-key :currency) s/Str})
+   (s/optional-key :currency) s/Str
+   (s/optional-key :description) s/Str})
 
 (s/defschema AccountDetails
   {(s/required-key "account") s/Str
@@ -121,7 +122,8 @@
          (s/required-key :from-id)    s/Str
          (s/required-key :to-id)      s/Str
          (s/required-key :amount)     s/Str
-         (s/optional-key :tags)      [s/Str]))
+         (s/optional-key :tags)      [s/Str]
+         (s/optional-key :description) s/Str))
 
 (s/defschema NewWithdraw
   (assoc Query
@@ -131,7 +133,8 @@
          (s/required-key :amount)     s/Str
          (s/optional-key :tags)      [s/Str]
          (s/optional-key :comment)    s/Str
-         (s/optional-key :commentto)    s/Str))
+         (s/optional-key :commentto)    s/Str
+         (s/optional-key :description) s/Str))
 
 (s/defschema NewDeposit
   (assoc Query
