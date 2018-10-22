@@ -9,13 +9,21 @@
             [clojure.test.check.generators :as gen]
             [midje.experimental :refer [for-all]]
             [freecoin-lib.core :as lib] 
-            [clj-storage.core :as store]))
+            [clj-storage.core :as store]
+            [clj-time.core :as t]
+            [clj-time.local :as l]
+            [clj-time.format :as f])
+  (:import [org.joda.time DateTimeZone]))
 
 (def Satoshi (BigDecimal. "0.00000001"))
 (def int16-fr8 (BigDecimal. "9999999999999999.99999999"))
 
 (def some-from-account "some-from")
 (def some-to-account "some-to-account")
+
+(def ISO8601-formatter (f/formatter "yyyy-MM-dd'T'HH:mm:ss.SSS"))
+(def UTC-formatter (f/with-zone ISO8601-formatter DateTimeZone/UTC))
+(def zulu-formatter (f/formatter "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"))
 
 (defn new-transaction-request [big-number from-account to-account]
   (h/app
@@ -55,10 +63,12 @@
                                                                             to-account)
                                           body (parse-body (:body response))
                                           _ (swap! sum-to-account #(.add % (BigDecimal. amount)))]
-                                      (:status response) => 200
-                                      )))
+                                      (:status response) => 200)))
                                (fact "There are 200 transactions inserted."
-                                   (lib/count-transactions (:mongo @h/connections) {}) => 200)
+                                     (lib/count-transactions (:mongo @h/connections) {}) => 200)
+                               (fact "They all have the same tag."
+                                     (lib/count-transactions (:mongo @h/connections) {:tags ["blabla"]}) => 200
+                                     (lib/count-transactions (:mongo @h/connections) {:tags ["not-there"]}) => 0)
                              (facts "Retrieving transactions limited by pagination."
                                     (fact "Retrieing results without pagination whould default to 10"
                                           (let [response (h/app
@@ -159,4 +169,76 @@
                                                            (mock/body  (cheshire/generate-string (merge mongo-db-only {:count 10
                                                                                                                        :from 10})))))
                                                 body (parse-body (:body response))] 
-                                              (count (:transactions body)) => 10)))))))
+                                              (count (:transactions body)) => 10))
+                                      (fact "Test whether one can filter by datetime."
+                                          (let [response (h/app
+                                                          (->
+                                                           (mock/request :post "/wallet/v1/transactions/list")
+                                                           (mock/content-type "application/json")
+                                                           (mock/body  (cheshire/generate-string (merge mongo-db-only {:per-page 0 :page 0})))))
+                                                body (parse-body (:body response))
+                                                transactions (:transactions body)
+                                                oldest-timestamp (-> transactions last :timestamp)]
+                                            (count transactions) => 200
+                                            (Thread/sleep 1000)
+                                            (let [response (new-transaction-request "1"
+                                                                            "account-1"
+                                                                            "account-2")
+                                                  newer-timestamp (-> response
+                                                                      :body
+                                                                      parse-body
+                                                                      :timestamp)]
+                                              (t/after? (f/parse zulu-formatter newer-timestamp)
+                                                        (f/parse zulu-formatter oldest-timestamp)) => true
+                                             (let [response (h/app
+                                                          (->
+                                                           (mock/request :post "/wallet/v1/transactions/list")
+                                                           (mock/content-type "application/json")
+                                                           (mock/body  (cheshire/generate-string
+                                                                        (merge mongo-db-only
+                                                                               {:to-datetime (t/now)
+                                                                                :per-page 0
+                                                                                :page 0})))))
+                                                    body (-> response :body parse-body)]
+                                                (:status response) => 200
+                                                (-> body :transactions first :timestamp) => newer-timestamp
+                                                (-> body :transactions count) => 201)
+                                             (let [response (h/app
+                                                             (->
+                                                              (mock/request :post "/wallet/v1/transactions/list")
+                                                              (mock/content-type "application/json")
+                                                              (mock/body  (cheshire/generate-string
+                                                                           (merge mongo-db-only
+                                                                                  {:to-datetime oldest-timestamp
+                                                                                   :per-page 0
+                                                                                   :page 0})))))
+                                                   body (-> response :body parse-body)]
+                                               (:status response) => 200
+                                               (-> body :transactions count) => 0)
+
+                                             (let [response (h/app
+                                                             (->
+                                                              (mock/request :post "/wallet/v1/transactions/list")
+                                                              (mock/content-type "application/json")
+                                                              (mock/body  (cheshire/generate-string
+                                                                           (merge mongo-db-only
+                                                                                  {:from-datetime newer-timestamp
+                                                                                   :per-page 0
+                                                                                   :page 0})))))
+                                                   body (-> response :body parse-body)]
+                                               (:status response) => 200
+                                               (-> body :transactions count) => 1)
+
+                                             (let [response (h/app
+                                                             (->
+                                                              (mock/request :post "/wallet/v1/transactions/list")
+                                                              (mock/content-type "application/json")
+                                                              (mock/body  (cheshire/generate-string
+                                                                           (merge mongo-db-only
+                                                                                  {:from-datetime oldest-timestamp
+                                                                                   :to-datetime newer-timestamp
+                                                                                   :per-page 0
+                                                                                   :page 0})))))
+                                                   body (-> response :body parse-body)]
+                                               (:status response) => 200
+                                               (-> body :transactions count) => 200)))))))))

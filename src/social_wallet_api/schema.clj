@@ -62,7 +62,7 @@
 (s/defschema DBTransaction
   "Transaction schema validator"
   {(s/optional-key :tags)      [s/Str]
-   (s/optional-key :timestamp)  s/Str
+   (s/optional-key :timestamp)  org.joda.time.DateTime
    (s/required-key :from-id)    s/Str
    (s/required-key :to-id)      s/Str
    (s/optional-key :amount)     s/Num
@@ -148,6 +148,9 @@
                 (s/optional-key :from) s/Num
                 (s/optional-key :page) s/Num
                 (s/optional-key :per-page) s/Num
+                (s/optional-key :tags) [s/Str]
+                (s/optional-key :from-datetime) java.util.Date
+                (s/optional-key :to-datetime) java.util.Date
                 (s/optional-key :currency) s/Str}))
 
 

@@ -296,21 +296,23 @@ It returns a list of tags found on the database.
                    :body [query ListTransactionsQuery]
                    :summary "List transactions"
                    :description "
-Takes a JSON structure with a `connection` query identifier. Both mongo and btc transactions can be filtered by `account-id`. For blockchains, a number of optional identifiers are available for filtering like `count`: Returns up to [count] most recent transactions skipping the first [from] transactions for account [account]. For mongo queries paging can be used with the `page` and `per-page` identifiers which default to 1 and 10 respectively (first page, ten per page). Finally mongo queries can be also filtered by `currency`. 
+Takes a JSON structure with a `connection` query identifier. Both mongo and btc transactions can be filtered by `account-id`. For blockchains, a number of optional identifiers are available for filtering like `count`: Returns up to [count] most recent transactions skipping the first [from] transactions for account [account]. For db queries paging can be used with the `page` and `per-page` identifiers which default to 1 and 10 respectively (first page, ten per page). Finally db queries can be also filtered by `currency`. 
 
 Returns a list of transactions found on that connection.
 
 "
                    (with-error-responses connections query
-                     (fn [connection {:keys [account-id from count page per-page currency]}]
+                     (fn [connection {:keys [account-id tags from-datetime to-datetime page per-page currency]}]
                        (f/if-let-ok? [transaction-list (lib/list-transactions
                                             connection
                                             (cond-> {}
                                               account-id  (assoc :account-id account-id)
-                                              from  (assoc :from from)
-                                              count (assoc :count count)
+                                              from-datetime  (assoc :from from-datetime)
+                                              to-datetime  (assoc :to to-datetime)
+                                              tags (assoc :tags tags)
                                               page (assoc :page page)
                                               per-page (assoc :per-page per-page)
+                                              ;; TODO: currency filtering doesnt work yetx
                                               currency (assoc :currency currency)))]
                          (if (= (-> query :connection keyword) :mongo)
                            {:total-count (lib/count-transactions connection {})
