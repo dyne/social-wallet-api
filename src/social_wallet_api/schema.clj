@@ -62,7 +62,7 @@
 (s/defschema DBTransaction
   "Transaction schema validator"
   {(s/optional-key :tags)      [s/Str]
-   (s/optional-key :timestamp)  org.joda.time.DateTime
+   (s/optional-key :timestamp)  (s/cond-pre s/Str org.joda.time.DateTime)
    (s/required-key :from-id)    s/Str
    (s/required-key :to-id)      s/Str
    (s/optional-key :amount)     s/Num

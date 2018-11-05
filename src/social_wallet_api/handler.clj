@@ -192,7 +192,7 @@
       :data {:info
              {:version (clojure.string/trim (slurp "VERSION"))
               :title "Social-wallet-api"
-              :description "Social Wallet REST API backend for webapps. All blockchain activity is backed by a DB. For example for any transaction that happens on the blockchain side a record will be created on the DB side and the fees will be updated where applicable."
+              :description "Social Wallet REST API backend for webapps. All blockchain activity is backed by a DB. For example for any transaction that happens on the blockchain side a record will be created on the DB side and the fees will be updated where applicable. All queries take as minimum parameters the `type` which can be one the [\"db-only\" \"blockchain-and-db\"] and the `connection` which can be \"mongo\" for db-only or \"faircoin\", \"bitcoin\" etc for blockchain-and-db."
               :contact {:url "https://github.com/Commonfare-net/social-wallet-api"}}}}}
 
     (context (path-with-version "") []
@@ -231,7 +231,7 @@ It returns the label value which contains the name of the currency.
                    :summary "List all addresses related to an account"
                    :description "
 
-Takes a JSON structure made of a `connection` identifier and an `account id`.
+Takes a JSON structure made of a `connection` identifier, a `type` and an `account-id`.
 
 It returns a list of addresses for the particular account.
 
@@ -252,7 +252,7 @@ It returns a list of addresses for the particular account.
         :summary "Returns the balance of an account or the total balance."
         :description "
 
-Takes a JSON structure made of a `connection` identifier and an `account id`.
+Takes a JSON structure made of a `connection`, `type` identifier and an `account id`.
 
 It returns balance for that particular account. If no account is provided it returns the total balance of the wallet.
 
@@ -271,7 +271,7 @@ It returns balance for that particular account. If no account is provided it ret
                    :summary "List all tags"
                    :description "
 
-Takes a JSON structure made of a `connection` identifier.
+Takes a JSON structure made of a `connection` and a `type` identifier.
 
 It returns a list of tags found on the database.
 
@@ -296,7 +296,7 @@ It returns a list of tags found on the database.
                    :body [query ListTransactionsQuery]
                    :summary "List transactions"
                    :description "
-Takes a JSON structure with a `connection` query identifier. Both mongo and btc transactions can be filtered by `account-id`. For blockchains, a number of optional identifiers are available for filtering like `count`: Returns up to [count] most recent transactions skipping the first [from] transactions for account [account]. For db queries paging can be used with the `page` and `per-page` identifiers which default to 1 and 10 respectively (first page, ten per page). Finally db queries can be also filtered by `currency`. 
+Takes a JSON structure with a `connection` and a `type` query identifier. Both mongo and btc transactions can be filtered by `account-id`. For blockchains, a number of optional identifiers are available for filtering like `count` and `from`: Returns up to [count] most recent transactions skipping the first [from] transactions for account [account]. For db queries paging can be used with the `page` and `per-page` identifiers which default to 1 and 10 respectively (first page, ten per page). Finally db queries can be also filtered by `currency`, `tags`, `description`, `from-datetime` and `to-datetime`. 
 
 Returns a list of transactions found on that connection.
 
@@ -312,7 +312,7 @@ Returns a list of transactions found on that connection.
                                               tags (assoc :tags tags)
                                               page (assoc :page page)
                                               per-page (assoc :per-page per-page)
-                                              ;; TODO: currency filtering doesnt work yetx
+                                              ;; TODO: currency filtering doesnt work yet
                                               currency (assoc :currency currency)))]
                          (if (= (-> query :connection keyword) :mongo)
                            {:total-count (lib/count-transactions connection {})
@@ -333,7 +333,7 @@ Returns a list of transactions found on that connection.
                    :body [query TransactionQuery]
                    :summary "Retieve a transaction by txid"
                    :description "
-Takes a JSON structure with a `connection` query identifier and a `txid`.
+Takes a JSON structure with a `connection`, `type` query identifier and a `txid`.
 
 Returns the transaction if found on that connection.
 
@@ -353,7 +353,7 @@ Returns the transaction if found on that connection.
                :body [query NewTransactionQuery]
                :summary "Create a new transaction"
                :description "
-Takes a JSON structure with a `connection`, `from-account`, `to-account`, `amount` query identifiers and optionally `tags` and `description` as paramaters. Tags are metadata meant to add a category to the transaction and useful for grouping and searching. The amount has been tested for values between `0.00000001` and `9999999999999999.99999999`.
+Takes a JSON structure with a `connection`, `type`, `from-account`, `to-account`, `amount` query identifiers and optionally `tags` and `description` as paramaters. Tags are metadata meant to add a category to the transaction and useful for grouping and searching. The amount has been tested for values between `0.00000001` and `9999999999999999.99999999`.
 
 Creates a transaction. This call is only meant for DBs and not for blockchains.
 
@@ -380,7 +380,7 @@ Returns the DB entry that was created.
                :body [query NewWithdraw]
                :summary "Perform a withrdaw from a blockchain"
                :description "
-Takes a JSON structure with a `connection`, `to-address`, `amount` query identifiers and optionally `from-id`, `from-wallet-account`, `tags`, `comment`, `commentto` and `description` as paramaters. Comment and commentto are particular to the BTC RCP, for more details look at https://en.bitcoin.it/wiki/Original_Bitcoin_client/API_calls_list. Tags are metadata meant to add a `label` to the withdraw and useful for grouping and searching. The parameter `from-id` is metadata not used in the actual blockchain transaction but stored on the db and useful to identify which account initiated the withdraw. Finally `from-wallet-account` if used will make the withdraw from the particular account in the wallet instead of the default. If not found an error will be returned.
+Takes a JSON structure with a `connection`, `type`, `to-address`, `amount` query identifiers and optionally `from-id`, `from-wallet-account`, `tags`, `comment`, `commentto` and `description` as paramaters. Comment and commentto are particular to the BTC RCP, for more details look at https://en.bitcoin.it/wiki/Original_Bitcoin_client/API_calls_list. Tags are metadata meant to add a `label` to the withdraw and useful for grouping and searching. The parameter `from-id` is metadata not used in the actual blockchain transaction but stored on the db and useful to identify which account initiated the withdraw. Finally `from-wallet-account` if used will make the withdraw from the particular account in the wallet instead of the default. If not found an error will be returned.
 
 This call will withdraw an amount from the default account \"\" or optionally a given wallet-account to a provided blockchain address. Also a transaction on the DB will be registered. If fees apply for this transaction those fees will be added to the amount on the DB when the transaction reaches the required amount of confirmations. The number of confirmations and the frequency of the checks are defined in the config as `number-confirmations` and `frequency-confirmations-millis` respectiviely.
 
@@ -440,7 +440,7 @@ Returns the DB entry that was created.
 
                :summary "Request a new blockchain address to perform a deposit"
                :description "
-Takes a JSON structure with a `connection` query identifier and optionally `to-id`, `to-wallet-id` and `tags`. `to-id` is metadata that will be added to the DB once a deposit to the address is detected. Same goes for `tags` which are metadata meant to add a `label` to the deposit and they are useful for grouping and searching. When `to-wallet-id` is used it will create the address for a particular account in the wallet and the default otherwise. If the account is not found the address will be created on the default account.
+Takes a JSON structure with a `connection` and `type` query identifier and optionally `to-id`, `to-wallet-id` and `tags`. `to-id` is metadata that will be added to the DB once a deposit to the address is detected. Same goes for `tags` which are metadata meant to add a `label` to the deposit and they are useful for grouping and searching. When `to-wallet-id` is used it will create the address for a particular account in the wallet and the default otherwise. If the account is not found the address will be created on the default account.
 
 This call creates a new address and returns it in order to be able to deposit to it. Then, on a different thread, there will be a watch that until it expires it will check for a transaction done to this address and update the DB. If no transaction is perfromed until expiration a check for that particular address can be triggered via `deposits/check`. The frequency of the transaction checks and the expiration can be set in the config as `frequency-deposit-millis` and `deposit-expiration-millis` respectively.
 
@@ -483,7 +483,7 @@ Returns the blockchain address that was created.
 
             :summary "Manually check if a given address has received any deposits"
             :description "
-Takes a JSON structure with a `connection` and an `address` query identifier.
+Takes a JSON structure with a `connection`, `type` and an `address` query identifier.
 
 This call will check if any deposits were made to this particular address and will update the DB if it is not already updated. It is meant to be used only for blockchains and the purpose is to update the db for deposits that were made after the deposit watch for the address has expired before a deposit was made. If it is called even though the deposits have been registerd no changes will be made.
 
