@@ -1,6 +1,6 @@
 ;; Social Wallet REST API
 
-;; Copyright (C) 2017 Dyne.org foundation
+;; Copyright (C) 2017- Dyne.org foundation
 
 ;; Sourcecode designed, written and maintained by
 ;; Denis Roio <jaromil@dyne.org>
@@ -40,9 +40,9 @@
                                               ListTransactionsQuery MaybeAccountQuery DecodedRawTransaction NewWithdraw
                                               Config DepositCheck AddressNew]]
             [failjure.core :as f]
-            [simple-time.core :as time]
             [dom-top.core :as dom]
-            [ring.middleware.cors :refer [wrap-cors]]))
+            [ring.middleware.cors :refer [wrap-cors]]
+            [clj-time.core :as time]))
 
 (defonce prod-app-name "social-wallet-api")
 (defonce config-default (config-read prod-app-name))
@@ -455,11 +455,11 @@ Returns the blockchain address that was created.
                                                                         (-> query :to-wallet-id))]
                            (let [pending (atom true)
                                  start-time (time/now)
-                                 end-time (time/add-milliseconds start-time (-> connection :deposits :deposit-expiration-millis))]
+                                 end-time (time/plus start-time (time/millis (-> connection :deposits :deposit-expiration-millis)))]
                              ;; Check whether a transaction to this address was made and update the DB
                              ;; The logged-future will return an exception which otherwise would be swallowed till deref
                              (log/logged-future
-                              (while (and @pending (time/< (time/now) end-time))
+                              (while (and @pending (time/before? (time/now) end-time))
                                 (when-not (empty? (blockchain-deposit->db-entry connection query new-address))
                                   (reset! pending false))
                                 ;; wait
