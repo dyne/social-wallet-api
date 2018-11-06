@@ -296,7 +296,7 @@ It returns a list of tags found on the database.
                    :body [query ListTransactionsQuery]
                    :summary "List transactions"
                    :description "
-Takes a JSON structure with a `connection` and a `type` query identifier. Both mongo and btc transactions can be filtered by `account-id`. For blockchains, a number of optional identifiers are available for filtering like `count` and `from`: Returns up to [count] most recent transactions skipping the first [from] transactions for account [account]. For db queries paging can be used with the `page` and `per-page` identifiers which default to 1 and 10 respectively (first page, ten per page). Finally db queries can be also filtered by `currency`, `tags`, `description`, `from-datetime` and `to-datetime`. 
+Takes a JSON structure with a `connection` and a `type` query identifier. Both mongo and btc transactions can be filtered by `account-id`. For blockchains, a number of optional identifiers are available for filtering like `count` and `from`: Returns up to [count] most recent transactions skipping the first [from] transactions for account [account]. For db queries paging can be used with the `page` and `per-page` identifiers which default to 1 and 10 respectively (first page, ten per page). Finally db queries can be also filtered by `currency`, `tags`, `description`, `from-datetime` and `to-datetime`. From-datetime is inclusive and to-datetime is exclusive. 
 
 Returns a list of transactions found on that connection.
 
