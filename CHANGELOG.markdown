@@ -1,5 +1,15 @@
 # Changelog
 
+## social-wallet-api 1.0
+
+* Upgraded to Clojure 1.9
+* Support Cross-Origin Requests
+* Replaced parameter `blockchain` with the composite `connection`  and `type`
+* Timestamps now stored as dates rather than strings
+* Added transaction description and currency parameters
+* Filter transactions by dates
+* Filter transactions by tags
+
 ## social-wallet-api 0.10.0
 * Added pagination to transaction/list
 
