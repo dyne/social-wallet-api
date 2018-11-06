@@ -27,9 +27,12 @@
 (defn- k [type key default]
   (rjs/field type {:example (get default key)}))
 
+(s/defschema Type (s/enum "db-only" "blockchain-and-db"))
+
 (s/defschema Query
   "POST Wallet query validator"
-  {:blockchain (rjs/field s/Str {:example "mongo"})})
+  {:connection (rjs/field s/Str {:example "mongo"})
+   :type (rjs/field Type {:example "db-only"})})
 
 (s/defschema PerAccountQuery
   "POST Wallet query validator for requests per account"
@@ -59,13 +62,14 @@
 (s/defschema DBTransaction
   "Transaction schema validator"
   {(s/optional-key :tags)      [s/Str]
-   (s/optional-key :timestamp)  s/Str
+   (s/optional-key :timestamp)  (s/cond-pre s/Str org.joda.time.DateTime)
    (s/required-key :from-id)    s/Str
    (s/required-key :to-id)      s/Str
    (s/optional-key :amount)     s/Num
    (s/optional-key :amount-text) s/Str
    (s/required-key :transaction-id) (s/maybe s/Str)
-   (s/optional-key :currency) s/Str})
+   (s/optional-key :currency) s/Str
+   (s/optional-key :description) s/Str})
 
 (s/defschema AccountDetails
   {(s/required-key "account") s/Str
@@ -118,7 +122,8 @@
          (s/required-key :from-id)    s/Str
          (s/required-key :to-id)      s/Str
          (s/required-key :amount)     s/Str
-         (s/optional-key :tags)      [s/Str]))
+         (s/optional-key :tags)      [s/Str]
+         (s/optional-key :description) s/Str))
 
 (s/defschema NewWithdraw
   (assoc Query
@@ -128,7 +133,8 @@
          (s/required-key :amount)     s/Str
          (s/optional-key :tags)      [s/Str]
          (s/optional-key :comment)    s/Str
-         (s/optional-key :commentto)    s/Str))
+         (s/optional-key :commentto)    s/Str
+         (s/optional-key :description) s/Str))
 
 (s/defschema NewDeposit
   (assoc Query
@@ -142,6 +148,9 @@
                 (s/optional-key :from) s/Num
                 (s/optional-key :page) s/Num
                 (s/optional-key :per-page) s/Num
+                (s/optional-key :tags) [s/Str]
+                (s/optional-key :from-datetime) java.util.Date
+                (s/optional-key :to-datetime) java.util.Date
                 (s/optional-key :currency) s/Str}))
 
 
@@ -166,7 +175,7 @@
   {:address s/Str})
 
 (s/defschema MongoConfig
-  {:host s/Str, :port s/Num, :db s/Str})
+  {:host s/Str, :port s/Num, :db s/Str :currency s/Str})
 
 (s/defschema BlockchainConfig
   {:currency s/Str

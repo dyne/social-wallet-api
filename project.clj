@@ -23,10 +23,11 @@
 
 (defproject social-wallet-api version
   :description "Freecoin web API for wallet operations"
-  :dependencies [[org.clojure/clojure "1.8.0"]
+  :dependencies [[org.clojure/clojure "1.9.0"]
                  [metosin/compojure-api "2.0.0-alpha17"]
-                 [ring/ring-core "1.6.2"]
-                 [ring/ring-defaults "0.3.1"]
+                 [ring/ring-core "1.7.0"]
+                 [ring/ring-defaults "0.3.2"]
+                 [ring-cors "0.1.12"]
 
                  ;; core freecoin toolkit library
                  [org.clojars.dyne/freecoin-lib ~version]
@@ -35,24 +36,24 @@
                  [org.clojars.dyne/auxiliary "0.4.0"]
 
                  ;; for rendering of readme etc.
-                 [markdown-clj "1.0.1"]
+                 [markdown-clj "1.0.2"]
 
                  ;; error handling
-                 [failjure "1.2.0"]
+                 [failjure "1.3.0"]
                  
                  ;; logging done right with timbre and slf4j
                  [com.taoensso/timbre "4.10.0"]
-                 [com.fzakaria/slf4j-timbre "0.3.7"]
+                 [com.fzakaria/slf4j-timbre "0.3.12"]
                  [org.slf4j/slf4j-api "1.7.25"]
                  [org.slf4j/log4j-over-slf4j "1.7.25"]
                  [org.slf4j/jul-to-slf4j "1.7.25"]
                  [org.slf4j/jcl-over-slf4j "1.7.25"]
 
                  ;; Convinence fns for better control flow
-                 [dom-top "1.0.2"]
+                 [dom-top "1.0.3"]
 
                  ;; Use mongo bson data types like Decimal128
-                 [org.mongodb/mongodb-driver "3.6.0-beta2"]]
+                 [org.mongodb/mongodb-driver "3.8.2"]]
 
   :jvm-opts ["-Djava.security.egd=file:/dev/random" ;use a proper random source
              "-XX:-OmitStackTraceInFastThrow" ; stacktrace JVM exceptions
@@ -74,11 +75,12 @@
          :reload-paths ["src"]}
 
   :uberjar-name "social-wallet-api.jar"
-  :profiles {:dev {:dependencies [[ring/ring-mock "0.3.1"]
+  :alias {"test" ["midje"]}
+  :profiles {:dev {:dependencies [[ring/ring-mock "0.3.2"]
                                   ;; this is necessary to use the for-all midje support
-                                  [midje "1.9.2-alpha3"]
+                                  [midje "1.9.2"]
                                   ;; json
-                                  [cheshire "5.8.0"]
+                                  [cheshire "5.8.1"]
                                   ;; generative testing
                                   [org.clojure/test.check "0.10.0-alpha2"]]
                    :repl-options {:init-ns social-wallet-api.handler}

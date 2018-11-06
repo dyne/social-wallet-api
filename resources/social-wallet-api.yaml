@@ -6,6 +6,7 @@ freecoin:
     host: localhost
     port: 27017
     db:   freecoin
+    currency: Commoncoin
   faircoin:
     currency: fair
     number-confirmations: 6
