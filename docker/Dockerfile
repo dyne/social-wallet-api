@@ -38,7 +38,7 @@ RUN npm install -g npm
 RUN npm install -g mongo-express
 
 
-ADD https://raw.githubusercontent.com/commonfare-net/social-wallet-api/master/docker/supervisord.conf \
+ADD https://raw.githubusercontent.com/Commonfare-net/social-wallet-api/docker/docker/supervisord.conf \
 	/etc/supervisor/supervisord.conf
 RUN sed -i "s/nodaemon=true/nodaemon=$foreground/" /etc/supervisor/supervisord.conf
 
