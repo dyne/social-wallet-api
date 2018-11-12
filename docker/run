@@ -1,3 +1,15 @@
 #!/bin/sh
 
+l=127.0.0.1
+cat <<EOF
+Starting SWAPI on localhost
+
+SWAPI:          http://$l:3000
+
+Supervisor:     http://$l:9001
+
+MongoExplorer:  http://$l:8081
+
+
+EOF
 docker run -p 3000:3000 -p 9001:9001 -p 8081:8081 -it dyne/social-wallet-api:latest $*
