@@ -1,3 +1,3 @@
 #!/bin/sh
 
-docker run -p 3000 -p 9001 -p 8081 -it dyne/social-wallet-api:latest $*
+docker run -p 3000:3000 -p 9001:9001 -p 8081:8081 -it dyne/social-wallet-api:latest $*

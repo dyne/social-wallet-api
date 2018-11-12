@@ -13,6 +13,9 @@ LABEL maintainer="Denis Roio <jaromil@dyne.org>" \
 	  homepage="https://github.com/commonfare-net/social-wallet-api"
 # ENV VERSION=AUTO_STRICT
 
+# CLI arguments
+ARG foreground=true
+
 ENV LEIN_VERSION=2.8.1 \
 	LEIN_INSTALL=/usr/local/bin/ \
 	PATH=$PATH:$LEIN_INSTALL \
@@ -37,6 +40,12 @@ RUN apt-get update \
 RUN npm install -g npm
 RUN npm install -g mongo-express
 
+WORKDIR /app
+COPY . /app
+
+# cache build deps
+RUN lein deps
+
 
 ADD https://raw.githubusercontent.com/Commonfare-net/social-wallet-api/docker/docker/supervisord.conf \
 	/etc/supervisor/supervisord.conf
@@ -45,14 +54,8 @@ RUN sed -i "s/nodaemon=true/nodaemon=$foreground/" /etc/supervisor/supervisord.c
 # supervisor
 EXPOSE 9001 9001
 # SWAPI
-EXPOSE 3000
+EXPOSE 3000 3000
 # mongo-express
-EXPOSE 8081
-
-WORKDIR /app
-COPY . /app
-
-# cache build deps
-RUN lein deps
+EXPOSE 8081 8081
 
 CMD bash -c '/etc/init.d/supervisor start'
