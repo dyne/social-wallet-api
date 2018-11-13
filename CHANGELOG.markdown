@@ -1,5 +1,9 @@
 # Changelog
 
+## social-wallet-api 1.1
+
+* Dockerized SWAPI together with goodies like mongo-express (mongo UI)
+
 ## social-wallet-api 1.0
 
 * Upgraded to Clojure 1.9
