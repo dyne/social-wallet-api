@@ -1,7 +1,9 @@
 #!/bin/sh
 
+## run with --no-cache as argument
+## it is passed along with other options
 if test -d src/social_wallet_api; then
-	docker build -f docker/Dockerfile \
+	docker build $* -f docker/Dockerfile \
 		   -t dyne/social-wallet-api:latest \
 		   --force-rm .
 else
