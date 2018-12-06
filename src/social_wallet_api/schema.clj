@@ -191,7 +191,8 @@
               (s/optional-key :faircoin) BlockchainConfig
               (s/optional-key :bitcoin) BlockchainConfig
               (s/optional-key :litecoin) BlockchainConfig
-              (s/optional-key :multichain) BlockchainConfig}})
+              (s/optional-key :multichain) BlockchainConfig
+              (s/optional-key :apikey) s/Str}})
 
 (s/defschema Config
   {:appname s/Str

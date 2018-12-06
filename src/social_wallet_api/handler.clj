@@ -42,7 +42,8 @@
             [failjure.core :as f]
             [dom-top.core :as dom]
             [ring.middleware.cors :refer [wrap-cors]]
-            [clj-time.core :as time]))
+            [clj-time.core :as time]
+            [social-wallet-api.api-key :refer [create-and-store-apikey]]))
 
 (defonce prod-app-name "social-wallet-api")
 (defonce config-default (config-read prod-app-name))
@@ -117,6 +118,11 @@
      (swap! connections conj {:mongo mongo})
      (log/warn "MongoDB backend connected."))
 
+   ;; TODO: make sure APIKEYS created and stored when available
+   ;; TODO is this per conneciton or per API instance?
+   #_(when (read-string (:apikey config))
+     (create-and-store-apikey currency))
+   
    (when-let [fair-conf (get-connection-conf config app-name :faircoin)]
      (f/if-let-ok? [fair (merge (lib/new-btc-rpc (:currency fair-conf) 
                                                  (:rpc-config-path fair-conf))
