@@ -151,7 +151,8 @@
                 (s/optional-key :tags) [s/Str]
                 (s/optional-key :from-datetime) java.util.Date
                 (s/optional-key :to-datetime) java.util.Date
-                (s/optional-key :currency) s/Str}))
+                (s/optional-key :currency) s/Str
+                (s/optional-key :description) s/Str}))
 
 
 (s/defschema DepositCheck

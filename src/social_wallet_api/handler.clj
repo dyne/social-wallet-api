@@ -308,7 +308,7 @@ Returns a list of transactions found on that connection.
 
 "
                    (with-error-responses connections query
-                     (fn [connection {:keys [account-id tags from-datetime to-datetime page per-page currency]}]
+                     (fn [connection {:keys [account-id tags from-datetime to-datetime page per-page currency description]}]
                        (f/if-let-ok? [transaction-list (lib/list-transactions
                                             connection
                                             (cond-> {}
@@ -319,7 +319,8 @@ Returns a list of transactions found on that connection.
                                               page (assoc :page page)
                                               per-page (assoc :per-page per-page)
                                               ;; TODO: currency filtering doesnt work yet
-                                              currency (assoc :currency currency)))]
+                                              currency (assoc :currency currency)
+                                              description (assoc :description description)))]
                          (if (= (-> query :connection keyword) :mongo)
                            {:total-count (lib/count-transactions connection {})
                             :transactions transaction-list}
