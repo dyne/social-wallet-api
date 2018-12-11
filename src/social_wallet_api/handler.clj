@@ -43,12 +43,14 @@
             [dom-top.core :as dom]
             [ring.middleware.cors :refer [wrap-cors]]
             [clj-time.core :as time]
-            [social-wallet-api.api-key :refer [create-and-store-apikey]]))
+            [social-wallet-api.api-key :refer [create-and-store-apikey! apikey? apikey]]
+            [ring-api-key-middleware.core :refer [wrap-api-key-fn]]))
 
 (defonce prod-app-name "social-wallet-api")
 (defonce config-default (config-read prod-app-name))
 
 (defonce connections (atom {}))
+(defonce client (atom nil))
 
 ;; TODO: lets see why we need this
 (defn- get-config [obj]
@@ -116,12 +118,14 @@
          mongo (lib/new-mongo (->  mongo-conf :mongo :currency)
                               (freecoin/connect-mongo (dissoc mongo-conf :currency)))]
      (swap! connections conj {:mongo mongo})
-     (log/warn "MongoDB backend connected."))
+     (log/warn "MongoDB backend connected.")
 
-   ;; TODO: make sure APIKEYS created and stored when available
-   ;; TODO is this per conneciton or per API instance?
-   #_(when (read-string (:apikey config))
-     (create-and-store-apikey currency))
+     ;; Setup api key when needed
+     (let [apikey-store (-> @connections :mongo :stores-m :apikey-store)]
+       (when-let [client-app (:apikey mongo-conf)]
+         (reset! client client-app )
+         (reset! apikey (log/spy (or (apikey? apikey-store client-app)
+                                     (create-and-store-apikey! apikey-store client-app 32)))))))
    
    (when-let [fair-conf (get-connection-conf config app-name :faircoin)]
      (f/if-let-ok? [fair (merge (lib/new-btc-rpc (:currency fair-conf) 
@@ -536,7 +540,19 @@ Returns the DB entries that were created.
       (assoc-in [:security :ssl-redirect] false)
       (assoc-in [:security :hsts] true)))
 
+(defn get-auth-from-api-key [token]
+  (log/info "LALALAL")
+  (when (= (log/spy token) (log/spy (get @apikey @client)))
+      {:user {:id @client :name @client}
+       :roles #{:user}
+       :auth-type :api-key}))
+
 (def app
-  (wrap-cors (wrap-defaults rest-api rest-api-defaults)
-             :access-control-allow-origin [#".*"]
-             :access-control-allow-methods [:get :post]))
+  #_(log/debug "Starting handler")
+  ((wrap-api-key-fn get-auth-from-api-key)
+                   (wrap-cors
+                    (wrap-defaults rest-api rest-api-defaults)
+                    :access-control-allow-origin [#".*"]
+                    :access-control-allow-methods [:get :post]))
+  
+  #_(log/spy ((wrap-api-key-fn get-auth-from-api-key) swapi)))
