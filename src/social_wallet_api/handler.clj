@@ -124,8 +124,8 @@
      (let [apikey-store (-> @connections :mongo :stores-m :apikey-store)]
        (when-let [client-app (:apikey mongo-conf)]
          (reset! client client-app )
-         (reset! apikey (log/spy (or (apikey? apikey-store client-app)
-                                     (create-and-store-apikey! apikey-store client-app 32)))))))
+         (reset! apikey (log/spy (or (apply hash-map (vals (apikey? apikey-store client-app)))
+                                     (apply hash-map (vals (create-and-store-apikey! apikey-store client-app 32)))))))))
    
    (when-let [fair-conf (get-connection-conf config app-name :faircoin)]
      (f/if-let-ok? [fair (merge (lib/new-btc-rpc (:currency fair-conf) 
@@ -547,12 +547,20 @@ Returns the DB entries that were created.
        :roles #{:user}
        :auth-type :api-key}))
 
+
+
+(defn wrap-auth [handler]
+  (fn [request]
+    (if (and (log/spy @client)
+             (= (log/spy (-> request :headers (get "Authorization") (get "apiKey")))
+                (log/spy (get (log/spy @apikey) @client))))
+      (handler request)
+      (f/fail "Unauthorized")
+      #_(status/unauthorized))))
+
 (def app
-  #_(log/debug "Starting handler")
-  ((wrap-api-key-fn get-auth-from-api-key)
-                   (wrap-cors
-                    (wrap-defaults rest-api rest-api-defaults)
-                    :access-control-allow-origin [#".*"]
-                    :access-control-allow-methods [:get :post]))
-  
-  #_(log/spy ((wrap-api-key-fn get-auth-from-api-key) swapi)))
+  (wrap-auth
+   (wrap-cors
+    (wrap-defaults rest-api rest-api-defaults)
+    :access-control-allow-origin [#".*"]
+    :access-control-allow-methods [:get :post])))
