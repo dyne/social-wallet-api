@@ -1,0 +1,10 @@
+log-level: debug
+
+freecoin:
+  apikey: midje-tests
+  mongo:
+    host: localhost
+    port: 27017
+    db:   test-freecoin
+    currency: Testcoin
+

@@ -24,7 +24,7 @@
             [failjure.core :as f]
             [freecoin-lib.db.api-key :as ak]))
 
-(defonce apikey (atom ""))
+(defonce apikey (atom {}))
 
 (defn- generate-apikey [length]
   (fxc/generate length))

@@ -201,4 +201,5 @@
    :paths [s/Str]
    ;; FIXME: one of the two keys bellow have to be present. How to do withough either/both???
    (s/optional-key :social-wallet-api) SocialWalletAPIConfig
-   (s/optional-key :social-wallet-api-test) SocialWalletAPIConfig})
+   (s/optional-key :social-wallet-api-test) SocialWalletAPIConfig
+   (s/optional-key :social-wallet-with-apikey-test) SocialWalletAPIConfig})

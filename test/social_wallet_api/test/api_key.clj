@@ -24,8 +24,13 @@
             [social-wallet-api.handler :as h]
             [clj-storage.core :as store]
             [auxiliary.config :refer [config-read]]
-            [social-wallet-api.test.handler :refer [test-app-name]]
-            [taoensso.timbre :as log]))
+            [taoensso.timbre :as log]
+            [ring.mock.request :as mock]
+            [cheshire.core :as cheshire]))
+
+(def test-app-name "social-wallet-with-apikey-test")
+(def mongo-db-only social-wallet-api.test.handler/mongo-db-only)
+(def parse-body social-wallet-api.test.handler/parse-body)
 
 (defn empty-apikeys []
   (store/delete-all! (-> @h/connections :mongo :stores-m :apikey-store)))
@@ -43,4 +48,33 @@
                               (:message (ak/create-and-store-apikey! apikey-store "app-1" 32))
                               "Could not create api-key entry because:") => true
 
-                             (:client-app (ak/create-and-store-apikey! apikey-store "app-2" 32)) => "app-2")))
+                             (:client-app (ak/create-and-store-apikey! apikey-store "app-2" 32)) => "app-2")
+                      (facts "Test that the API KEY works with requests."
+                             (fact "A request sent without the API KEY on the headers doesnt work."
+                                   (let [response (h/app
+                                                   (->
+                                                    (mock/request :post "/wallet/v1/label")
+                                                    (mock/content-type "application/json")
+                                                    (mock/body  (cheshire/generate-string mongo-db-only))))]
+                                     (:status response) => 401
+                                     (:body response) => {:error "Could not access the Social Wallet API"}))
+                             (fact "A request sent with the wrong API KEY on the headers doesnt work."
+                                   (let [response (h/app
+                                                   (->
+                                                    (mock/request :post "/wallet/v1/label")
+                                                    (mock/content-type "application/json")
+                                                    (mock/header "X-API-Key" "wrong-key")
+                                                    (mock/body  (cheshire/generate-string mongo-db-only))))]
+                                     (:status response) => 401
+                                     (:body response) => {:error "Could not access the Social Wallet API"}))
+                             (fact "A request sent with the correct API KEY on the headers works as expected."
+                                   (let [apikey (get @ak/apikey @h/client)
+                                         response (h/app
+                                                   (->
+                                                    (mock/request :post "/wallet/v1/label")
+                                                    (mock/content-type "application/json")
+                                                    (mock/header "X-API-Key" apikey)
+                                                    (mock/body  (cheshire/generate-string mongo-db-only))))
+                                         body (parse-body (:body response))]
+                                     (:status response) => 200
+                                     body => {:currency "Testcoin"})))))

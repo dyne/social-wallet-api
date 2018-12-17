@@ -123,9 +123,10 @@
      ;; Setup api key when needed
      (let [apikey-store (-> @connections :mongo :stores-m :apikey-store)]
        (when-let [client-app (:apikey mongo-conf)]
-         (reset! client client-app )
-         (reset! apikey (log/spy (or (apply hash-map (vals (apikey? apikey-store client-app)))
-                                     (apply hash-map (vals (create-and-store-apikey! apikey-store client-app 32)))))))))
+         (reset! client client-app)
+         (reset! apikey (apply hash-map (vals
+                                         (or (apikey? apikey-store client-app)
+                                             (create-and-store-apikey! apikey-store client-app 32))))))))
    
    (when-let [fair-conf (get-connection-conf config app-name :faircoin)]
      (f/if-let-ok? [fair (merge (lib/new-btc-rpc (:currency fair-conf) 
@@ -143,8 +144,8 @@
 (defn destroy []
   (log/warn "Stopping the Social Wallet API.")
   (freecoin/disconnect-mongo (:mongo @connections))
-  ;; TODO: fair?
-  )
+  (reset! client "")
+  (reset! apikey {}))
 
 (defn- with-error-responses [connections query ok-fn]
   (try
@@ -194,6 +195,16 @@
                                                       :currency (:connection query)))))))
              blockchain-transactions)))
 
+(defn wrap-auth [handler]
+  (fn [request]
+    (if (log/spy @client)
+      (if (= (or (-> request :headers (get "X-API-Key"))
+                 (-> request :headers (get "x-api-key")))
+             (log/spy (get @apikey @client)))
+        (handler request)
+        (unauthorized {:error "Could not access the Social Wallet API"}))
+      (handler request))))
+
 (def rest-api
   (api
     {:swagger
@@ -206,19 +217,21 @@
               :contact {:url "https://github.com/Commonfare-net/social-wallet-api"}}}}}
 
     (context (path-with-version "") []
-             :tags ["INFO"]
-             (GET "/readme" request
-                  {:headers {"Content-Type"
-                             "text/html; charset=utf-8"}
-                   :body {:readme (md/md-to-html-string
-                                   (slurp "README.md"))}}))
+      :tags ["INFO"]
+      (GET "/readme" request
+        {:headers {"Content-Type"
+                   "text/html; charset=utf-8"}
+         :body {:readme (md/md-to-html-string
+                         (slurp "README.md"))}}))
 
     (context (path-with-version "") []
       :tags ["LABEL"]
+      :middleware [wrap-auth]
       (POST "/label" request
         :responses {status/not-found {:schema {:error s/Str}}
                     status/service-unavailable {:schema {:error s/Str}}}
         :return Label
+        :header-params [x-api-key]
         :body [query Query]
         :summary "Show the label"
         :description "
@@ -540,27 +553,18 @@ Returns the DB entries that were created.
       (assoc-in [:security :ssl-redirect] false)
       (assoc-in [:security :hsts] true)))
 
-(defn get-auth-from-api-key [token]
-  (log/info "LALALAL")
-  (when (= (log/spy token) (log/spy (get @apikey @client)))
-      {:user {:id @client :name @client}
-       :roles #{:user}
-       :auth-type :api-key}))
-
-
-
 (defn wrap-auth [handler]
   (fn [request]
-    (if (and (log/spy @client)
-             (= (log/spy (-> request :headers (get "Authorization") (get "apiKey")))
-                (log/spy (get (log/spy @apikey) @client))))
-      (handler request)
-      (f/fail "Unauthorized")
-      #_(status/unauthorized))))
+    (if @client
+      (if (= (or (-> request :headers (get "X-API-Key"))
+                 (-> request :headers (get "x-api-key")))
+             (get @apikey @client))
+        (handler request)
+        (unauthorized {:error "Could not access the Social Wallet API"}))
+      (handler request))))
 
 (def app
-  (wrap-auth
-   (wrap-cors
-    (wrap-defaults rest-api rest-api-defaults)
-    :access-control-allow-origin [#".*"]
-    :access-control-allow-methods [:get :post])))
+  (wrap-cors
+   (wrap-defaults rest-api rest-api-defaults)
+   :access-control-allow-origin [#".*"]
+   :access-control-allow-methods [:get :post]))
