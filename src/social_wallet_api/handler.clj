@@ -197,136 +197,144 @@
 
 (defn wrap-auth [handler]
   (fn [request]
-    (if (log/spy @client)
+    (if @client
       (if (= (or (-> request :headers (get "X-API-Key"))
                  (-> request :headers (get "x-api-key")))
-             (log/spy (get @apikey @client)))
+             (get @apikey @client))
         (handler request)
         (unauthorized {:error "Could not access the Social Wallet API"}))
       (handler request))))
 
 (def rest-api
   (api
-    {:swagger
-     {:ui "/"
-      :spec "/swagger.json"
-      :data {:info
-             {:version (clojure.string/trim (slurp "VERSION"))
-              :title "Social-wallet-api"
-              :description "Social Wallet REST API backend for webapps. All blockchain activity is backed by a DB. For example for any transaction that happens on the blockchain side a record will be created on the DB side and the fees will be updated where applicable. All queries take as minimum parameters the `type` which can be one the [\"db-only\" \"blockchain-and-db\"] and the `connection` which can be \"mongo\" for db-only or \"faircoin\", \"bitcoin\" etc for blockchain-and-db."
-              :contact {:url "https://github.com/Commonfare-net/social-wallet-api"}}}}}
+   {:swagger
+    {:ui "/"
+     :spec "/swagger.json"
+     :data {:securityDefinitions
+            {:api_key 
+             {:type "apiKey"
+              :name "x-api-key"
+              :in "header"}}
+            :info
+            {:version (clojure.string/trim (slurp "VERSION"))
+             :title "Social-wallet-api"
+             :description "Social Wallet REST API backend for webapps. All blockchain activity is backed by a DB. For example for any transaction that happens on the blockchain side a record will be created on the DB side and the fees will be updated where applicable. All queries take as minimum parameters the `type` which can be one the [\"db-only\" \"blockchain-and-db\"] and the `connection` which can be \"mongo\" for db-only or \"faircoin\", \"bitcoin\" etc for blockchain-and-db."
+             :contact {:url "https://github.com/Commonfare-net/social-wallet-api"}}}}}
 
-    (context (path-with-version "") []
-      :tags ["INFO"]
-      (GET "/readme" request
-        {:headers {"Content-Type"
-                   "text/html; charset=utf-8"}
-         :body {:readme (md/md-to-html-string
-                         (slurp "README.md"))}}))
+   (context (path-with-version "") []
+     :tags ["INFO"]
+     (GET "/readme" request
+       {:headers {"Content-Type"
+                  "text/html; charset=utf-8"}
+        :body {:readme (md/md-to-html-string
+                        (slurp "README.md"))}}))
 
-    (context (path-with-version "") []
-      :tags ["LABEL"]
-      :middleware [wrap-auth]
-      (POST "/label" request
-        :responses {status/not-found {:schema {:error s/Str}}
-                    status/service-unavailable {:schema {:error s/Str}}}
-        :return Label
-        :header-params [x-api-key]
-        :body [query Query]
-        :summary "Show the label"
-        :description "
+   (context (path-with-version "") []
+     :tags ["LABEL"]
+     :middleware [wrap-auth]
+     (POST "/label" request
+       :responses {status/not-found {:schema {:error s/Str}}
+                   status/service-unavailable {:schema {:error s/Str}}}
+       :return Label
+       :body [query Query]
+       :summary "Show the label"
+       :description "
 
 Takes a JSON structure made of a `connection` and a `type` identifier.
 
 It returns the label value which contains the name of the currency.
 
 "
-                   (with-error-responses connections query
-                     (fn [connection query] {:currency (lib/label connection)}))))
+       (with-error-responses connections query
+         (fn [connection query] {:currency (lib/label connection)}))))
 
-    (context (path-with-version "") []
-             :tags ["ADDRESS"]
-             (POST "/address" request
-               :responses {status/not-found {:schema {:error s/Str}}
-                           status/service-unavailable {:schema {:error s/Str}}}
-                   :return Addresses
-                   :body [query PerAccountQuery]
-                   :summary "List all addresses related to an account"
-                   :description "
+   (context (path-with-version "") []
+     :tags ["ADDRESS"]
+     :middleware [wrap-auth]
+     (POST "/address" request
+       :responses {status/not-found {:schema {:error s/Str}}
+                   status/service-unavailable {:schema {:error s/Str}}}
+       :return Addresses
+       :body [query PerAccountQuery]
+       :summary "List all addresses related to an account"
+       :description "
 
 Takes a JSON structure made of a `connection` identifier, a `type` and an `account-id`.
 
 It returns a list of addresses for the particular account.
 
 "
-                   (with-error-responses connections query 
-                     (fn [connection query]
-                       (if (= (-> query :connection keyword) :mongo)
-                         (f/fail "Addresses are available only for blockchain requests")
-                         {:addresses (lib/get-address connection (:account-id query))})))))
+       (with-error-responses connections query 
+         (fn [connection query]
+           (if (= (-> query :connection keyword) :mongo)
+             (f/fail "Addresses are available only for blockchain requests")
+             {:addresses (lib/get-address connection (:account-id query))})))))
 
-    (context (path-with-version "") []
-      :tags ["BALANCE"]
-      (POST "/balance" request
-        :responses {status/not-found {:schema {:error s/Str}}
-                    status/service-unavailable {:schema {:error s/Str}}}
-        :return Balance
-        :body [query MaybeAccountQuery]
-        :summary "Returns the balance of an account or the total balance."
-        :description "
+   (context (path-with-version "") []
+     :tags ["BALANCE"]
+     :middleware [wrap-auth]
+     (POST "/balance" request
+       :responses {status/not-found {:schema {:error s/Str}}
+                   status/service-unavailable {:schema {:error s/Str}}}
+       :return Balance
+       :body [query MaybeAccountQuery]
+       :summary "Returns the balance of an account or the total balance."
+       :description "
 
 Takes a JSON structure made of a `connection`, `type` identifier and an `account id`.
 
 It returns balance for that particular account. If no account is provided it returns the total balance of the wallet.
 
 "
-        (with-error-responses connections query
-          (fn [connection query] {:amount (lib/get-balance connection (:account-id query))}))))
+       (with-error-responses connections query
+         (fn [connection query] {:amount (lib/get-balance connection (:account-id query))}))))
 
-    (context (path-with-version "/tags") []
-             :tags ["TAGS"]
-             (POST "/list" request
-               :responses {status/not-found {:schema {:error s/Str}}
-                               status/service-unavailable {:schema {:error s/Str}}
-                               status/bad-request {:schema {:error s/Str}}}
-                   :return Tags
-                   :body [query Query]
-                   :summary "List all tags"
-                   :description "
+   (context (path-with-version "/tags") []
+     :tags ["TAGS"]
+     :middleware [wrap-auth]
+     (POST "/list" request
+       :responses {status/not-found {:schema {:error s/Str}}
+                   status/service-unavailable {:schema {:error s/Str}}
+                   status/bad-request {:schema {:error s/Str}}}
+       :return Tags
+       :body [query Query]
+       :summary "List all tags"
+       :description "
 
 Takes a JSON structure made of a `connection` and a `type` identifier.
 
 It returns a list of tags found on the database.
 
 "
-                   (with-error-responses connections query
-                     (fn [connection query]
-                       (if (= (-> query :connection keyword) :mongo)
-                         {:tags (lib/list-tags connection {})}
-                         ;; TODO replace mongo eith generic DB or storage?
-                         (f/fail "Tags are available only for Mongo requests"))))))
+       (with-error-responses connections query
+         (fn [connection query]
+           (if (= (-> query :connection keyword) :mongo)
+             {:tags (lib/list-tags connection {})}
+             ;; TODO replace mongo eith generic DB or storage?
+             (f/fail "Tags are available only for Mongo requests"))))))
 
-    ;; TODO: maye add the mongo filtering parameters too? Like tags and from/to timestamps
-    (context (path-with-version "/transactions") []
-             :tags ["TRANSACTIONS"]
-             (POST "/list" request
-               :responses {status/not-found {:schema {:error s/Str}}
-                           status/service-unavailable {:schema {:error s/Str}}}
-                   :return  (s/if #(map? %)
-                              {:total-count s/Num
-                               :transactions [DBTransaction]}
-                              [BTCTransaction])
-                   :body [query ListTransactionsQuery]
-                   :summary "List transactions"
-                   :description "
+   ;; TODO: maye add the mongo filtering parameters too? Like tags and from/to timestamps
+   (context (path-with-version "/transactions") []
+     :tags ["TRANSACTIONS"]
+     :middleware [wrap-auth]
+     (POST "/list" request
+       :responses {status/not-found {:schema {:error s/Str}}
+                   status/service-unavailable {:schema {:error s/Str}}}
+       :return  (s/if #(map? %)
+                  {:total-count s/Num
+                   :transactions [DBTransaction]}
+                  [BTCTransaction])
+       :body [query ListTransactionsQuery]
+       :summary "List transactions"
+       :description "
 Takes a JSON structure with a `connection` and a `type` query identifier. Both mongo and btc transactions can be filtered by `account-id`. For blockchains, a number of optional identifiers are available for filtering like `count` and `from`: Returns up to [count] most recent transactions skipping the first [from] transactions for account [account]. For db queries paging can be used with the `page` and `per-page` identifiers which default to 1 and 10 respectively (first page, ten per page). Finally db queries can be also filtered by `currency`, `tags`, `description`, `from-datetime` and `to-datetime`. From-datetime is inclusive and to-datetime is exclusive. 
 
 Returns a list of transactions found on that connection.
 
 "
-                   (with-error-responses connections query
-                     (fn [connection {:keys [account-id tags from-datetime to-datetime page per-page currency description]}]
-                       (f/if-let-ok? [transaction-list (lib/list-transactions
+       (with-error-responses connections query
+         (fn [connection {:keys [account-id tags from-datetime to-datetime page per-page currency description]}]
+           (f/if-let-ok? [transaction-list (lib/list-transactions
                                             connection
                                             (cond-> {}
                                               account-id  (assoc :account-id account-id)
@@ -338,45 +346,47 @@ Returns a list of transactions found on that connection.
                                               ;; TODO: currency filtering doesnt work yet
                                               currency (assoc :currency currency)
                                               description (assoc :description description)))]
-                         (if (= (-> query :connection keyword) :mongo)
-                           {:total-count (lib/count-transactions connection {})
-                            :transactions transaction-list}
-                           transaction-list)
-                         transaction-list)))))
+             (if (= (-> query :connection keyword) :mongo)
+               {:total-count (lib/count-transactions connection {})
+                :transactions transaction-list}
+               transaction-list)
+             transaction-list)))))
 
-    (context (path-with-version "/transactions") []
-             :tags ["TRANSACTIONS"]
-             (POST "/get" request
-               :responses {status/not-found {:schema {:error s/Str}}
-                           status/service-unavailable {:schema {:error s/Str}}}
-               :return (s/if #(:transaction-id %)
-                         DBTransaction
-                         (s/if #(get % "amount")
-                           BTCTransaction
-                           DecodedRawTransaction))
-                   :body [query TransactionQuery]
-                   :summary "Retieve a transaction by txid"
-                   :description "
+   (context (path-with-version "/transactions") []
+     :tags ["TRANSACTIONS"]
+     :middleware [wrap-auth]
+     (POST "/get" request
+       :responses {status/not-found {:schema {:error s/Str}}
+                   status/service-unavailable {:schema {:error s/Str}}}
+       :return (s/if #(:transaction-id %)
+                 DBTransaction
+                 (s/if #(get % "amount")
+                   BTCTransaction
+                   DecodedRawTransaction))
+       :body [query TransactionQuery]
+       :summary "Retieve a transaction by txid"
+       :description "
 Takes a JSON structure with a `connection`, `type` query identifier and a `txid`.
 
 Returns the transaction if found on that connection.
 
 "
-                   (with-error-responses connections query
-                     (fn [connection query] (lib/get-transaction
-                                             connection
-                                             (:txid query))))))
+       (with-error-responses connections query
+         (fn [connection query] (lib/get-transaction
+                                 connection
+                                 (:txid query))))))
 
-    (context (path-with-version "/transactions") []
-             :tags ["TRANSACTIONS"]
-             (POST "/new" request
-               :responses {status/not-found {:schema {:error s/Str}}
-                           status/service-unavailable {:schema {:error s/Str}}
-                           status/bad-request {:schema {:error s/Str}}}
-               :return DBTransaction
-               :body [query NewTransactionQuery]
-               :summary "Create a new transaction"
-               :description "
+   (context (path-with-version "/transactions") []
+     :tags ["TRANSACTIONS"]
+     :middleware [wrap-auth]
+     (POST "/new" request
+       :responses {status/not-found {:schema {:error s/Str}}
+                   status/service-unavailable {:schema {:error s/Str}}
+                   status/bad-request {:schema {:error s/Str}}}
+       :return DBTransaction
+       :body [query NewTransactionQuery]
+       :summary "Create a new transaction"
+       :description "
 Takes a JSON structure with a `connection`, `type`, `from-account`, `to-account`, `amount` query identifiers and optionally `tags` and `description` as paramaters. Tags are metadata meant to add a category to the transaction and useful for grouping and searching. The amount has been tested for values between `0.00000001` and `9999999999999999.99999999`.
 
 Creates a transaction. This call is only meant for DBs and not for blockchains.
@@ -384,26 +394,27 @@ Creates a transaction. This call is only meant for DBs and not for blockchains.
 Returns the DB entry that was created.
 
 "
-               (with-error-responses connections query
-                 (fn [connection query]
-                   (if (= (-> query :connection keyword) :mongo)
-                     (lib/create-transaction connection
-                                             (:from-id query)
-                                             (:amount query)
-                                             (:to-id query)
-                                             query) 
-                     (f/fail "Transactions can only be made for DBs. For blockchains please look at Deposit and Withdraw"))))))
+       (with-error-responses connections query
+         (fn [connection query]
+           (if (= (-> query :connection keyword) :mongo)
+             (lib/create-transaction connection
+                                     (:from-id query)
+                                     (:amount query)
+                                     (:to-id query)
+                                     query) 
+             (f/fail "Transactions can only be made for DBs. For blockchains please look at Deposit and Withdraw"))))))
 
-    (context (path-with-version "/withdraws") []
-             :tags ["WITHDRAWS"]
-             (POST "/new" request
-               :responses {status/not-found {:schema {:error s/Str}}
-                           status/service-unavailable {:schema {:error s/Str}}
-                           status/bad-request {:schema {:error s/Str}}}
-               :return DBTransaction
-               :body [query NewWithdraw]
-               :summary "Perform a withrdaw from a blockchain"
-               :description "
+   (context (path-with-version "/withdraws") []
+     :tags ["WITHDRAWS"]
+     :middleware [wrap-auth]
+     (POST "/new" request
+       :responses {status/not-found {:schema {:error s/Str}}
+                   status/service-unavailable {:schema {:error s/Str}}
+                   status/bad-request {:schema {:error s/Str}}}
+       :return DBTransaction
+       :body [query NewWithdraw]
+       :summary "Perform a withrdaw from a blockchain"
+       :description "
 Takes a JSON structure with a `connection`, `type`, `to-address`, `amount` query identifiers and optionally `from-id`, `from-wallet-account`, `tags`, `comment`, `commentto` and `description` as paramaters. Comment and commentto are particular to the BTC RCP, for more details look at https://en.bitcoin.it/wiki/Original_Bitcoin_client/API_calls_list. Tags are metadata meant to add a `label` to the withdraw and useful for grouping and searching. The parameter `from-id` is metadata not used in the actual blockchain transaction but stored on the db and useful to identify which account initiated the withdraw. Finally `from-wallet-account` if used will make the withdraw from the particular account in the wallet instead of the default. If not found an error will be returned.
 
 This call will withdraw an amount from the default account \"\" or optionally a given wallet-account to a provided blockchain address. Also a transaction on the DB will be registered. If fees apply for this transaction those fees will be added to the amount on the DB when the transaction reaches the required amount of confirmations. The number of confirmations and the frequency of the checks are defined in the config as `number-confirmations` and `frequency-confirmations-millis` respectiviely.
@@ -412,58 +423,59 @@ This call will withdraw an amount from the default account \"\" or optionally a 
 Returns the DB entry that was created.
 
 "
-                   (with-error-responses connections query
-                     (fn [connection query] 
-                       (if (= (-> query :connection keyword) :mongo)
-                         (f/fail "Withdraws are only available for blockchain requests")
-                         (f/if-let-ok? [transaction-id (lib/create-transaction
-                                                        connection
-                                                        (or (:from-wallet-account query) "")
-                                                        (-> query :amount)
+       (with-error-responses connections query
+         (fn [connection query] 
+           (if (= (-> query :connection keyword) :mongo)
+             (f/fail "Withdraws are only available for blockchain requests")
+             (f/if-let-ok? [transaction-id (lib/create-transaction
+                                            connection
+                                            (or (:from-wallet-account query) "")
+                                            (-> query :amount)
+                                            (:to-address query)
+                                            (dissoc query :tags :description))]
+               (do
+                 ;; Update fee to db when confirmed
+                 ;; The logged-future will return an exception which otherwise would be swallowed till deref
+                 (log/logged-future
+                  (while (> (-> connection :confirmations :number-confirmations)
+                            (number-confirmations connection transaction-id))
+                    (log/debug "Not enough confirmations for transaction with id " transaction-id)
+                    (Thread/sleep (-> connection :confirmations :frequency-confirmations-millis)))
+                  (let [transaction (lib/get-transaction connection transaction-id)
+                        fee (get transaction "fee")]
+                    (log/debug "Updating the amount with the fee")
+                    (lib/update-transaction
+                     (get-db-connection connections) transaction-id
+                     ;; Here we add the minus fee to the whole transaction when confirmed
+                     (fn [tr] (let [updated-transaction (update tr :amount #(+ % (- fee)))]
+                                (assoc updated-transaction :amount-text (-> updated-transaction :amount str)))))))
+                 ;; store to db as well with transaction-id
+                 (f/if-let-ok? [db-transaction
+                                (lib/create-transaction (get-db-connection connections)
+                                                        (or (:from-id query) (:from-wallet-account query) "")
+                                                        (:amount query)
                                                         (:to-address query)
-                                                        (dissoc query :tags :description))]
-                           (do
-                             ;; Update fee to db when confirmed
-                             ;; The logged-future will return an exception which otherwise would be swallowed till deref
-                             (log/logged-future
-                              (while (> (-> connection :confirmations :number-confirmations)
-                                        (number-confirmations connection transaction-id))
-                                 (log/debug "Not enough confirmations for transaction with id " transaction-id)
-                                 (Thread/sleep (-> connection :confirmations :frequency-confirmations-millis)))
-                              (let [transaction (lib/get-transaction connection transaction-id)
-                                    fee (get transaction "fee")]
-                                 (log/debug "Updating the amount with the fee")
-                                 (lib/update-transaction
-                                  (get-db-connection connections) transaction-id
-                                  ;; Here we add the minus fee to the whole transaction when confirmed
-                                  (fn [tr] (let [updated-transaction (update tr :amount #(+ % (- fee)))]
-                                             (assoc updated-transaction :amount-text (-> updated-transaction :amount str)))))))
-                             ;; store to db as well with transaction-id
-                             (f/if-let-ok? [db-transaction
-                                            (lib/create-transaction (get-db-connection connections)
-                                                                    (or (:from-id query) (:from-wallet-account query) "")
-                                                                    (:amount query)
-                                                                    (:to-address query)
-                                                                    (-> query
-                                                                        (dissoc :comment :comment-to)
-                                                                        (assoc :transaction-id transaction-id
-                                                                               :currency (:connection query))))]
-                               db-transaction
-                               (f/fail (f/message (str "Did not write transaction " transaction-id " on the DB because: " (f/message db-transaction))))))
-                           ;; There was an error
-                           (f/fail (f/message transaction-id))))))))
+                                                        (-> query
+                                                            (dissoc :comment :comment-to)
+                                                            (assoc :transaction-id transaction-id
+                                                                   :currency (:connection query))))]
+                   db-transaction
+                   (f/fail (f/message (str "Did not write transaction " transaction-id " on the DB because: " (f/message db-transaction))))))
+               ;; There was an error
+               (f/fail (f/message transaction-id))))))))
 
-        (context (path-with-version "/deposits") []
-             :tags ["DEPOSITS"]
-             (POST "/new" request
-               :responses {status/not-found {:schema {:error s/Str}}
-                           status/service-unavailable {:schema {:error s/Str}}
-                           status/bad-request {:schema {:error s/Str}}}
-               :return AddressNew
-               :body [query NewDeposit]
+   (context (path-with-version "/deposits") []
+     :tags ["DEPOSITS"]
+     :middleware [wrap-auth]
+     (POST "/new" request
+       :responses {status/not-found {:schema {:error s/Str}}
+                   status/service-unavailable {:schema {:error s/Str}}
+                   status/bad-request {:schema {:error s/Str}}}
+       :return AddressNew
+       :body [query NewDeposit]
 
-               :summary "Request a new blockchain address to perform a deposit"
-               :description "
+       :summary "Request a new blockchain address to perform a deposit"
+       :description "
 Takes a JSON structure with a `connection` and `type` query identifier and optionally `to-id`, `to-wallet-id` and `tags`. `to-id` is metadata that will be added to the DB once a deposit to the address is detected. Same goes for `tags` which are metadata meant to add a `label` to the deposit and they are useful for grouping and searching. When `to-wallet-id` is used it will create the address for a particular account in the wallet and the default otherwise. If the account is not found the address will be created on the default account.
 
 This call creates a new address and returns it in order to be able to deposit to it. Then, on a different thread, there will be a watch that until it expires it will check for a transaction done to this address and update the DB. If no transaction is perfromed until expiration a check for that particular address can be triggered via `deposits/check`. The frequency of the transaction checks and the expiration can be set in the config as `frequency-deposit-millis` and `deposit-expiration-millis` respectively.
@@ -471,42 +483,43 @@ This call creates a new address and returns it in order to be able to deposit to
 Returns the blockchain address that was created.
 
 "
-                   (with-error-responses connections query
-                     (fn [connection query]
-                       (if (= (-> query :connection keyword) :mongo)
-                         (f/fail "Deposits are only available for blockchain requests")
-                         (f/if-let-ok? [new-address (lib/create-address connection
-                                                                        (-> query :to-wallet-id))]
-                           (let [pending (atom true)
-                                 start-time (time/now)
-                                 end-time (time/plus start-time (time/millis (-> connection :deposits :deposit-expiration-millis)))]
-                             ;; Check whether a transaction to this address was made and update the DB
-                             ;; The logged-future will return an exception which otherwise would be swallowed till deref
-                             (log/logged-future
-                              (while (and @pending (time/before? (time/now) end-time))
-                                (when-not (empty? (blockchain-deposit->db-entry connection query new-address))
-                                  (reset! pending false))
-                                ;; wait
-                                (Thread/sleep (-> connection :confirmations :frequency-confirmations-millis))))
-                             {:address new-address})
-                           ;; There was an error
-                           (f/fail (f/message new-address))))))))
+       (with-error-responses connections query
+         (fn [connection query]
+           (if (= (-> query :connection keyword) :mongo)
+             (f/fail "Deposits are only available for blockchain requests")
+             (f/if-let-ok? [new-address (lib/create-address connection
+                                                            (-> query :to-wallet-id))]
+               (let [pending (atom true)
+                     start-time (time/now)
+                     end-time (time/plus start-time (time/millis (-> connection :deposits :deposit-expiration-millis)))]
+                 ;; Check whether a transaction to this address was made and update the DB
+                 ;; The logged-future will return an exception which otherwise would be swallowed till deref
+                 (log/logged-future
+                  (while (and @pending (time/before? (time/now) end-time))
+                    (when-not (empty? (blockchain-deposit->db-entry connection query new-address))
+                      (reset! pending false))
+                    ;; wait
+                    (Thread/sleep (-> connection :confirmations :frequency-confirmations-millis))))
+                 {:address new-address})
+               ;; There was an error
+               (f/fail (f/message new-address))))))))
 
-        (context (path-with-version "/deposits") []
-          :tags ["DEPOSITS"]
-          (POST "/check" request
-            :responses {status/not-found {:schema {:error s/Str}}
-                        status/service-unavailable {:schema {:error s/Str}}
-                        status/bad-request {:schema {:error s/Str}}}
-            :return (s/if #(coll? %)
-                        (s/if #(first %)
-                          [DBTransaction]
-                          [])
-                        {:error s/Str}) 
-            :body [query DepositCheck]
+   (context (path-with-version "/deposits") []
+     :tags ["DEPOSITS"]
+     :middleware [wrap-auth]
+     (POST "/check" request
+       :responses {status/not-found {:schema {:error s/Str}}
+                   status/service-unavailable {:schema {:error s/Str}}
+                   status/bad-request {:schema {:error s/Str}}}
+       :return (s/if #(coll? %)
+                 (s/if #(first %)
+                   [DBTransaction]
+                   [])
+                 {:error s/Str}) 
+       :body [query DepositCheck]
 
-            :summary "Manually check if a given address has received any deposits"
-            :description "
+       :summary "Manually check if a given address has received any deposits"
+       :description "
 Takes a JSON structure with a `connection`, `type` and an `address` query identifier.
 
 This call will check if any deposits were made to this particular address and will update the DB if it is not already updated. It is meant to be used only for blockchains and the purpose is to update the db for deposits that were made after the deposit watch for the address has expired before a deposit was made. If it is called even though the deposits have been registerd no changes will be made.
@@ -514,34 +527,34 @@ This call will check if any deposits were made to this particular address and wi
 Returns the DB entries that were created.
 
 "
-            (with-error-responses connections query
-              (fn [connection query]
-                (if (= (-> query :connection keyword) :mongo)
-                  (f/fail "Deposit checks are only available for blockchain requests")
-                  (blockchain-deposit->db-entry connection query (:address query)))))))
+       (with-error-responses connections query
+         (fn [connection query]
+           (if (= (-> query :connection keyword) :mongo)
+             (f/fail "Deposit checks are only available for blockchain requests")
+             (blockchain-deposit->db-entry connection query (:address query)))))))
 
 
-        
-    ;; (context "/wallet/v1/accounts" []
-    ;;          :tags ["ACCOUNTS"]
-    ;;          (GET "/list" request
-    ;;               {:return Accounts
-    ;;                :summary "List all valid accounts"
-    ;;                :body (ok {:data (list-accounts (:backend @app-state))})}))
+   
+   ;; (context "/wallet/v1/accounts" []
+   ;;          :tags ["ACCOUNTS"]
+   ;;          (GET "/list" request
+   ;;               {:return Accounts
+   ;;                :summary "List all valid accounts"
+   ;;                :body (ok {:data (list-accounts (:backend @app-state))})}))
 
-    ;;          (POST "import" []
-    ;;                :return Accounts
-    ;;                :body [account Accounts]
-    ;;                :summary "Import an existing account"
-    ;;                (ok (complete import-account account Accounts)))
+   ;;          (POST "import" []
+   ;;                :return Accounts
+   ;;                :body [account Accounts]
+   ;;                :summary "Import an existing account"
+   ;;                (ok (complete import-account account Accounts)))
 
-    ;;          (POST "create" []
-    ;;                :return Accounts
-    ;;                :body [account Accounts]
-    ;;                :summary "Create a new account"
-    ;;                (ok (complete create-account account Accounts))))
+   ;;          (POST "create" []
+   ;;                :return Accounts
+   ;;                :body [account Accounts]
+   ;;                :summary "Create a new account"
+   ;;                (ok (complete create-account account Accounts))))
 
-    ))
+   ))
 
 ;; explicit middleware configuration for compojure
 (def rest-api-defaults
@@ -552,16 +565,6 @@ Returns the DB entries that were created.
       (assoc-in [:security :anti-forgery] false)
       (assoc-in [:security :ssl-redirect] false)
       (assoc-in [:security :hsts] true)))
-
-(defn wrap-auth [handler]
-  (fn [request]
-    (if @client
-      (if (= (or (-> request :headers (get "X-API-Key"))
-                 (-> request :headers (get "x-api-key")))
-             (get @apikey @client))
-        (handler request)
-        (unauthorized {:error "Could not access the Social Wallet API"}))
-      (handler request))))
 
 (def app
   (wrap-cors

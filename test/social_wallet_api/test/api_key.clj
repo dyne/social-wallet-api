@@ -55,18 +55,20 @@
                                                    (->
                                                     (mock/request :post "/wallet/v1/label")
                                                     (mock/content-type "application/json")
-                                                    (mock/body  (cheshire/generate-string mongo-db-only))))]
+                                                    (mock/body  (cheshire/generate-string mongo-db-only))))
+                                         body (parse-body (:body response))]
                                      (:status response) => 401
-                                     (:body response) => {:error "Could not access the Social Wallet API"}))
+                                     body => {:error "Could not access the Social Wallet API"}))
                              (fact "A request sent with the wrong API KEY on the headers doesnt work."
                                    (let [response (h/app
                                                    (->
                                                     (mock/request :post "/wallet/v1/label")
                                                     (mock/content-type "application/json")
                                                     (mock/header "X-API-Key" "wrong-key")
-                                                    (mock/body  (cheshire/generate-string mongo-db-only))))]
+                                                    (mock/body  (cheshire/generate-string mongo-db-only))))
+                                         body (parse-body (:body response))]
                                      (:status response) => 401
-                                     (:body response) => {:error "Could not access the Social Wallet API"}))
+                                     body => {:error "Could not access the Social Wallet API"}))
                              (fact "A request sent with the correct API KEY on the headers works as expected."
                                    (let [apikey (get @ak/apikey @h/client)
                                          response (h/app
