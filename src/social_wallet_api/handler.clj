@@ -202,7 +202,7 @@
       (if (= (-> request :headers (get "x-api-key"))
              (get @apikey @client))
         (handler request)
-        (unauthorized {:error "Could not access the Social Wallet API"}))
+        (unauthorized {:error "Could not access the Social Wallet API: wrong API KEY"}))
       (handler request))))
 
 (def rest-api
