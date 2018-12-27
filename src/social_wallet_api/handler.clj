@@ -43,7 +43,8 @@
             [dom-top.core :as dom]
             [ring.middleware.cors :refer [wrap-cors]]
             [clj-time.core :as time]
-            [social-wallet-api.api-key :refer [create-and-store-apikey! apikey? apikey]]
+            [social-wallet-api.api-key :refer [create-and-store-apikey! apikey? apikey
+                                               write-apikey-file]]
             [ring-api-key-middleware.core :refer [wrap-api-key-fn]]))
 
 (defonce prod-app-name "social-wallet-api")
@@ -120,13 +121,14 @@
      (swap! connections conj {:mongo mongo})
      (log/warn "MongoDB backend connected.")
 
-     ;; Setup api key when needed
+     ;; Setup API KEY when needed
      (let [apikey-store (-> @connections :mongo :stores-m :apikey-store)]
        (when-let [client-app (:apikey mongo-conf)]
          (reset! client client-app)
          (reset! apikey (apply hash-map (vals
                                          (or (apikey? apikey-store client-app)
-                                             (create-and-store-apikey! apikey-store client-app 32))))))))
+                                             (create-and-store-apikey! apikey-store client-app 32)))))
+         (write-apikey-file "apikey.yaml" (str client-app ":\n " (get @apikey client-app))))))
    
    (when-let [fair-conf (get-connection-conf config app-name :faircoin)]
      (f/if-let-ok? [fair (merge (lib/new-btc-rpc (:currency fair-conf) 

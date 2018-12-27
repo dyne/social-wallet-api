@@ -38,3 +38,6 @@
 
 (defn apikey? [apikey-store client-app]
   (ak/fetch-by-client-app apikey-store client-app))
+
+(defn write-apikey-file [file apikey]
+  (spit file apikey))
