@@ -117,7 +117,6 @@ served from enterprise infrastructure using JBoss or Tomcat.
 ### TODO
 
 - Multicurrency on the DB
-- API KEY signature for requests
 
 ## Acknowledgements
 
