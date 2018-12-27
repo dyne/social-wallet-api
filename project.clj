@@ -28,8 +28,6 @@
                  [ring/ring-core "1.7.0"]
                  [ring/ring-defaults "0.3.2"]
                  [ring-cors "0.1.12"]
-                 ;; APIKEY middleware
-                 [threatgrid/ring-api-key-middleware "0.1.2"]
 
                  ;; core freecoin toolkit library
                  [org.clojars.dyne/freecoin-lib ~version]

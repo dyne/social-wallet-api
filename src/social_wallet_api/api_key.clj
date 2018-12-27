@@ -36,7 +36,8 @@
     apikey-entry
     (f/fail (str "Could not create api-key entry because: " apikey-entry))))
 
-(defn apikey? [apikey-store client-app]
+(defn fetch-apikey [apikey-store client-app]
+  "Fetches the api key from storage and returns it, retuns nil if not found."
   (ak/fetch-by-client-app apikey-store client-app))
 
 (defn write-apikey-file [file apikey]
