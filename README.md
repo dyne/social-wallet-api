@@ -67,7 +67,8 @@ log-level: debug
 # open freecoin specific section
 freecoin:
 # indentation matters: mind the initial spaces of following sections
-
+  # If an apikey is added to the config, for that particular installation an apikey will be created, stored and required with every request. Device-id should be replaced with the device/client-app name/id.
+  apikey: device-id
 # configuration for the database holding local transactions
   mongo:
     host: localhost
