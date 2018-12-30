@@ -15,7 +15,7 @@
   (cheshire/parse-string (slurp body) true))
 
 (against-background [(before :contents (h/init
-                                        (config-read social-wallet-api.test.handler/test-app-name)
+                                        (config-read test-app-name)
                                         social-wallet-api.test.handler/test-app-name))
                      (after :contents (h/destroy))]
                     (facts "Some basic requests work properly"
