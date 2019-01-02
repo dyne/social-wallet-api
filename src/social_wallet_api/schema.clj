@@ -151,7 +151,8 @@
                 (s/optional-key :tags) [s/Str]
                 (s/optional-key :from-datetime) java.util.Date
                 (s/optional-key :to-datetime) java.util.Date
-                (s/optional-key :currency) s/Str}))
+                (s/optional-key :currency) s/Str
+                (s/optional-key :description) s/Str}))
 
 
 (s/defschema DepositCheck
@@ -191,7 +192,8 @@
               (s/optional-key :faircoin) BlockchainConfig
               (s/optional-key :bitcoin) BlockchainConfig
               (s/optional-key :litecoin) BlockchainConfig
-              (s/optional-key :multichain) BlockchainConfig}})
+              (s/optional-key :multichain) BlockchainConfig
+              (s/optional-key :apikey) s/Str}})
 
 (s/defschema Config
   {:appname s/Str
@@ -199,4 +201,5 @@
    :paths [s/Str]
    ;; FIXME: one of the two keys bellow have to be present. How to do withough either/both???
    (s/optional-key :social-wallet-api) SocialWalletAPIConfig
-   (s/optional-key :social-wallet-api-test) SocialWalletAPIConfig})
+   (s/optional-key :social-wallet-api-test) SocialWalletAPIConfig
+   (s/optional-key :social-wallet-with-apikey-test) SocialWalletAPIConfig})

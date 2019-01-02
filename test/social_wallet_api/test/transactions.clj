@@ -241,4 +241,15 @@
                                                                                    :page 0})))))
                                                    body (-> response :body parse-body)]
                                                (:status response) => 200
-                                               (-> body :transactions count) => 200)))))))))
+                                               (-> body :transactions count) => 200)
+
+                                             (let [response (h/app
+                                                             (->
+                                                              (mock/request :post "/wallet/v1/transactions/list")
+                                                              (mock/content-type "application/json")
+                                                              (mock/body  (cheshire/generate-string
+                                                                           (merge mongo-db-only
+                                                                                  {:description "lalala"})))))
+                                                   body (-> response :body parse-body)]
+                                               (:status response) => 200
+                                               (-> body :transactions count) => 10)))))))))
