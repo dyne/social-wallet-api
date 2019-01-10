@@ -138,7 +138,7 @@
                                                                                                 mongo-db-only
                                                                                                 {:from-id "from account"
                                                                                                  :to-id "to account"
-                                                                                                 :amount amount
+                                                                                                 :amount (log/spy amount)
                                                                                                  :tags ["blabla"]})))))
                                               body (parse-body (:body response))]
                                           (:status response) => 400
