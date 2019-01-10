@@ -17,6 +17,7 @@ case of error, report meaningful messages.
 [![Build Status](https://travis-ci.org/Commonfare-net/social-wallet-api.svg?branch=master)](https://travis-ci.org/Commonfare-net/social-wallet-api)
 [![Clojars Project](https://img.shields.io/clojars/v/social-wallet-api.svg)](https://clojars.org/social-wallet-api)
 [![Freecoin project stats](https://www.openhub.net/p/freecoin/widgets/project_thin_badge.gif)](https://www.openhub.net/p/freecoin)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 
 This REST API interface is so far meant for low-level access of
 wallets built using the [Freecoin toolkit](https://freecoin.dyne.org).
