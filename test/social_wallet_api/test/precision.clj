@@ -17,6 +17,9 @@
 (def some-from-account "some-from")
 (def some-to-account "some-to-account")
 
+(defn- bigint? [x]
+  (= "No bigint" (try (and (string? x) (bigint x)) (catch NumberFormatException e "No bigint"))))
+
 (defn new-transaction-request [big-number from-account to-account]
   (h/app
    (->
@@ -77,7 +80,7 @@
                                    (class (:amount (get-latest-transaction some-from-account))) => java.math.BigDecimal                    
                                    (:amount-text (get-latest-transaction some-from-account)) => (.toString big-number)))
                            
-                           (fact "Negative amounts not allowed)"
+                           (fact "Negative amounts not allowed"
                                  (let [some-negative -16.5
                                        response (new-transaction-request (str some-negative)
                                                                          some-from-account
@@ -85,7 +88,15 @@
                                        body (parse-body (:body response))]
                                    (:status response) => 400
                                    (:error body) => "Negative values not allowed."
-                                   (:amount-text body) => nil)))
+                                   (:amount-text body) => nil))
+
+                           (fact "Chech amount zero"
+                                 (let [response (new-transaction-request "0"
+                                                                         some-from-account
+                                                                         some-to-account)
+                                       body (parse-body (:body response))]
+                                   (:status response) => 200
+                                   (:amount-text body) => "0")))
                     
                     (facts "Check different doubles" :slow
                            (let [sum-to-account (atom (BigDecimal. 0))]
@@ -97,7 +108,7 @@
                               {:num-tests 200}
                               (fact "Generative tests"
                                     (let [amount (.toString rand-double)  
-                                          response (new-transaction-request (log/spy amount)
+                                          response (new-transaction-request amount
                                                                             "other-from-account"
                                                                             "other-to-account")
                                           body (parse-body (:body response))
@@ -126,7 +137,8 @@
 
                            (fact "Check other inputs" :slow
                                  (for-all
-                                  [other (gen/one-of [gen/string gen/boolean gen/uuid])]
+                                  [other (gen/such-that #(not (bigint? %))
+                                          (gen/one-of [gen/string gen/boolean gen/uuid]))]
                                   {:num-tests 200}
                                   (fact "A really large number with 16,8 digits"
                                         (let [amount (str other) 
