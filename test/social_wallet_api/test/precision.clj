@@ -92,7 +92,7 @@
                                    (:error body) => "Negative values not allowed."
                                    (:amount-text body) => nil))
 
-                           (fact "Chech amount zero"
+                           (fact "Check amount zero"
                                  (let [response (new-transaction-request "0"
                                                                          some-from-account
                                                                          some-to-account)
