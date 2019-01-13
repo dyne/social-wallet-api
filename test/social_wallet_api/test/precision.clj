@@ -18,7 +18,9 @@
 (def some-to-account "some-to-account")
 
 (defn- bigint? [x]
-  (= "No bigint" (try (and (string? x) (bigint x)) (catch NumberFormatException e "No bigint"))))
+  (not= "No bigint"
+     (try (and (string? x) (bigint x))
+                      (catch NumberFormatException e "No bigint"))))
 
 (defn new-transaction-request [big-number from-account to-account]
   (h/app
@@ -138,7 +140,8 @@
                            (fact "Check other inputs" :slow
                                  (for-all
                                   [other (gen/such-that #(not (bigint? %))
-                                          (gen/one-of [gen/string gen/boolean gen/uuid]))]
+                                                        (gen/one-of [gen/string gen/boolean gen/uuid])
+                                                        100)]
                                   {:num-tests 200}
                                   (fact "A really large number with 16,8 digits"
                                         (let [amount (str other) 
