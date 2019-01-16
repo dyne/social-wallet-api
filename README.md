@@ -4,20 +4,19 @@ The Social Wallet API  is made to facilitate the integration of blockchain
 functions into existing front-end applications, providing an easy
 backend of documented REST API endpoints that are validated and, in
 case of error, report meaningful messages. 
-It provides with an abstraction that creates, adds metadata, lists
-and filters tranactions.
+The API provides calls to create, list, filter tranactions and add metadata.
 
 The Social Wallet API allows to make calls to mongo and to running
 blockchain nodes that are compatibile with Bitcoin Core and support
 the generic Bitcoin RPC. Overtime more implemenations will be provided for
-different blockchains and storages.
+different distributed ledger implementations and storages.
 
 <a href="https://www.dyne.org"><img
 src="https://secrets.dyne.org/static/img/swbydyne.png"
 alt="software by Dyne.org"
 title="software by Dyne.org" class="pull-right"></a>
 
-[Getting started](#Getting-Started) | [Prerequisites](#Prerequisites) | [Running](#Running-the-Social-Wallet) | [Running the tests](#Running-the-tests) | [Deployment](#Deployment) | [Acknowledgements](#Acknowledgements) | [Licence](#Licence) | [change log](https://github.com/Commonfare-net/social-wallet-api/blob/master/CHANGELOG.markdown) 
+[Getting started](#Getting-Started) | [Prerequisites](#Prerequisites) | [Running](#Running-the-Social-Wallet-API) | [Running the tests](#Running-the-tests) | [Deployment](#Deployment) | [Acknowledgements](#Acknowledgements) | [License](#License) | [change log](https://github.com/Commonfare-net/social-wallet-api/blob/master/CHANGELOG.markdown) 
 
 [![Build Status](https://travis-ci.org/Commonfare-net/social-wallet-api.svg?branch=master)](https://travis-ci.org/Commonfare-net/social-wallet-api)
 [![Clojars Project](https://img.shields.io/clojars/v/social-wallet-api.svg)](https://clojars.org/social-wallet-api)
@@ -127,7 +126,8 @@ on the project dir
 ## Deployment
 
 Even though there are many ways to deploy this software, a dockerised version is provided in this project. 
-For more details look into the [docker](docker) folder.
+For more details look into the [docker](docker) folder. Please keep in mind that we do not recommend docker for production
+due to some security concerns. 
 
 ## TODO
 
