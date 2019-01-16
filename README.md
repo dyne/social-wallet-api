@@ -3,20 +3,25 @@
 The Social Wallet API  is made to facilitate the integration of blockchain
 functions into existing front-end applications, providing an easy
 backend of documented REST API endpoints that are validated and, in
-case of error, report meaningful messages. 
-The API provides calls to create, list, filter tranactions and add metadata.
+case of error, report meaningful messages. It also gives the opportunity to add
+metadata to transactions which can be very useful for grouping, labeling and filtering
+as well as adding some context.
 
-The Social Wallet API allows to make calls to mongo and to running
+The Social Wallet API allows to make calls to mongo db and to running
 blockchain nodes that are compatibile with Bitcoin Core and support
 the generic Bitcoin RPC. Overtime more implemenations will be provided for
 different distributed ledger implementations and storages.
+
+The Social wallet API can also operate with only the DB without any blockchain connection,
+which is great for experimentation, testing or situations where the complexity of 
+a distributed ledger is not required.
 
 <a href="https://www.dyne.org"><img
 src="https://secrets.dyne.org/static/img/swbydyne.png"
 alt="software by Dyne.org"
 title="software by Dyne.org" class="pull-right"></a>
 
-[Getting started](#Getting-Started) | [Prerequisites](#Prerequisites) | [Running](#Running-the-Social-Wallet-API) | [Running the tests](#Running-the-tests) | [Deployment](#Deployment) | [Acknowledgements](#Acknowledgements) | [License](#License) | [change log](https://github.com/Commonfare-net/social-wallet-api/blob/master/CHANGELOG.markdown) 
+[Getting started](#Getting-Started) | [Prerequisites](#Prerequisites) | [Running](#Running-the-Social-Wallet-API) | [Running the tests](#Running-the-tests) | [Deployment](#Deployment) | [Todos](#Todos) | [Acknowledgements](#Acknowledgements) | [License](#License) | [change log](https://github.com/Commonfare-net/social-wallet-api/blob/master/CHANGELOG.markdown) 
 
 [![Build Status](https://travis-ci.org/Commonfare-net/social-wallet-api.svg?branch=master)](https://travis-ci.org/Commonfare-net/social-wallet-api)
 [![Clojars Project](https://img.shields.io/clojars/v/social-wallet-api.svg)](https://clojars.org/social-wallet-api)
@@ -61,7 +66,7 @@ openjdk-7-jdk libversioneer-clojure haveged`.
 
 First of all check the configuration in
 `resources/social-wallet-api.yaml` and adjust its contents to your
-setup. Here an example complete with comments:
+setup. Here a sample configuration:
 
 ```yaml
 # verbosity level of messages
@@ -71,13 +76,15 @@ log-level: debug
 freecoin:
 # indentation matters: mind the initial spaces of following sections
   # If an apikey is added to the config, for that particular installation an apikey will be created, stored and required with every request. Device-id should be replaced with the device/client-app name/id.
-  apikey: device-id
+  apikey: device-id ## optional
 # configuration for the database holding local transactions
   mongo:
     host: localhost
     port: 27017
     db:   freecoin
     currency: Commoncoin # You can set this to the name of the local currency to be used on the DB
+
+## All the configurations below are optional and multiple can be added
 
 # configuration of the 'faircoin' blockchain
   faircoin:
@@ -129,7 +136,7 @@ Even though there are many ways to deploy this software, a dockerised version is
 For more details look into the [docker](docker) folder. Please keep in mind that we do not recommend docker for production
 due to some security concerns. 
 
-## TODO
+## Todos
 
 - Multicurrency on the DB
 
