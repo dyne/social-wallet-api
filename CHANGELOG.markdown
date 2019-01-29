@@ -1,5 +1,8 @@
 # Changelog
 
+## social-wallet-api 1.3.0
+* Added licencing and README file with template.
+
 ## social-wallet-api 1.2
 * Added the option to require an API KEY for every requests. An API KEY is produced per client app. 	
 	
