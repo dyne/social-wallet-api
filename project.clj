@@ -72,7 +72,8 @@
          :reload-paths ["src"]}
 
   :uberjar-name "social-wallet-api.jar"
-  :alias {"test" ["midje"]}
+  :aliases {"test" ["midje"]
+          "test-basic" ["midje" ":config" "test-resources/fast-tests.config"]}
   :profiles {:dev {:dependencies [[ring/ring-mock "0.3.2"]
                                   ;; this is necessary to use the for-all midje support
                                   [midje "1.9.2"]

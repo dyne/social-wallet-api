@@ -130,6 +130,21 @@ To run all tests one need to run
 ` lein midje`
 on the project dir
 
+#### Run only the fast tests
+
+Some of the tests are marked as slow. If you want to avoid running them you can either
+
+```
+lein midje :filter -slow
+```
+
+or use the alias
+
+```
+lein test-basic
+```
+
+
 ## Deployment
 
 Even though there are many ways to deploy this software, a dockerised version is provided in this project. 
@@ -156,3 +171,8 @@ the [Commonfare project](https://pieproject.eu) (grant nr. 687922) .
 ## License
 
 This project is licensed under the AGPL 3 License - see the [LICENSE](LICENSE) file for details
+
+#### Additional permission under GNU AGPL version 3 section 7.
+
+If you modify Freecoin-lib, or any covered work, by linking or combining it with any library (or a modified version of that library), containing parts covered by the terms of EPL v 1.0, the licensors of this Program grant you additional permission to convey the resulting work. Your modified version must prominently offer all users interacting with it remotely through a computer network (if your version supports such interaction) an opportunity to receive the Corresponding Source of your version by providing access to the Corresponding Source from a network server at no charge, through some standard or customary means of facilitating copying of software. Corresponding Source for a non-source form of such a combination shall include the source code for the parts of the libraries (dependencies) covered by the terms of EPL v 1.0 used as well as that of the covered work.
+
