@@ -50,7 +50,10 @@
                  [dom-top "1.0.3"]
 
                  ;; Use mongo bson data types like Decimal128
-                 [org.mongodb/mongodb-driver "3.8.2"]]
+                 [org.mongodb/mongodb-driver "3.8.2"]
+
+                 ;; Embedded web server
+                 [http-kit "2.3.0"]]
 
   :jvm-opts ["-Djava.security.egd=file:/dev/random" ;use a proper random source
              "-XX:-OmitStackTraceInFastThrow" ; stacktrace JVM exceptions
@@ -71,7 +74,9 @@
          :destroy social-wallet-api.handler/destroy
          :reload-paths ["src"]}
 
-  :uberjar {:main social-wallet-api.handler} 
+  :main social-wallet-api.handler
+  :uberjar {:main social-wallet-api.handler
+            :aot :all} 
   :uberjar-name "social-wallet-api.jar"
   :aliases {"test" ["midje"]
           "test-basic" ["midje" ":config" "test-resources/fast-tests.config"]}

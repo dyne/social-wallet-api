@@ -43,13 +43,16 @@
             [ring.middleware.cors :refer [wrap-cors]]
             [clj-time.core :as time]
             [social-wallet-api.api-key :refer [create-and-store-apikey! fetch-apikey apikey
-                                               write-apikey-file]]))
+                                               write-apikey-file]]
+            [org.httpkit.server :as server])
+  (:gen-class))
 
 (defonce prod-app-name "social-wallet-api")
 (defonce config-default (config-read prod-app-name))
 
 (defonce connections (atom {}))
 (defonce client (atom nil))
+(defonce http-server (atom nil))
 
 ;; TODO: lets see why we need this
 (defn- get-config [obj]
@@ -573,4 +576,5 @@ Returns the DB entries that were created.
 
 (defn -main [& args]
   (prn "Starting the social wallet REST API --- from main.clj")
-  (comp init app))
+  (init) 
+  (server/run-server app {:port 3000}))
