@@ -570,3 +570,7 @@ Returns the DB entries that were created.
    (wrap-defaults rest-api rest-api-defaults)
    :access-control-allow-origin [#".*"]
    :access-control-allow-methods [:get :post]))
+
+(defn -main [& args]
+  (prn "Starting the social wallet REST API --- from main.clj")
+  (comp init app))

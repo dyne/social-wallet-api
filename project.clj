@@ -71,6 +71,7 @@
          :destroy social-wallet-api.handler/destroy
          :reload-paths ["src"]}
 
+  :uberjar {:main social-wallet-api.handler} 
   :uberjar-name "social-wallet-api.jar"
   :aliases {"test" ["midje"]
           "test-basic" ["midje" ":config" "test-resources/fast-tests.config"]}
