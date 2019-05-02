@@ -2,7 +2,6 @@
 log-level: debug
 
 freecoin:
-  apikey: device-id
   mongo:
     host: localhost
     port: 27017
