@@ -15,4 +15,11 @@ freecoin:
     rpc-config-path: /tmp/faircoin.conf
     deposit-expiration-millis: 3600000
     frequency-deposit-millis: 60000
+  bitcoin:
+    currency: bit
+    number-confirmations: 6
+    frequency-confirmations-millis: 20000
+    rpc-config-path: /tmp/bitcoin.conf
+    deposit-expiration-millis: 3600000
+    frequency-deposit-millis: 60000
 

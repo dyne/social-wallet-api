@@ -45,6 +45,8 @@
             [social-wallet-api.api-key :refer [create-and-store-apikey! fetch-apikey apikey
                                                write-apikey-file]]))
 
+(def available-blockchains #{:faircoin :bitcoin :litecoin :multichain})
+
 (defonce prod-app-name "social-wallet-api")
 (defonce config-default (config-read prod-app-name))
 
@@ -84,6 +86,9 @@
 (defn- get-connection-conf [config app-name connection]
   (get-in config [(keyword app-name) :freecoin connection]))
 
+(defn- get-connection-configs [config app-name]
+  (get-in config [(keyword app-name) :freecoin]))
+
 (defn- get-app-conf [config app-name]
   (get-in config [(keyword app-name) :freecoin]))
 
@@ -100,7 +105,7 @@
   ([config :- Config app-name] 
    (log/debug "Initialising app with name: " app-name)
    ;; TODO: this should be able to read from resources or a specific file path
-   (if-let [log-level (get-in config [(keyword app-name) :log-level])]
+   (when-let [log-level (get-in config [(keyword app-name) :log-level])]
      (log/merge-config! {:level (keyword log-level)
                          ;; #{:trace :debug :info :warn :error :fatal :report}
 
@@ -127,19 +132,19 @@
                                          (or (fetch-apikey apikey-store client-app)
                                              (create-and-store-apikey! apikey-store client-app 32)))))
          (write-apikey-file "apikey.yaml" (str client-app ":\n " (get @apikey client-app))))))
-   
-   (when-let [fair-conf (get-connection-conf config app-name :faircoin)]
-     (f/if-let-ok? [fair (merge (lib/new-btc-rpc (:currency fair-conf) 
-                                                 (:rpc-config-path fair-conf))
-                                {:confirmations {:number-confirmations (:number-confirmations fair-conf)
-                                                 :frequency-confirmations-millis (:frequency-confirmations-millis fair-conf)}}
-                                {:deposits {:deposit-expiration-millis (:deposit-expiration-millis fair-conf)
-                                            :frequency-deposit-millis (:frequency-deposit-millis fair-conf)}})]
+
+   (doseq [[blockchain blockchain-conf] (select-keys (get-connection-configs config app-name) available-blockchains)]
+     (f/if-let-ok? [blockchain-conn (merge (lib/new-btc-rpc (:currency blockchain-conf) 
+                                                            (:rpc-config-path blockchain-conf))
+                                           {:confirmations {:number-confirmations (:number-confirmations blockchain-conf)
+                                                            :frequency-confirmations-millis (:frequency-confirmations-millis blockchain-conf)}}
+                                           {:deposits {:deposit-expiration-millis (:deposit-expiration-millis blockchain-conf)
+                                                       :frequency-deposit-millis (:frequency-deposit-millis blockchain-conf)}})]
        ;; TODO add schema fair
        (do
-         (swap! connections conj {:faircoin fair})
-         (log/info "Faircoin config is loaded"))
-       (log/error (f/message fair))))))
+         (swap! connections conj {blockchain blockchain-conn})
+         (log/info (str (name blockchain) " config is loaded")))
+       (log/error (f/message blockchain-conn))))))
 
 (defn destroy []
   (log/warn "Stopping the Social Wallet API.")
