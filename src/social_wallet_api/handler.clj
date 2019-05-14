@@ -19,8 +19,9 @@
 ;; If you modify Social Wallet REST API, or any covered work, by linking or combining it with any library (or a modified version of that library), containing parts covered by the terms of EPL v 1.0, the licensors of this Program grant you additional permission to convey the resulting work. Your modified version must prominently offer all users interacting with it remotely through a computer network (if your version supports such interaction) an opportunity to receive the Corresponding Source of your version by providing access to the Corresponding Source from a network server at no charge, through some standard or customary means of facilitating copying of software. Corresponding Source for a non-source form of such a combination shall include the source code for the parts of the libraries (dependencies) covered by the terms of EPL v 1.0 used as well as that of the covered work.
 
 (ns social-wallet-api.handler
-  (:require [compojure.api.sweet :refer :all]
-            [ring.util.http-response :refer :all]
+  (:require [compojure.api.sweet :refer [api context GET POST]]
+            [ring.util.http-response :refer [not-found service-unavailable unauthorized ok
+                                             bad-request]]
             [ring.util.http-status :as status]
             [schema.core :as s]
             [ring.middleware.defaults :refer
@@ -32,7 +33,6 @@
 
             [auxiliary.config :refer [config-read]]
             [freecoin-lib.core :as lib]
-            [freecoin-lib.utils :as lib-utils]
             [freecoin-lib.app :as freecoin]
             [social-wallet-api.schema :refer [Query Tags DBTransaction BTCTransaction TransactionQuery
                                               Addresses Balance PerAccountQuery NewTransactionQuery Label NewDeposit
