@@ -151,6 +151,28 @@ Even though there are many ways to deploy this software, a dockerised version is
 For more details look into the [docker](docker) folder. Please keep in mind that we do not recommend docker for production
 due to some security concerns. 
 
+## Summary
+
+This table summarizes which are the available methods for the different backends.
+
+| method                   | database | blockchain |
+|--------------------------|:--------:|:----------:|
+| `tags.list`              | ✅        | 🚫         |
+| `transactions(...).new`  | ✅        | 🚫         |
+| `transactions(...).list` | ✅        | ✅         |
+| `transactions(...).get`  | ✅        | ✅         |
+| `balance`                | ✅        | ✅         |
+| `label`                  | ✅        | ✅         |
+| `address`                | 🚫        | ✅         |
+| `withdraws.new`          | 🚫        | ✅         |
+| `deposits.new`           | 🚫        | ✅         |
+| `deposits.check`         | 🚫        | ✅         |
+
+
+## Articles & Guides
+
+- [Setup and running swapi with bitcoin v0.18](https://www.dyne.org/setup-and-running-swapi-with-bitcoin-v0-18/)
+
 ## Todos
 
 - Multicurrency on the DB
