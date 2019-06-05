@@ -51,7 +51,7 @@
 
                  ;; Use mongo bson data types like Decimal128
                  [org.mongodb/mongodb-driver "3.8.2"]]
-
+                 
   :jvm-opts ["-Djava.security.egd=file:/dev/random" ;use a proper random source
              "-XX:-OmitStackTraceInFastThrow" ; stacktrace JVM exceptions
              ]
@@ -59,7 +59,8 @@
             :email "jaromil@dyne.org"
             :year 2017
             :key "gpl-3.0"}
-
+  :managed-dependencies [[org.clojure/core.rrb-vector "0.0.13"]
+                       [org.flatland/ordered "1.5.7"]]
   :resource-paths ["resources" "test-resources"]
   :deploy-repositories [["releases" {:url :clojars
                                      :creds :gpg}]]
@@ -82,6 +83,6 @@
                                   ;; generative testing
                                   [org.clojure/test.check "0.10.0-alpha2"]]
                    :repl-options {:init-ns social-wallet-api.handler}
-                   :plugins [[lein-ring "0.12.0"]
-                             [lein-midje "3.2"]]}})
+                   :plugins [[lein-ring "0.12.5"]
+                             [lein-midje "3.2"] [org.clojure/core.rrb-vector "0.0.13"] [org.flatland/ordered "1.5.7"]]}})
  
