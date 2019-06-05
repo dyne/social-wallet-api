@@ -71,7 +71,7 @@
    (s/optional-key :description) s/Str})
 
 (s/defschema AccountDetails
-  {(s/required-key "account") s/Str
+  {(s/optional-key "account") s/Str
    (s/required-key "address") s/Str
    (s/required-key "category") s/Str
    (s/required-key "amount") s/Num
@@ -89,6 +89,7 @@
    (s/optional-key "fee") s/Num
    (s/optional-key "confirmations") s/Num
    (s/optional-key "blockhash") s/Str
+   (s/optional-key "generated") s/Bool
    (s/optional-key "blockindex") s/Num
    (s/optional-key "blocktime") s/Num
    (s/optional-key "walletconflicts") [s/Any]
