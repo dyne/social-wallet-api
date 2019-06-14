@@ -26,7 +26,6 @@
             [schema.core :as s]
             [ring.middleware.defaults :refer
              [wrap-defaults site-defaults]]
-            [ring.middleware.session :refer :all]
             [markdown.core :as md]
 
             [taoensso.timbre :as log]
@@ -313,7 +312,8 @@ It returns a list of tags found on the database.
        (with-error-responses connections query
          (fn [connection query]
            (if (= (-> query :connection keyword) :mongo)
-             {:tags (lib/list-tags connection {})}
+             {:total-count (lib/count-tags connection {})
+              :tags (lib/list-tags connection {})}
              ;; TODO replace mongo eith generic DB or storage?
              (f/fail "Tags are available only for Mongo requests"))))))
 
