@@ -1,0 +1,27 @@
+{:known-macros
+  [clojure.test.check.generators/let
+   compojure.core/defroutes
+   compojure.api.core/GET
+   compojure.api.core/POST
+   compojure.api.core/context
+   failjure.core/attempt-all
+   failjure.core/if-let-failed?
+   failjure.core/when-let-failed?
+   failjure.core/if-let-ok?
+   failjure.core/if-failed
+   failjure.core/when-failed
+   mount.core/defstate
+   schema.core/defn
+   schema.core/s/defschema
+   dom-top.core/letr
+   dom-top.core/return]
+ :known-namespaces
+   [clojure.string clojure.set]
+ :known-tags
+   []
+ :ignored-unused-namespaces
+   []
+ :rules
+   {:unused-fn-parameter true
+    :if-without-else true
+    :no-forms-threading true}}

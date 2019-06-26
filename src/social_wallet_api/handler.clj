@@ -19,20 +19,19 @@
 ;; If you modify Social Wallet REST API, or any covered work, by linking or combining it with any library (or a modified version of that library), containing parts covered by the terms of EPL v 1.0, the licensors of this Program grant you additional permission to convey the resulting work. Your modified version must prominently offer all users interacting with it remotely through a computer network (if your version supports such interaction) an opportunity to receive the Corresponding Source of your version by providing access to the Corresponding Source from a network server at no charge, through some standard or customary means of facilitating copying of software. Corresponding Source for a non-source form of such a combination shall include the source code for the parts of the libraries (dependencies) covered by the terms of EPL v 1.0 used as well as that of the covered work.
 
 (ns social-wallet-api.handler
-  (:require [compojure.api.sweet :refer :all]
-            [ring.util.http-response :refer :all]
+  (:require [compojure.api.sweet :refer [api context GET POST]]
+            [ring.util.http-response :refer [not-found service-unavailable unauthorized ok
+                                             bad-request]]
             [ring.util.http-status :as status]
             [schema.core :as s]
             [ring.middleware.defaults :refer
              [wrap-defaults site-defaults]]
-            [ring.middleware.session :refer :all]
             [markdown.core :as md]
 
             [taoensso.timbre :as log]
 
             [auxiliary.config :refer [config-read]]
             [freecoin-lib.core :as lib]
-            [freecoin-lib.utils :as lib-utils]
             [freecoin-lib.app :as freecoin]
             [social-wallet-api.schema :refer [Query Tags DBTransaction BTCTransaction TransactionQuery
                                               Addresses Balance PerAccountQuery NewTransactionQuery Label NewDeposit
@@ -44,6 +43,8 @@
             [clj-time.core :as time]
             [social-wallet-api.api-key :refer [create-and-store-apikey! fetch-apikey apikey
                                                write-apikey-file]]))
+
+(def available-blockchains #{:faircoin :bitcoin :litecoin :multichain})
 
 (defonce prod-app-name "social-wallet-api")
 (defonce config-default (config-read prod-app-name))
@@ -84,6 +85,9 @@
 (defn- get-connection-conf [config app-name connection]
   (get-in config [(keyword app-name) :freecoin connection]))
 
+(defn- get-connection-configs [config app-name]
+  (get-in config [(keyword app-name) :freecoin]))
+
 (defn- get-app-conf [config app-name]
   (get-in config [(keyword app-name) :freecoin]))
 
@@ -100,7 +104,7 @@
   ([config :- Config app-name] 
    (log/debug "Initialising app with name: " app-name)
    ;; TODO: this should be able to read from resources or a specific file path
-   (if-let [log-level (get-in config [(keyword app-name) :log-level])]
+   (when-let [log-level (get-in config [(keyword app-name) :log-level])]
      (log/merge-config! {:level (keyword log-level)
                          ;; #{:trace :debug :info :warn :error :fatal :report}
 
@@ -127,19 +131,19 @@
                                          (or (fetch-apikey apikey-store client-app)
                                              (create-and-store-apikey! apikey-store client-app 32)))))
          (write-apikey-file "apikey.yaml" (str client-app ":\n " (get @apikey client-app))))))
-   
-   (when-let [fair-conf (get-connection-conf config app-name :faircoin)]
-     (f/if-let-ok? [fair (merge (lib/new-btc-rpc (:currency fair-conf) 
-                                                 (:rpc-config-path fair-conf))
-                                {:confirmations {:number-confirmations (:number-confirmations fair-conf)
-                                                 :frequency-confirmations-millis (:frequency-confirmations-millis fair-conf)}}
-                                {:deposits {:deposit-expiration-millis (:deposit-expiration-millis fair-conf)
-                                            :frequency-deposit-millis (:frequency-deposit-millis fair-conf)}})]
+
+   (doseq [[blockchain blockchain-conf] (select-keys (get-connection-configs config app-name) available-blockchains)]
+     (f/if-let-ok? [blockchain-conn (merge (lib/new-btc-rpc (:currency blockchain-conf) 
+                                                            (:rpc-config-path blockchain-conf))
+                                           {:confirmations {:number-confirmations (:number-confirmations blockchain-conf)
+                                                            :frequency-confirmations-millis (:frequency-confirmations-millis blockchain-conf)}}
+                                           {:deposits {:deposit-expiration-millis (:deposit-expiration-millis blockchain-conf)
+                                                       :frequency-deposit-millis (:frequency-deposit-millis blockchain-conf)}})]
        ;; TODO add schema fair
        (do
-         (swap! connections conj {:faircoin fair})
-         (log/info "Faircoin config is loaded"))
-       (log/error (f/message fair))))))
+         (swap! connections conj {blockchain blockchain-conn})
+         (log/info (str (name blockchain) " config is loaded")))
+       (log/error (f/message blockchain-conn))))))
 
 (defn destroy []
   (log/warn "Stopping the Social Wallet API.")
@@ -308,7 +312,8 @@ It returns a list of tags found on the database.
        (with-error-responses connections query
          (fn [connection query]
            (if (= (-> query :connection keyword) :mongo)
-             {:tags (lib/list-tags connection {})}
+             {:total-count (lib/count-tags connection {})
+              :tags (lib/list-tags connection {})}
              ;; TODO replace mongo eith generic DB or storage?
              (f/fail "Tags are available only for Mongo requests"))))))
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## social-wallet-api 1.4.0
+* Docker build moved to external repo
+* Added clojure linter config
+* Fixed issue with multiple blockchain confs
+* Added call table on README
+* Added count to tags
+
 ## social-wallet-api 1.3.0
 * Added licencing and README file with template.
 
