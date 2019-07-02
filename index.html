@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<title>Social Wallet API - Social Wallet API</title>
+		<link rel="stylesheet" href="./assets/css/bulma.min.css">
+		<link rel="stylesheet" href="./assets/css/bulma-dyne.css">
+
+		<link rel="stylesheet" href="//cdn.materialdesignicons.com/3.7.95/css/materialdesignicons.min.css">
+		
+		<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Montserrat&display=swap">
+		
+		<link rel="stylesheet" href="css/custom.css">
+		
+
+	</head>
+	<body>
+		<nav class="navbar has-shadow is-transparent">
+    <div class="navbar-brand">
+        <a class="navbar-item" href="/">
+			
+            <h1 class="title">Social Wallet API</h1>
+			
+        </a>
+        <!-- <div class="navbar-burger burger" data-target="navbarExampleTransparentExample">
+             <span></span>
+             <span></span>
+             <span></span>
+             </div> -->
+    </div>
+	
+	<div id="navbarExampleTransparentExample" class="navbar-menu">
+        <div class="navbar-start">
+			<div class="navbar-item">
+				This is an awesome project
+			</div>
+		</div>
+	</div>
+	
+	<!-- 
+		 <div id="navbarExampleTransparentExample" class="navbar-menu">
+         <div class="navbar-start">
+         
+         
+         <a class="navbar-item" href="">
+         Social Wallet API
+         </a>
+         
+         
+         </div>
+	-->
+        <div class="navbar-end">
+            <div class="navbar-item">
+                <div class="field is-grouped">
+                    <!-- TODO: demo button
+						 <p class="control">
+                         <a class="button is-primary" href="">
+                         <span class="icon">
+                         <i class="mdi mdi-download"></i>
+                         </span>
+                         <span>Download</span>
+                         </a>
+						 </p> -->
+                    <p class="control">
+                        <a href="https://dyne.org">
+                            <img src="https://img.shields.io/badge/made%20with%20%E2%9D%A4%20by-Dyne.org-turquoise.svg?style=for-the-badge&logo=gnu" alt="Made with love by Dyne.org" title="We are free to share code and we code to share Freedom"></a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+		<section class="section">
+			<div class="container">
+				<div class="columns">
+					<div class="column is-one-quarter">
+						<aside class="menu">
+    
+    <h1 class="menu-label">
+        <span class="mdi mdi-fire has-text-danger"></span> Quick Links</h1>
+    <ul class="menu-list" style="list-style: none">
+        
+        <li><span class="mdi mdi-github-circle"></span><a href="https://github.com/commonfare-net/social-wallet-api/">Source Code</a></li>
+        
+        
+        <li><span class="mdi mdi-history"></span><a href="https://files.dyne.org/social-wallet-api">Latest Release</a></li>
+        
+        
+        <li><span class="mdi mdi-docker"></span><a href="https://hub.docker.com/r/dyne/social-wallet-api">Docker image</a></li>
+        
+        
+        <li><span class="mdi mdi-school"></span><a href="https://github.com/commonfare-net/social-wallet-api/wiki">Quick Start Guide</a></li>
+        
+        
+        <li><span class="mdi mdi-forum"></span><a href="https://lists.dyne.org">Mailing list / Forum</a></li>
+        
+    </ul>
+    
+
+    <hr width="20%">
+
+    <h1 class="menu-label">
+        <span class="mdi mdi-format-list-numbered has-text-primary"></span> Table of Contents</h1>
+	
+    
+    <ul class="menu-list">
+        <li>
+	<a href="#social-wallet-api">Social Wallet API</a>
+	
+    <ul>
+      
+        <li>
+	<a href="#getting-started">Getting Started</a>
+	
+    <ul>
+      
+        <li>
+	<a href="#prerequisites">Prerequisites</a>
+	
+</li>
+      
+        <li>
+	<a href="#running-the-social-wallet-api">Running the Social Wallet API</a>
+	
+</li>
+      
+    </ul>
+  
+</li>
+      
+        <li>
+	<a href="#running-the-tests">Running the tests</a>
+	
+    <ul>
+      
+        <li>
+	<a href="#run-only-the-fast-tests">Run only the fast tests</a>
+	
+</li>
+      
+    </ul>
+  
+</li>
+      
+        <li>
+	<a href="#deployment">Deployment</a>
+	
+</li>
+      
+        <li>
+	<a href="#summary">Summary</a>
+	
+</li>
+      
+        <li>
+	<a href="#articles-guides">Articles &amp; Guides</a>
+	
+</li>
+      
+        <li>
+	<a href="#todos">Todos</a>
+	
+</li>
+      
+        <li>
+	<a href="#acknowledgements">Acknowledgements</a>
+	
+</li>
+      
+        <li>
+	<a href="#license">License</a>
+	
+    <ul>
+      
+        <li>
+	<a href="#additional-permission-under-gnu-agpl-version-3-section-7">Additional permission under GNU AGPL version 3 section 7.</a>
+	
+</li>
+      
+    </ul>
+  
+</li>
+      
+    </ul>
+  
+</li>
+    </ul>
+    
+	
+</aside>
+					</div>
+					<div class="column">
+						<div class="content">
+							 <h1 id="social-wallet-api">Social Wallet API</h1>
+<p>The Social Wallet API  is made to facilitate the integration of blockchain
+functions into existing front-end applications, providing an easy
+backend of documented REST API endpoints that are validated and, in
+case of error, report meaningful messages. It also gives the opportunity to add
+metadata to transactions which can be very useful for grouping, labeling and filtering
+as well as adding some context.</p>
+<p>The Social Wallet API allows to make calls to mongo db and to running
+blockchain nodes that are compatibile with Bitcoin Core and support
+the generic Bitcoin RPC. Overtime more implemenations will be provided for
+different distributed ledger implementations and storages.</p>
+<p>The Social wallet API can also operate with only the DB without any blockchain connection,
+which is great for experimentation, testing or situations where the complexity of 
+a distributed ledger is not required.</p>
+<p><a href="https://www.dyne.org"><img
+src="https://secrets.dyne.org/static/img/swbydyne.png"
+alt="software by Dyne.org"
+title="software by Dyne.org" class="pull-right"></a></p>
+<p><a href="#Getting-Started">Getting started</a> | <a href="#Prerequisites">Prerequisites</a> | <a href="#Running-the-Social-Wallet-API">Running</a> | <a href="#Running-the-tests">Running the tests</a> | <a href="#Deployment">Deployment</a> | <a href="#Todos">Todos</a> | <a href="#Acknowledgements">Acknowledgements</a> | <a href="#License">License</a> | <a href="https://github.com/Commonfare-net/social-wallet-api/blob/master/CHANGELOG.markdown">change log</a> </p>
+<p><a href="https://travis-ci.org/Commonfare-net/social-wallet-api"><img alt="Build Status" src="https://travis-ci.org/Commonfare-net/social-wallet-api.svg?branch=master" /></a>
+<a href="https://clojars.org/social-wallet-api"><img alt="Clojars Project" src="https://img.shields.io/clojars/v/social-wallet-api.svg" /></a>
+<a href="https://www.openhub.net/p/freecoin"><img alt="Freecoin project stats" src="https://www.openhub.net/p/freecoin/widgets/project_thin_badge.gif" /></a>
+<a href="https://www.gnu.org/licenses/agpl-3.0"><img alt="License: AGPL v3" src="https://img.shields.io/badge/License-AGPL%20v3-blue.svg" /></a></p>
+<p>This REST API interface is so far meant for low-level access of
+wallets built using the <a href="https://freecoin.dyne.org">Freecoin toolkit</a>.</p>
+<p><a href="https://freecoin.dyne.org"><img alt="Freecoin.dyne.org" src="https://freecoin.dyne.org/images/freecoin_logo.png" /></a></p>
+<h2 id="getting-started">Getting Started</h2>
+<p><img class="pull-right"
+src="https://secrets.dyne.org/static/img/clojure.png"></p>
+<p>The Social Wallet API is written in Clojure and is fully
+cross-platform: one can run it locally on a GNU/Linux machine, as well
+on Apple/OSX and MS/Windows.</p>
+<h3 id="prerequisites">Prerequisites</h3>
+<p><img class="pull-left" src="https://secrets.dyne.org/static/img/leiningen.jpg"
+style="padding-right: 1.5em"></p>
+<p>Please install
+1. A JDK. The software is tested on <a href="http://openjdk.java.net/">openJDK</a> versions 7 and 8 as well as with <a href="http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html">oracleJDK 8</a> and 10. Make sure that the env var JAVA_HOME is set to the JDK install dir like <a href="https://docs.oracle.com/cd/E19182-01/820-7851/inst_cli_jdk_javahome_t/index.html">mentioned here</a>.
+2. <a href="https://docs.mongodb.com/manual/administration/install-community/">MongoDB community edition</a>. The software has been tested on Mongo v3.6.4. Earlier versions might not work due to loss of precision (Decimal128 was not introduced).
+3. <a href="https://leiningen.org/">leiningen</a> which is used for dependency management like:</p>
+<div class="codehilite"><pre><span class="n">mkdir</span> <span class="o">~/</span><span class="n">bin</span>
+<span class="n">wget</span> <span class="n">https</span><span class="o">:</span><span class="c1">//raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein -O ~/bin/lein</span>
+<span class="n">chmod</span> <span class="o">+</span><span class="n">x</span> <span class="o">~/</span><span class="n">bin</span><span class="o">/</span><span class="n">lein</span>
+</pre></div>
+
+
+<p>For instance on Devuan systems one can install all necessary
+dependencies using apt and the following packages: <code>apt-get
+openjdk-7-jdk libversioneer-clojure haveged</code>.</p>
+<h3 id="running-the-social-wallet-api">Running the Social Wallet API</h3>
+<p>First of all check the configuration in
+<code>resources/social-wallet-api.yaml</code> and adjust its contents to your
+setup. Here a sample configuration:</p>
+<div class="codehilite"><pre><span class="c1"># verbosity level of messages</span>
+<span class="l-Scalar-Plain">log-level</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">debug</span>
+
+<span class="c1"># open freecoin specific section</span>
+<span class="l-Scalar-Plain">freecoin</span><span class="p-Indicator">:</span>
+<span class="c1"># indentation matters: mind the initial spaces of following sections</span>
+  <span class="c1"># If an apikey is added to the config, for that particular installation an apikey will be created, stored and required with every request. Device-id should be replaced with the device/client-app name/id.</span>
+  <span class="l-Scalar-Plain">apikey</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">device-id</span> <span class="c1">## optional</span>
+<span class="c1"># configuration for the database holding local transactions</span>
+  <span class="l-Scalar-Plain">mongo</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">host</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">localhost</span>
+    <span class="l-Scalar-Plain">port</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">27017</span>
+    <span class="l-Scalar-Plain">db</span><span class="p-Indicator">:</span>   <span class="l-Scalar-Plain">freecoin</span>
+    <span class="l-Scalar-Plain">currency</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Commoncoin</span> <span class="c1"># You can set this to the name of the local currency to be used on the DB</span>
+
+<span class="c1">## All the configurations below are optional and multiple can be added</span>
+
+<span class="c1"># configuration of the &#39;faircoin&#39; blockchain</span>
+  <span class="l-Scalar-Plain">faircoin</span><span class="p-Indicator">:</span>
+<span class="c1"># visualised name of the currency</span>
+    <span class="l-Scalar-Plain">currency</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">fair</span>
+<span class="c1"># number of confirmations to consider a transaction as valid</span>
+    <span class="l-Scalar-Plain">number-confirmations</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">6</span>
+<span class="c1"># frequency of confirmations checks in milliseconds</span>
+    <span class="l-Scalar-Plain">frequency-confirmations-millis</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">20000</span>
+<span class="c1"># path to the rpc configuration holding username and password</span>
+    <span class="l-Scalar-Plain">rpc-config-path</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">/home/user/.faircoin2/faircoin.conf</span>
+<span class="c1"># deposit to an address watch expiration time in milliseconds</span>
+    <span class="l-Scalar-Plain">deposit-expiration-millis</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">3600000</span>
+<span class="c1"># frequency of deposit checks in milliseconds</span>
+    <span class="l-Scalar-Plain">frequency-deposit-millis</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">60000</span>
+
+<span class="c1"># configuration of the &#39;bitcoin&#39; blockchain</span>
+  <span class="l-Scalar-Plain">bitcoin</span><span class="p-Indicator">:</span>
+<span class="c1"># visualised name of the currency</span>
+    <span class="l-Scalar-Plain">currency</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">btc</span>
+<span class="c1"># number of confirmations to consider a transaction as valid</span>
+    <span class="l-Scalar-Plain">number-confirmations</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">6</span>
+<span class="c1"># frequency of confirmations checks in milliseconds</span>
+    <span class="l-Scalar-Plain">frequency-confirmations-millis</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">20000</span>
+<span class="c1"># path to the rpc configuration holding username and password</span>
+    <span class="l-Scalar-Plain">rpc-config-path</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">/home/user/.bitcoin/bitcoin.conf</span>
+</pre></div>
+
+
+<p>Once correctly configured, from inside the social-wallet-api source
+directory one can use various commands to run it live (refreshing live
+changes to the code) using:</p>
+<ul>
+<li><code>lein ring server</code> (which will start and spawn a browser on it)</li>
+<li><code>lein ring server-headless</code> (will start without browser)</li>
+</ul>
+<p>One can also use <code>lein uberjar</code> to build a standalone jar application,
+or <code>lein uberwar</code> to build a standalone war application ready to be
+served from enterprise infrastructure using JBoss or Tomcat.</p>
+<h2 id="running-the-tests">Running the tests</h2>
+<p>To run all tests one need to run
+<code>lein midje</code>
+on the project dir</p>
+<h4 id="run-only-the-fast-tests">Run only the fast tests</h4>
+<p>Some of the tests are marked as slow. If you want to avoid running them you can either</p>
+<div class="codehilite"><pre><span class="n">lein</span> <span class="n">midje</span> <span class="o">:</span><span class="n">filter</span> <span class="o">-</span><span class="n">slow</span>
+</pre></div>
+
+
+<p>or use the alias</p>
+<div class="codehilite"><pre><span class="n">lein</span> <span class="n">test</span><span class="o">-</span><span class="n">basic</span>
+</pre></div>
+
+
+<h2 id="deployment">Deployment</h2>
+<p>Even though there are many ways to deploy this software, a dockerised version is provided in this project. 
+For more details look into the <a href="docker">docker</a> folder. Please keep in mind that we do not recommend docker for production
+due to some security concerns. </p>
+<h2 id="summary">Summary</h2>
+<p>This table summarizes which are the available methods for the different backends.</p>
+<table>
+<thead>
+<tr>
+<th>method</th>
+<th align="center">database</th>
+<th align="center">blockchain</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tags.list</code></td>
+<td align="center">✅</td>
+<td align="center">🚫</td>
+</tr>
+<tr>
+<td><code>transactions(...).new</code></td>
+<td align="center">✅</td>
+<td align="center">🚫</td>
+</tr>
+<tr>
+<td><code>transactions(...).list</code></td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+</tr>
+<tr>
+<td><code>transactions(...).get</code></td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+</tr>
+<tr>
+<td><code>balance</code></td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+</tr>
+<tr>
+<td><code>label</code></td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+</tr>
+<tr>
+<td><code>address</code></td>
+<td align="center">🚫</td>
+<td align="center">✅</td>
+</tr>
+<tr>
+<td><code>withdraws.new</code></td>
+<td align="center">🚫</td>
+<td align="center">✅</td>
+</tr>
+<tr>
+<td><code>deposits.new</code></td>
+<td align="center">🚫</td>
+<td align="center">✅</td>
+</tr>
+<tr>
+<td><code>deposits.check</code></td>
+<td align="center">🚫</td>
+<td align="center">✅</td>
+</tr>
+</tbody>
+</table>
+<h2 id="articles-guides">Articles &amp; Guides</h2>
+<ul>
+<li><a href="https://www.dyne.org/setup-and-running-swapi-with-bitcoin-v0-18/">Setup and running swapi with bitcoin v0.18</a></li>
+</ul>
+<h2 id="todos">Todos</h2>
+<ul>
+<li>Multicurrency on the DB</li>
+</ul>
+<h2 id="acknowledgements">Acknowledgements</h2>
+<p>The Social Wallet API is Free and Open Source research and development
+activity funded by the European Commission in the context of
+the
+<a href="https://ec.europa.eu/digital-single-market/en/collective-awareness">Collective Awareness Platforms for Sustainability and Social Innovation (CAPSSI)</a> program. Social
+Wallet API uses the
+underlying <a href="https://github.com/dyne/freecoin-lib">Freecoin-lib</a>
+blockchain implementation library and adopted as a component of the
+social wallet toolkit being developed for
+the <a href="https://pieproject.eu">Commonfare project</a> (grant nr. 687922) .</p>
+<h2 id="license">License</h2>
+<p>This project is licensed under the AGPL 3 License - see the <a href="LICENSE">LICENSE</a> file for details</p>
+<h4 id="additional-permission-under-gnu-agpl-version-3-section-7">Additional permission under GNU AGPL version 3 section 7.</h4>
+<p>If you modify Freecoin-lib, or any covered work, by linking or combining it with any library (or a modified version of that library), containing parts covered by the terms of EPL v 1.0, the licensors of this Program grant you additional permission to convey the resulting work. Your modified version must prominently offer all users interacting with it remotely through a computer network (if your version supports such interaction) an opportunity to receive the Corresponding Source of your version by providing access to the Corresponding Source from a network server at no charge, through some standard or customary means of facilitating copying of software. Corresponding Source for a non-source form of such a combination shall include the source code for the parts of the libraries (dependencies) covered by the terms of EPL v 1.0 used as well as that of the covered work.</p> 
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+		<footer class="footer">
+	<div class="content has-text-centered">
+		<p>	<strong>Social Wallet API</strong> is Copyright (C) 2019 by the <a href="https://dyne.org">Dyne.org foundation</a>. The source code is licensed <a href="https://www.gnu.org/licenses/agpl-3.0.en.html">AGPLv3</a>. </p>
+		<div class="columns is-gapless">
+			<div class="column is-one-fifth">
+				<img src="assets/img/eu-flag.png"></div>
+			<p class="column is-three-quarters">
+			This project received funding from the European Union’s
+			Horizon 2020 research and innovation programme under grant
+			agreement nr. .</p>
+		</div>
+	</div>
+</footer>
+		
+		 <!-- Start of Async Drift Code -->
+<script>
+ "use strict";
+
+ !function() {
+	 var t = window.driftt = window.drift = window.driftt || [];
+	 if (!t.init) {
+		 if (t.invoked) return void (window.console && console.error &&
+									 console.error("Drift snippet included twice."));
+		 t.invoked = !0, t.methods = [ "identify", "config", "track", "reset",
+									   "debug", "show", "ping", "page", "hide", "off", "on" ],
+							   t.factory = function(e) {
+								   return function() {
+									   var n = Array.prototype.slice.call(arguments);
+									   return n.unshift(e), t.push(n), t;
+								   };
+							   }, t.methods.forEach(function(e) {
+								   t[e] = t.factory(e);
+							   }), t.load = function(t) {
+								   var e = 3e5, n = Math.ceil(new Date() / e) * e, o =
+									   document.createElement("script");
+								   o.type = "text/javascript", o.async = !0, o.crossorigin = "anonymous",
+									   o.src = "https://js.driftt.com/include/" + n + "/" + t + ".js";
+								   var i = document.getElementsByTagName("script")[0];
+								   i.parentNode.insertBefore(o, i);
+							   };
+	 }
+ }();
+ drift.SNIPPET_VERSION = '0.3.1';
+ drift.load('s64nd7w43g53');
+</script> 
+	</body>
+</html>
