@@ -1,4 +1,4 @@
-site_name: Social Wallet API
+site_name: Social Wallet
 site_url: https://commonfare-net.github.io/social-wallet-api
 repo_url: https://github.com/commonfare-net/social-wallet-api
 site_author: Jaromil
@@ -12,8 +12,9 @@ extra:
     quickstart: https://github.com/commonfare-net/social-wallet-api/wiki
     forum: https://lists.dyne.org
   drift_handle: s64nd7w43g53
+  h2020: "687922"
   nav:
-    subtitle: This is an awesome project
+    subtitle: Open source complementary currency toolkit
     logo: null # /img/redroom-trans.png
     og_image_large: /img/logo-trans.png
 

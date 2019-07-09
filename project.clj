@@ -82,6 +82,6 @@
                                   ;; generative testing
                                   [org.clojure/test.check "0.10.0-alpha2"]]
                    :repl-options {:init-ns social-wallet-api.handler}
-                   :plugins [[lein-ring "0.12.0"]
+                   :plugins [[lein-ring "0.12.5"]
                              [lein-midje "3.2"]]}})
  

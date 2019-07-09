@@ -1,56 +1,79 @@
-# Social Wallet API
 
-The Social Wallet API  is made to facilitate the integration of blockchain
-functions into existing front-end applications, providing an easy
-backend of documented REST API endpoints that are validated and, in
-case of error, report meaningful messages. It also gives the opportunity to add
-metadata to transactions which can be very useful for grouping, labeling and filtering
-as well as adding some context.
 
-The Social Wallet API allows to make calls to mongo db and to running
-blockchain nodes that are compatibile with Bitcoin Core and support
-the generic Bitcoin RPC. Overtime more implemenations will be provided for
-different distributed ledger implementations and storages.
-
-The Social wallet API can also operate with only the DB without any blockchain connection,
-which is great for experimentation, testing or situations where the complexity of 
-a distributed ledger is not required.
-
-<a href="https://www.dyne.org"><img
-src="https://secrets.dyne.org/static/img/swbydyne.png"
-alt="software by Dyne.org"
-title="software by Dyne.org" class="pull-right"></a>
-
-[Getting started](#Getting-Started) | [Prerequisites](#Prerequisites) | [Running](#Running-the-Social-Wallet-API) | [Running the tests](#Running-the-tests) | [Deployment](#Deployment) | [Todos](#Todos) | [Acknowledgements](#Acknowledgements) | [License](#License) | [change log](https://github.com/Commonfare-net/social-wallet-api/blob/master/CHANGELOG.markdown) 
+# SWAPI - Open source complementary currency toolkit
 
 [![Build Status](https://travis-ci.org/Commonfare-net/social-wallet-api.svg?branch=master)](https://travis-ci.org/Commonfare-net/social-wallet-api)
 [![Clojars Project](https://img.shields.io/clojars/v/social-wallet-api.svg)](https://clojars.org/social-wallet-api)
 [![Freecoin project stats](https://www.openhub.net/p/freecoin/widgets/project_thin_badge.gif)](https://www.openhub.net/p/freecoin)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 
-This REST API interface is so far meant for low-level access of
-wallets built using the [Freecoin toolkit](https://freecoin.dyne.org).
 
-[![Freecoin.dyne.org](https://freecoin.dyne.org/images/freecoin_logo.png)](https://freecoin.dyne.org)
+<img class="logo" src="/img/freecoin_logo.png" alt="software by Dyne.org" title="software by Dyne.org" width="400" />
 
 
-## Getting Started
+---
 
-<img class="pull-right"
-src="https://secrets.dyne.org/static/img/clojure.png">
+> The social wallet toolkit is a set of tools to let groups design and/or manage currencies in a simple and secure way. <br />
+> It is made for **participatory** and **democratic organisations** who want to incentivise participation -- *unlike centralised banking databases* and experiment with different economic models -- *unlike centralised nation state*.
 
-The Social Wallet API is written in Clojure and is fully
-cross-platform: one can run it locally on a GNU/Linux machine, as well
-on Apple/OSX and MS/Windows.
+<iframe width="560" height="315" src="https://www.youtube.com/embed/cAfaBqpozG0" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
-### Prerequisites
+---
 
-<img class="pull-left" src="https://secrets.dyne.org/static/img/leiningen.jpg"
-style="padding-right: 1.5em">
+## 👀 With SWAPI you can
 
-Please install
+- ✅ **Create your currency from scratch and use it within your group**
+- ✅ **Implement different economic governances**
+- ✅ **Aggregate and visualize data generated during time**
+- ✅ **Use your currency offline (eg. during festivals) via printed qrcode**
+- ✅ **Add tags to your transactions to filter them**
+- ✅ **Add a message to your transactions**
+- ✅ **Use it as wallet for cryptocurrencies**
+- ✅ **Use it with a default authentication system or use it within an existing userbase**
+
+---
+
+## 🔧 Technical overview
+
+The Social Wallet API allows both to create currencies from scratch and to facilitate the integration of blockchain functions into existing front-end applications, providing an easy
+backend of documented **REST API endpoints** that are **validated** and, in
+case of error, **reporting meaningful messages**. <br />
+It also gives the opportunity to add _metadata_ to transactions which can be very useful for grouping, labeling and filtering as well as adding some context.
+
+The social wallet API layer is agnostic from any specific database implementation, being able to connect with different ledgers based on ad-hoc connectors.<br />
+At present, available ledgers connectors are for mongodb and nippy (a filesystem storage) as well as for bitcoin blockchain and any blockchain node compatible with bitcoin core and that supports generic bitcoin RPC calls.
+
+The Social wallet API can also operate with only the DB without any blockchain connection,
+which is great for experimentation, testing or situations where the complexity of 
+a distributed ledger is not required.
+
+---
+
+## 🧰 The toolkit
+The social wallet is built to be highly modular, and agnostic from any specific implementation - trying to suit a broader range of scenarios and giving freedom of experimentation to groups. <br />
+To do that, we created a suite of open source libraries that can be plugged together and customized upon necessities:
+
+- [Freecoin core library](https://github.com/Commonfare-net/freecoin-lib): An interface to transactions operation
+- [API](https://github.com/Commonfare-net/social-wallet-api): A clean and error-prone API layer
+- [Web app](https://github.com/Commonfare-net/social-wallet): A javascript-free client interface 
+- [Just-auth](https://github.com/Commonfare-net/just-auth): Authentication and 2fa without frissle
+- [Clj-storage](https://github.com/Commonfare-net/clj-storage): A minimalist clojure protocol abstraction over document databases
+
+---
+
+## 🚀 Getting Started
+
+The Social Wallet API is written in Clojure and is fully cross-platform: one can run it locally on a GNU/Linux machine, as well on Apple/OSX and MS/Windows.
+
+
+**Prerequisites**
+
+Please install:
+
 1. A JDK. The software is tested on [openJDK](http://openjdk.java.net/) versions 7 and 8 as well as with [oracleJDK 8](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html) and 10. Make sure that the env var JAVA_HOME is set to the JDK install dir like [mentioned here](https://docs.oracle.com/cd/E19182-01/820-7851/inst_cli_jdk_javahome_t/index.html).
+
 2. [MongoDB community edition](https://docs.mongodb.com/manual/administration/install-community/). The software has been tested on Mongo v3.6.4. Earlier versions might not work due to loss of precision (Decimal128 was not introduced).
+
 3. [leiningen](https://leiningen.org/) which is used for dependency management like:
 ```
 mkdir ~/bin
@@ -62,7 +85,7 @@ For instance on Devuan systems one can install all necessary
 dependencies using apt and the following packages: `apt-get
 openjdk-7-jdk libversioneer-clojure haveged`.
 
-### Running the Social Wallet API
+**Running the Social Wallet API**
 
 First of all check the configuration in
 `resources/social-wallet-api.yaml` and adjust its contents to your
@@ -124,13 +147,13 @@ One can also use `lein uberjar` to build a standalone jar application,
 or `lein uberwar` to build a standalone war application ready to be
 served from enterprise infrastructure using JBoss or Tomcat.
 
-## Running the tests
+**Running the tests**
 
 To run all tests one need to run
 ` lein midje`
 on the project dir
 
-#### Run only the fast tests
+**Run only the fast tests**
 
 Some of the tests are marked as slow. If you want to avoid running them you can either
 
@@ -145,13 +168,13 @@ lein test-basic
 ```
 
 
-## Deployment
+**Deployment**
 
 Even though there are many ways to deploy this software, a dockerised version is provided in this project. 
 For more details look into the [docker](docker) folder. Please keep in mind that we do not recommend docker for production
 due to some security concerns. 
 
-## Summary
+## 🏁 Summary
 
 This table summarizes which are the available methods for the different backends.
 
@@ -169,15 +192,12 @@ This table summarizes which are the available methods for the different backends
 | `deposits.check`         | 🚫        | ✅         |
 
 
-## Articles & Guides
+## 🍻 Articles
 
 - [Setup and running swapi with bitcoin v0.18](https://www.dyne.org/setup-and-running-swapi-with-bitcoin-v0-18/)
 
-## Todos
 
-- Multicurrency on the DB
-
-## Acknowledgements
+## 👥 Acknowledgements
 
 The Social Wallet API is Free and Open Source research and development
 activity funded by the European Commission in the context of
@@ -190,7 +210,7 @@ social wallet toolkit being developed for
 the [Commonfare project](https://pieproject.eu) (grant nr. 687922) .
 
 
-## License
+## 📄 License
 
 This project is licensed under the AGPL 3 License - see the [LICENSE](LICENSE) file for details
 
