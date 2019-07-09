@@ -192,9 +192,14 @@ This table summarizes which are the available methods for the different backends
 | `deposits.check`         | 🚫        | ✅         |
 
 
-## 🍻 Articles
+## 🍻 Articles & Guides
 
 - [Setup and running swapi with bitcoin v0.18](https://www.dyne.org/setup-and-running-swapi-with-bitcoin-v0-18/)
+- [The Collective Turn in Finance: On Commonfare and Social Wallet](https://networkcultures.org/moneylab/2018/07/10/social-wallet/)
+- [Social wallet @ STARTS PRIZE](https://starts-prize.aec.at/en/social-wallet/)
+- [On Freecoin, Blockchains and the future of money: an interview with Jaromil](https://www.nesta.org.uk/blog/on-freecoin-blockchains-and-the-future-of-money-an-interview-with-jaromil/)
+- [Becoming a smart society: is Eindhoven ready for freecoin?](https://innovationorigins.com/towards-a-smart-society-is-eindhoven-ready-for-freecoin/)
+- [SWAPI on bictoin wiki](https://en.bitcoin.it/wiki/Freecoin)
 
 
 ## 👥 Acknowledgements
