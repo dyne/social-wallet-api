@@ -4,6 +4,7 @@
    compojure.api.core/GET
    compojure.api.core/POST
    compojure.api.core/context
+   compojure.api.api/api
    failjure.core/attempt-all
    failjure.core/if-let-failed?
    failjure.core/when-let-failed?
@@ -12,7 +13,7 @@
    failjure.core/when-failed
    mount.core/defstate
    schema.core/defn
-   schema.core/s/defschema
+   schema.core/defschema
    dom-top.core/letr
    dom-top.core/return]
  :known-namespaces

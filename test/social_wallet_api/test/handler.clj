@@ -18,9 +18,10 @@
 ;; If you modify Social Wallet REST API, or any covered work, by linking or combining it with any library (or a modified version of that library), containing parts covered by the terms of EPL v 1.0, the licensors of this Program grant you additional permission to convey the resulting work. Your modified version must prominently offer all users interacting with it remotely through a computer network (if your version supports such interaction) an opportunity to receive the Corresponding Source of your version by providing access to the Corresponding Source from a network server at no charge, through some standard or customary means of facilitating copying of software. Corresponding Source for a non-source form of such a combination shall include the source code for the parts of the libraries (dependencies) covered by the terms of EPL v 1.0 used as well as that of the covered work.
 
 (ns social-wallet-api.test.handler
-  (:require [midje.sweet :refer :all]
+  (:require [midje.sweet :refer [against-background before after facts fact =>]]
             [ring.mock.request :as mock]
             [social-wallet-api.handler :as h]
+            [social-wallet-api.core :as swapi]
             [auxiliary.config :refer [config-read]]
             [taoensso.timbre :as log]
             [cheshire.core :as cheshire]))
@@ -33,10 +34,10 @@
 (defn parse-body [body]
   (cheshire/parse-string (slurp body) true))
 
-(against-background [(before :contents (h/init
+(against-background [(before :contents (swapi/init
                                         (config-read test-app-name)
                                         social-wallet-api.test.handler/test-app-name))
-                     (after :contents (h/destroy))]
+                     (after :contents (swapi/destroy))]
                     (facts "Some basic requests work properly"
                            (fact "Get the label using the blockchain type as string"
                                  (let [response (h/app

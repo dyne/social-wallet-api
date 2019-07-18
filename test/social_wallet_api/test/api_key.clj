@@ -18,9 +18,10 @@
 ;; If you modify Social Wallet REST API, or any covered work, by linking or combining it with any library (or a modified version of that library), containing parts covered by the terms of EPL v 1.0, the licensors of this Program grant you additional permission to convey the resulting work. Your modified version must prominently offer all users interacting with it remotely through a computer network (if your version supports such interaction) an opportunity to receive the Corresponding Source of your version by providing access to the Corresponding Source from a network server at no charge, through some standard or customary means of facilitating copying of software. Corresponding Source for a non-source form of such a combination shall include the source code for the parts of the libraries (dependencies) covered by the terms of EPL v 1.0 used as well as that of the covered work.
 
 (ns social-wallet-api.test.api-key
-  (:require [midje.sweet :refer :all]
+  (:require [midje.sweet :refer [against-background before after facts fact =>]]
             [social-wallet-api.api-key :as ak]
             [social-wallet-api.handler :as h]
+            [social-wallet-api.core :as swapi]
             [clj-storage.core :as store]
             [auxiliary.config :refer [config-read]]
             [taoensso.timbre :as log]
@@ -32,15 +33,15 @@
 (def parse-body social-wallet-api.test.handler/parse-body)
 
 (defn empty-apikeys []
-  (store/delete-all! (-> @h/connections :mongo :stores-m :apikey-store)))
+  (store/delete-all! (-> @swapi/connections :mongo :stores-m :apikey-store)))
 
-(against-background [(before :contents (h/init
+(against-background [(before :contents (swapi/init
                                         (config-read test-app-name)
                                         test-app-name))
                      (after :contents (do
                                         (empty-apikeys)
-                                        (h/destroy)))]
-                    (let [apikey-store (-> @h/connections :mongo :stores-m :apikey-store)]
+                                        (swapi/destroy)))]
+                    (let [apikey-store (-> @swapi/connections :mongo :stores-m :apikey-store)]
                       (facts "Test that API key creation works and doesnt allow for duplicates."
                              (:client-app (ak/create-and-store-apikey! apikey-store "app-1" 32)) => "app-1"
                              (.startsWith
@@ -69,7 +70,7 @@
                                      (:status response) => 401
                                      body => {:error "Could not access the Social Wallet API: wrong API KEY"}))
                              (fact "A request sent with the correct API KEY on the headers works as expected."
-                                   (let [apikey (get @ak/apikey @h/client)
+                                   (let [apikey (get @ak/apikey @swapi/client)
                                          response (h/app
                                                    (->
                                                     (mock/request :post "/wallet/v1/label")

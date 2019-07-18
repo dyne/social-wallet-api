@@ -20,76 +20,28 @@
 
 (ns social-wallet-api.handler
   (:require [compojure.api.sweet :refer [api context GET POST]]
+            
             [ring.util.http-response :refer [not-found service-unavailable unauthorized ok
                                              bad-request]]
             [ring.util.http-status :as status]
-            [schema.core :as s]
+            [ring.middleware.cors :refer [wrap-cors]]
             [ring.middleware.defaults :refer
              [wrap-defaults site-defaults]]
+            [failjure.core :as f]
+            [dom-top.core :as dom]
+            [clj-time.core :as time]
+            [schema.core :as s]
             [markdown.core :as md]
-
             [taoensso.timbre :as log]
-
-            [auxiliary.config :refer [config-read]]
+            
             [freecoin-lib.core :as lib]
-            [freecoin-lib.app :as freecoin]
             [social-wallet-api.schema :refer [Query Tags DBTransaction BTCTransaction TransactionQuery
                                               Addresses Balance PerAccountQuery NewTransactionQuery Label NewDeposit
                                               ListTransactionsQuery MaybeAccountQuery DecodedRawTransaction NewWithdraw
                                               Config DepositCheck AddressNew]]
-            [failjure.core :as f]
-            [dom-top.core :as dom]
-            [ring.middleware.cors :refer [wrap-cors]]
-            [clj-time.core :as time]
             [social-wallet-api.api-key :refer [create-and-store-apikey! fetch-apikey apikey
-                                               write-apikey-file]]))
-
-(def available-blockchains #{:faircoin :bitcoin :litecoin :multichain})
-
-(defonce prod-app-name "social-wallet-api")
-(defonce config-default (config-read prod-app-name))
-
-(defonce connections (atom {}))
-(defonce client (atom nil))
-
-;; TODO: lets see why we need this
-(defn- get-config [obj]
-  "sanitize configuration or returns nil if not found"
-  (if (contains? obj :config)
-    (let [mc (merge config-default {:defaults (:config obj)})]
-      ;; any imposed conversion of config values may happen here
-      ;; for example values that must be integer or strings:
-      ;; (merge mc {:total  (Integer. (:total mc))
-      ;;            :quorum (Integer. (:quorum mc))})
-      mc
-      )
-    nil))
-
-;; generic wrapper to complete the conf structure if missing
-;; TODO: may be a good point to insert promises and raise errors
-;; WHat is this for?
-(defn- complete [func obj schema]
-  (if-let [conf (get-config obj)]
-    {:data (func conf (:data obj))
-     :config conf}
-    {:data (func config-default (:data obj))
-     :config config-default}))
-
-;; TODO: pass conncetion as arg?
-(defn- get-connection [connections query]
-  (get @connections (-> query :connection keyword)))
-
-(defn- get-db-connection [connections]
-  (:mongo @connections))
-
-(defn- get-connection-conf [config app-name connection]
-  (get-in config [(keyword app-name) :freecoin connection]))
-
-(defn- get-connection-configs [config app-name]
-  (get-in config [(keyword app-name) :freecoin]))
-
-(defn- get-app-conf [config app-name]
-  (get-in config [(keyword app-name) :freecoin]))
+                                               write-apikey-file]]
+            [social-wallet-api.core :as swapi]))
 
 (defn- number-confirmations [connection transaction-id]
   (-> (lib/get-transaction connection transaction-id)
@@ -98,62 +50,16 @@
 (defn- path-with-version [path]
   (str "/wallet/v1" path))
 
-(s/defn ^:always-validate init
-  ([]
-   (init config-default prod-app-name))
-  ([config :- Config app-name] 
-   (log/debug "Initialising app with name: " app-name)
-   ;; TODO: this should be able to read from resources or a specific file path
-   (when-let [log-level (get-in config [(keyword app-name) :log-level])]
-     (log/merge-config! {:level (keyword log-level)
-                         ;; #{:trace :debug :info :warn :error :fatal :report}
+;; TODO: pass conncetion as arg?
+(defn- get-connection [connections query]
+  (get @connections (-> query :connection keyword)))
 
-                         ;; Control log filtering by
-                         ;; namespaces/patterns. Useful for turning off
-                         ;; logging in noisy libraries, etc.:
-                         :ns-whitelist  ["social-wallet-api.*"
-                                         "freecoin-lib.*"
-                                         "clj-storage.*"]
-                         :ns-blacklist  ["org.eclipse.jetty.*"]}))
-
-   ;; TODO a more generic way to go multiple configurations
-   (let [mongo-conf (get-app-conf config app-name) 
-         mongo (lib/new-mongo (->  mongo-conf :mongo :currency)
-                              (freecoin/connect-mongo (dissoc mongo-conf :currency)))]
-     (swap! connections conj {:mongo mongo})
-     (log/warn "MongoDB backend connected.")
-
-     ;; Setup API KEY when needed
-     (let [apikey-store (-> @connections :mongo :stores-m :apikey-store)]
-       (when-let [client-app (:apikey mongo-conf)]
-         (reset! client client-app)
-         (reset! apikey (apply hash-map (vals
-                                         (or (fetch-apikey apikey-store client-app)
-                                             (create-and-store-apikey! apikey-store client-app 32)))))
-         (write-apikey-file "apikey.yaml" (str client-app ":\n " (get @apikey client-app))))))
-
-   (doseq [[blockchain blockchain-conf] (select-keys (get-connection-configs config app-name) available-blockchains)]
-     (f/if-let-ok? [blockchain-conn (merge (lib/new-btc-rpc (:currency blockchain-conf) 
-                                                            (:rpc-config-path blockchain-conf))
-                                           {:confirmations {:number-confirmations (:number-confirmations blockchain-conf)
-                                                            :frequency-confirmations-millis (:frequency-confirmations-millis blockchain-conf)}}
-                                           {:deposits {:deposit-expiration-millis (:deposit-expiration-millis blockchain-conf)
-                                                       :frequency-deposit-millis (:frequency-deposit-millis blockchain-conf)}})]
-       ;; TODO add schema fair
-       (do
-         (swap! connections conj {blockchain blockchain-conn})
-         (log/info (str (name blockchain) " config is loaded")))
-       (log/error (f/message blockchain-conn))))))
-
-(defn destroy []
-  (log/warn "Stopping the Social Wallet API.")
-  (freecoin/disconnect-mongo (:mongo @connections))
-  (reset! client "")
-  (reset! apikey {}))
+(defn- get-db-connection [connections]
+  (:mongo @connections))
 
 (defn- with-error-responses [connections query ok-fn]
   (try
-    (if-let [connection (get-connection connections query)]
+    (if-let [connection (get-connection swapi/connections query)]
       (if (and (not (instance? freecoin_lib.core.Mongo connection)) (= "db-only" (:type query)))
         (not-found {:error "The connection is not of type db-only."})
         (f/if-let-ok? [response (ok-fn connection query)]
@@ -178,8 +84,8 @@
             (mapv
              (fn [transaction]
                (let [transaction-id (get transaction "txid")]
-                 (f/when-let-failed? [fail (lib/get-transaction (get-db-connection connections) transaction-id)]
-                   (lib/create-transaction (get-db-connection connections)
+                 (f/when-let-failed? [fail (lib/get-transaction (get-db-connection swapi/connections) transaction-id)]
+                   (lib/create-transaction (get-db-connection swapi/connections)
                                            ;; from
                                            (get (first (filter
                                                         #(= "send" (get % "category"))
@@ -201,9 +107,9 @@
 
 (defn wrap-auth [handler]
   (fn [request]
-    (if @client
+    (if @swapi/client
       (if (= (-> request :headers (get "x-api-key"))
-             (get @apikey @client))
+             (get @apikey @swapi/client))
         (handler request)
         (unauthorized {:error "Could not access the Social Wallet API: wrong API KEY"}))
       (handler request))))
@@ -248,7 +154,7 @@ Takes a JSON structure made of a `connection` and a `type` identifier.
 It returns the label value which contains the name of the currency.
 
 "
-       (with-error-responses connections query
+       (with-error-responses swapi/connections query
          (fn [connection query] {:currency (lib/label connection)}))))
 
    (context (path-with-version "") []
@@ -267,7 +173,7 @@ Takes a JSON structure made of a `connection` identifier, a `type` and an `accou
 It returns a list of addresses for the particular account.
 
 "
-       (with-error-responses connections query 
+       (with-error-responses swapi/connections query 
          (fn [connection query]
            (if (= (-> query :connection keyword) :mongo)
              (f/fail "Addresses are available only for blockchain requests")
@@ -289,7 +195,7 @@ Takes a JSON structure made of a `connection`, `type` identifier and an `account
 It returns balance for that particular account. If no account is provided it returns the total balance of the wallet.
 
 "
-       (with-error-responses connections query
+       (with-error-responses swapi/connections query
          (fn [connection query] {:amount (lib/get-balance connection (:account-id query))}))))
 
    (context (path-with-version "/tags") []
@@ -309,7 +215,7 @@ Takes a JSON structure made of a `connection` and a `type` identifier.
 It returns a list of tags found on the database.
 
 "
-       (with-error-responses connections query
+       (with-error-responses swapi/connections query
          (fn [connection query]
            (if (= (-> query :connection keyword) :mongo)
              {:total-count (lib/count-tags connection {})
@@ -336,7 +242,7 @@ Takes a JSON structure with a `connection` and a `type` query identifier. Both m
 Returns a list of transactions found on that connection.
 
 "
-       (with-error-responses connections query
+       (with-error-responses swapi/connections query
          (fn [connection {:keys [account-id tags from-datetime to-datetime page per-page currency description]}]
            (f/if-let-ok? [transaction-list (lib/list-transactions
                                             connection
@@ -375,7 +281,7 @@ Takes a JSON structure with a `connection`, `type` query identifier and a `txid`
 Returns the transaction if found on that connection.
 
 "
-       (with-error-responses connections query
+       (with-error-responses swapi/connections query
          (fn [connection query] (lib/get-transaction
                                  connection
                                  (:txid query))))))
@@ -398,7 +304,7 @@ Creates a transaction. This call is only meant for DBs and not for blockchains.
 Returns the DB entry that was created.
 
 "
-       (with-error-responses connections query
+       (with-error-responses swapi/connections query
          (fn [connection query]
            (if (= (-> query :connection keyword) :mongo)
              (lib/create-transaction connection
@@ -427,7 +333,7 @@ This call will withdraw an amount from the default account \"\" or optionally a 
 Returns the DB entry that was created.
 
 "
-       (with-error-responses connections query
+       (with-error-responses swapi/connections query
          (fn [connection query] 
            (if (= (-> query :connection keyword) :mongo)
              (f/fail "Withdraws are only available for blockchain requests")
@@ -449,13 +355,13 @@ Returns the DB entry that was created.
                         fee (get transaction "fee")]
                     (log/debug "Updating the amount with the fee")
                     (lib/update-transaction
-                     (get-db-connection connections) transaction-id
+                     (get-db-connection swapi/connections) transaction-id
                      ;; Here we add the minus fee to the whole transaction when confirmed
                      (fn [tr] (let [updated-transaction (update tr :amount #(+ % (- fee)))]
                                 (assoc updated-transaction :amount-text (-> updated-transaction :amount str)))))))
                  ;; store to db as well with transaction-id
                  (f/if-let-ok? [db-transaction
-                                (lib/create-transaction (get-db-connection connections)
+                                (lib/create-transaction (get-db-connection swapi/connections)
                                                         (or (:from-id query) (:from-wallet-account query) "")
                                                         (:amount query)
                                                         (:to-address query)
@@ -487,7 +393,7 @@ This call creates a new address and returns it in order to be able to deposit to
 Returns the blockchain address that was created.
 
 "
-       (with-error-responses connections query
+       (with-error-responses swapi/connections query
          (fn [connection query]
            (if (= (-> query :connection keyword) :mongo)
              (f/fail "Deposits are only available for blockchain requests")
@@ -531,7 +437,7 @@ This call will check if any deposits were made to this particular address and wi
 Returns the DB entries that were created.
 
 "
-       (with-error-responses connections query
+       (with-error-responses swapi/connections query
          (fn [connection query]
            (if (= (-> query :connection keyword) :mongo)
              (f/fail "Deposit checks are only available for blockchain requests")

@@ -18,9 +18,10 @@
 ;; If you modify Social Wallet REST API, or any covered work, by linking or combining it with any library (or a modified version of that library), containing parts covered by the terms of EPL v 1.0, the licensors of this Program grant you additional permission to convey the resulting work. Your modified version must prominently offer all users interacting with it remotely through a computer network (if your version supports such interaction) an opportunity to receive the Corresponding Source of your version by providing access to the Corresponding Source from a network server at no charge, through some standard or customary means of facilitating copying of software. Corresponding Source for a non-source form of such a combination shall include the source code for the parts of the libraries (dependencies) covered by the terms of EPL v 1.0 used as well as that of the covered work.
 
 (ns social-wallet-api.test.transactions
-  (:require [midje.sweet :refer :all]
+  (:require [midje.sweet :refer [against-background facts fact before after =>]]
             [ring.mock.request :as mock]
             [social-wallet-api.handler :as h]
+            [social-wallet-api.core :as swapi]
             [social-wallet-api.test.handler :refer [test-app-name parse-body mongo-db-only]]
             [auxiliary.config :refer [config-read]]
             [taoensso.timbre :as log]
@@ -30,7 +31,6 @@
             [freecoin-lib.core :as lib] 
             [clj-storage.core :as store]
             [clj-time.core :as t]
-            [clj-time.local :as l]
             [clj-time.format :as f])
   (:import [org.joda.time DateTimeZone]))
 
@@ -56,14 +56,14 @@
                                                                 :description "lalala"}))))))
 
 (defn empty-transactions []
-  (store/delete-all! (-> @h/connections :mongo :stores-m :transaction-store)))
+  (store/delete-all! (-> @swapi/connections :mongo :stores-m :transaction-store)))
 
-(against-background [(before :contents (h/init
+(against-background [(before :contents (swapi/init
                                         (config-read test-app-name)
                                         test-app-name))
                      (after :contents (do
                                         (empty-transactions)
-                                        (h/destroy)))] 
+                                        (swapi/destroy)))] 
                     
                     (facts "Create some transactions." :slow
                            (let [sum-to-account (atom (BigDecimal. 0))]
@@ -84,10 +84,10 @@
                                           _ (swap! sum-to-account #(.add % (BigDecimal. amount)))]
                                       (:status response) => 200)))
                                (fact "There are 200 transactions inserted."
-                                     (lib/count-transactions (:mongo @h/connections) {}) => 200)
+                                     (lib/count-transactions (:mongo @swapi/connections) {}) => 200)
                                (fact "They all have the same tag."
-                                     (lib/count-transactions (:mongo @h/connections) {:tags ["blabla"]}) => 200
-                                     (lib/count-transactions (:mongo @h/connections) {:tags ["not-there"]}) => 0)
+                                     (lib/count-transactions (:mongo @swapi/connections) {:tags ["blabla"]}) => 200
+                                     (lib/count-transactions (:mongo @swapi/connections) {:tags ["not-there"]}) => 0)
                              (facts "Retrieving transactions limited by pagination."
                                     (fact "Retrieing results without pagination whould default to 10"
                                           (let [response (h/app
