@@ -244,6 +244,7 @@ Returns a list of transactions found on that connection.
 "
        (with-error-responses swapi/connections query
          (fn [connection {:keys [account-id tags from-datetime to-datetime page per-page currency description]}]
+           ;; TODO: change input parameters?????
            (f/if-let-ok? [transaction-list (lib/list-transactions
                                             connection
                                             (cond-> {}
