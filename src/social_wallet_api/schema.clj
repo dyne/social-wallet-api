@@ -182,6 +182,10 @@
    :deposit-expiration-millis s/Num
    :frequency-deposit-millis s/Num})
 
+(s/defschema SawtoothConfig
+  {:currency s/Str
+   :host s/Str})
+
 (s/defschema SocialWalletAPIConfig
   {:log-level s/Str
    :freecoin {:mongo MongoConfig
@@ -189,7 +193,8 @@
               (s/optional-key :bitcoin) BlockchainConfig
               (s/optional-key :litecoin) BlockchainConfig
               (s/optional-key :multichain) BlockchainConfig
-              (s/optional-key :apikey) s/Str}})
+              (s/optional-key :apikey) s/Str
+              (s/optional-key :sawtooth) SawtoothConfig}})
 
 (s/defschema Config
   {:appname s/Str

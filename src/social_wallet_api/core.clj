@@ -24,6 +24,7 @@
 
             [auxiliary.config :refer [config-read]]
             [freecoin-lib.core :as lib]
+            [freecoin-lib.sawtooth :as lib-saw]
             [freecoin-lib.app :as freecoin]
             
             [failjure.core :as f]
@@ -69,6 +70,17 @@
 (defn- get-app-conf [config app-name]
   (get-in config [(keyword app-name) :freecoin]))
 
+(defn- blockchain-conf->conn [blockchain blockchain-conf]
+  (case blockchain
+    :sawtooth  (lib-saw/new-sawtooth (:currency blockchain-conf)
+                                     (select-keys blockchain-conf [:host]))
+    (merge (lib/new-btc-rpc (:currency blockchain-conf) 
+                            (:rpc-config-path blockchain-conf))
+           {:confirmations {:number-confirmations (:number-confirmations blockchain-conf)
+                            :frequency-confirmations-millis (:frequency-confirmations-millis blockchain-conf)}}
+           {:deposits {:deposit-expiration-millis (:deposit-expiration-millis blockchain-conf)
+                       :frequency-deposit-millis (:frequency-deposit-millis blockchain-conf)}})))
+
 (s/defn ^:always-validate init
   ([]
    (init config-default prod-app-name))
@@ -88,28 +100,24 @@
                          :ns-blacklist  ["org.eclipse.jetty.*"]}))
 
    ;; TODO a more generic way to go multiple configurations
-   (let [mongo-conf (get-app-conf config app-name) 
-         mongo (lib/new-mongo (->  mongo-conf :mongo :currency)
-                              (freecoin/connect-mongo (dissoc mongo-conf :currency)))]
+   (let [swapi-conf (get-app-conf config app-name) 
+         mongo (lib/new-mongo (->  (log/spy swapi-conf) :mongo :currency)
+                              (freecoin/connect-mongo (dissoc swapi-conf :currency)))]
      (swap! connections conj {:mongo mongo})
      (log/warn "MongoDB backend connected.")
 
      ;; Setup API KEY when needed
      (let [apikey-store (-> @connections :mongo :stores-m :apikey-store)]
-       (when-let [client-app (:apikey mongo-conf)]
+       (when-let [client-app (:apikey swapi-conf)]
          (reset! client client-app)
          (reset! apikey (apply hash-map (vals
                                          (or (fetch-apikey apikey-store client-app)
                                              (create-and-store-apikey! apikey-store client-app 32)))))
          (write-apikey-file "apikey.yaml" (str client-app ":\n " (get @apikey client-app))))))
 
+   ;; Read all blockchain configs and start connections
    (doseq [[blockchain blockchain-conf] (select-keys (get-connection-configs config app-name) available-blockchains)]
-     (f/if-let-ok? [blockchain-conn (merge (lib/new-btc-rpc (:currency blockchain-conf) 
-                                                            (:rpc-config-path blockchain-conf))
-                                           {:confirmations {:number-confirmations (:number-confirmations blockchain-conf)
-                                                            :frequency-confirmations-millis (:frequency-confirmations-millis blockchain-conf)}}
-                                           {:deposits {:deposit-expiration-millis (:deposit-expiration-millis blockchain-conf)
-                                                       :frequency-deposit-millis (:frequency-deposit-millis blockchain-conf)}})]
+     (f/if-let-ok? [blockchain-conn (blockchain-conf->conn blockchain blockchain-conf)]
        ;; TODO add schema fair
        (do
          (swap! connections conj {blockchain blockchain-conn})
@@ -121,5 +129,3 @@
   (freecoin/disconnect-mongo (:mongo @connections))
   (reset! client "")
   (reset! apikey {}))
-
-

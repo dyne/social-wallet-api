@@ -251,29 +251,24 @@ Returns a list of transactions found on that connection.
 "
        (with-error-responses swapi/connections query
          (fn [connection {:keys [account-id tags from-datetime to-datetime page per-page currency description]}]
-           (let [params (cond-> {}
-                          account-id  (assoc :account-id account-id)
-                          from-datetime  (assoc :from from-datetime)
-                          to-datetime  (assoc :to to-datetime)
-                          tags (assoc :tags tags)
-                          page (assoc :page page)
-                          per-page (assoc :per-page per-page)
-                          ;; TODO: currency filtering doesnt work yet
-                          currency (assoc :currency currency)
-                          description (assoc :description description))]
-             (f/if-let-ok? [transaction-list (lib/list-transactions
-                                              connection
-                                              params)]
-               (if (= (-> query :connection keyword) :mongo)
-                 {:total-count (lib/count-transactions connection (if account-id
-                                                                    (-> params
-                                                                        (dissoc :account-id)
-                                                                        (assoc  $or [{:from-id account-id}
-                                                                                     {:to-id account-id}]))
-                                                                    {}))
-                  :transactions transaction-list}
-                 transaction-list)
-               transaction-list))))))
+           ;; TODO: change input parameters?????
+           (f/if-let-ok? [transaction-list (lib/list-transactions
+                                            connection
+                                            (cond-> {}
+                                              account-id  (assoc :account-id account-id)
+                                              from-datetime  (assoc :from from-datetime)
+                                              to-datetime  (assoc :to to-datetime)
+                                              tags (assoc :tags tags)
+                                              page (assoc :page page)
+                                              per-page (assoc :per-page per-page)
+                                              ;; TODO: currency filtering doesnt work yet
+                                              currency (assoc :currency currency)
+                                              description (assoc :description description)))]
+             (if (= (-> query :connection keyword) :mongo)
+               {:total-count (lib/count-transactions connection {})
+                :transactions transaction-list}
+               transaction-list)
+             transaction-list)))))
 
    (context (path-with-version "/transactions") []
      :tags ["TRANSACTIONS"]
