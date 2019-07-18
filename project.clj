@@ -63,12 +63,12 @@
   :resource-paths ["resources" "test-resources"]
   :deploy-repositories [["releases" {:url :clojars
                                      :creds :gpg}]]
-  :ring {:init    social-wallet-api.handler/init
+  :ring {:init    social-wallet-api.core/init
          :handler social-wallet-api.handler/app
          ;; Accessible only from localhost
          ;; https://stackoverflow.com/questions/24467539/lein-ring-server-headless-only-listen-to-localhost
          :host ~(or (System/getenv "SWAPI_HOST") "localhost")
-         :destroy social-wallet-api.handler/destroy
+         :destroy social-wallet-api.core/destroy
          :reload-paths ["src"]}
 
   :uberjar-name "social-wallet-api.jar"
@@ -81,7 +81,7 @@
                                   [cheshire "5.8.1"]
                                   ;; generative testing
                                   [org.clojure/test.check "0.10.0-alpha2"]]
-                   :repl-options {:init-ns social-wallet-api.handler}
+                   :repl-options {:init-ns social-wallet-api.core}
                    :plugins [[lein-ring "0.12.0"]
                              [lein-midje "3.2"]]}})
  
