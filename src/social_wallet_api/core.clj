@@ -42,8 +42,9 @@
 (defonce client (atom nil))
 
 ;; TODO: lets see why we need this
-(defn- get-config [obj]
+(defn- get-config
   "sanitize configuration or returns nil if not found"
+  [obj]  
   (if (contains? obj :config)
     (let [mc (merge config-default {:defaults (:config obj)})]
       ;; any imposed conversion of config values may happen here
@@ -57,7 +58,7 @@
 ;; generic wrapper to complete the conf structure if missing
 ;; TODO: may be a good point to insert promises and raise errors
 ;; WHat is this for?
-(defn- complete [func obj schema]
+(defn- complete [func obj]
   (if-let [conf (get-config obj)]
     {:data (func conf (:data obj))
      :config conf}
