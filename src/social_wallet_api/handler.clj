@@ -38,7 +38,7 @@
             [social-wallet-api.schema :refer [Query Tag DBTransaction BTCTransaction TransactionQuery
                                               Addresses Balance PerAccountQuery NewTransactionQuery Label NewDeposit
                                               ListTransactionsQuery MaybeAccountQuery DecodedRawTransaction NewWithdraw
-                                              Config DepositCheck AddressNew]]
+                                              Config DepositCheck AddressNew SawtoothTransaction]]
             [social-wallet-api.api-key :refer [create-and-store-apikey! fetch-apikey apikey
                                                write-apikey-file]]
             [social-wallet-api.core :as swapi]
@@ -232,9 +232,11 @@ It returns a list of tags found on the database.
      (POST "/list" request
        :responses {status/not-found {:schema {:error s/Str}}
                    status/service-unavailable {:schema {:error s/Str}}}
-       :return  (s/if #(map? %)
-                  {:total-count s/Num
-                   :transactions [DBTransaction]}
+       :return (s/if #(map? %)
+                  (s/if #(get % "data")
+                    SawtoothTransaction
+                    {:total-count s/Num
+                     :transactions [DBTransaction]})
                   [BTCTransaction])
        :body [query ListTransactionsQuery]
        :summary "List transactions"
@@ -249,6 +251,7 @@ Returns a list of transactions found on that connection.
            ;; TODO: change input parameters?????
            (f/if-let-ok? [transaction-list (lib/list-transactions
                                             connection
+                                            ;; TODO: adjust params to sawtooth
                                             (cond-> {}
                                               account-id  (assoc :account-id account-id)
                                               from-datetime  (assoc :from from-datetime)

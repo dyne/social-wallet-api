@@ -204,3 +204,30 @@
    (s/optional-key :social-wallet-api) SocialWalletAPIConfig
    (s/optional-key :social-wallet-api-test) SocialWalletAPIConfig
    (s/optional-key :social-wallet-with-apikey-test) SocialWalletAPIConfig})
+
+(s/defschema SawtoothHeader
+  {(s/required-key "batcher_public_key") s/Str
+   (s/required-key "dependencies") []
+   (s/required-key "family_name") s/Str
+   (s/required-key "family_version") s/Str
+   (s/required-key "inputs") [s/Str]
+   (s/required-key "nonce") s/Str
+   (s/required-key "outputs") [s/Str]
+   (s/required-key "payload_sha512") s/Str
+   (s/required-key "signer_public_key") s/Str})
+
+(s/defschema SawtoothData
+  {(s/required-key "header") SawtoothHeader
+   (s/required-key "header_signature") s/Str
+   (s/required-key "payload") s/Str})
+
+(s/defschema SawtoothPaging
+  ;; TODO maybe is not nice, but thats more for spec, still recomended for schema. CHeck talk maybe not.
+  {(s/required-key "limit") (s/maybe s/Num)
+   (s/required-key "start") (s/maybe s/Num)})
+
+(s/defschema SawtoothTransaction
+  {(s/required-key "data") [SawtoothData]
+   (s/required-key "head") s/Str
+   (s/required-key "link") s/Str
+   (s/required-key "paging") SawtoothPaging})
