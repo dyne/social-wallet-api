@@ -9,3 +9,9 @@ pom.xml.asc
 /.nrepl-port
 apikey.yaml
 .cache/
+
+website/site/
+website/docs/
+website/mkdocs-dyne-theme/
+
+
