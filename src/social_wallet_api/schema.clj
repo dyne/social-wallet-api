@@ -210,7 +210,8 @@
 
 (s/defschema SawtoothHeader
   {(s/required-key "batcher_public_key") s/Str
-   (s/required-key "dependencies") []
+   ;; BE CAREFULL: do not leave empty vectors for schema, ends up to  https://stackoverflow.com/questions/54074251/swagger-ui-has-console-error-cannot-read-property-ref-of-null-how-to-fix. If content not know fill in  s/Any
+   (s/required-key "dependencies") [s/Any]
    (s/required-key "family_name") s/Str
    (s/required-key "family_version") s/Str
    (s/required-key "inputs") [s/Str]
