@@ -8,7 +8,7 @@
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 
 
-<img class="logo" src="/img/freecoin_logo.png" alt="software by Dyne.org" title="software by Dyne.org" width="400" />
+<img class="logo" src="./website/docs/img/freecoin_logo.png" alt="software by Dyne.org" title="software by Dyne.org" width="400" />
 
 
 ---
