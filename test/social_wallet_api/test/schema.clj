@@ -19,7 +19,7 @@
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 (ns social-wallet-api.test.schema
-  (:require [midje.sweet :refer :all]
+  (:require [midje.sweet :refer [fact truthy =>]]
             [social-wallet-api.schema :refer [AccountDetails BTCTransaction
                                               DecodedRawTransaction SawtoothTransaction]]
             [schema.core :as s]
