@@ -38,7 +38,7 @@
             [social-wallet-api.schema :refer [Query Tags DBTransaction BTCTransaction TransactionQuery
                                               Addresses Balance PerAccountQuery NewTransactionQuery Label NewDeposit
                                               ListTransactionsQuery MaybeAccountQuery DecodedRawTransaction NewWithdraw
-                                              Config DepositCheck AddressNew SawtoothTransaction]]
+                                              Config DepositCheck AddressNew SawtoothTransaction SawtoothTransactions]]
             [social-wallet-api.api-key :refer [create-and-store-apikey! fetch-apikey apikey
                                                write-apikey-file]]
             [social-wallet-api.core :as swapi]))
@@ -232,7 +232,7 @@ It returns a list of tags found on the database.
                    status/service-unavailable {:schema {:error s/Str}}}
        :return (s/if #(map? %)
                   (s/if #(get % "data")
-                    SawtoothTransaction
+                    SawtoothTransactions
                     {:total-count s/Num
                      :transactions [DBTransaction]})
                   [BTCTransaction])
@@ -274,9 +274,11 @@ Returns a list of transactions found on that connection.
                    status/service-unavailable {:schema {:error s/Str}}}
        :return (s/if #(:transaction-id %)
                  DBTransaction
-                 (s/if #(get % "amount")
-                   BTCTransaction
-                   DecodedRawTransaction))
+                 (s/if #(get % "data")
+                   SawtoothTransaction
+                   (s/if #(get % "amount")
+                     BTCTransaction
+                     DecodedRawTransaction)))
        :body [query TransactionQuery]
        :summary "Retieve a transaction by txid"
        :description "

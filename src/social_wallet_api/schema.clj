@@ -223,15 +223,20 @@
 (s/defschema SawtoothData
   {(s/required-key "header") SawtoothHeader
    (s/required-key "header_signature") s/Str
-   (s/required-key "payload") s/Str})
+   ;; TODO: do we know the possible payloads?
+   (s/required-key "payload") s/Any})
 
 (s/defschema SawtoothPaging
   ;; TODO maybe is not nice, but thats more for spec, still recomended for schema. CHeck talk maybe not.
   {(s/required-key "limit") (s/maybe s/Num)
    (s/required-key "start") (s/maybe s/Num)})
 
-(s/defschema SawtoothTransaction
+(s/defschema SawtoothTransactions
   {(s/required-key "data") [SawtoothData]
    (s/required-key "head") s/Str
    (s/required-key "link") s/Str
    (s/required-key "paging") SawtoothPaging})
+
+(s/defschema SawtoothTransaction
+  {(s/required-key "data") SawtoothData
+   (s/required-key "link") s/Str})
