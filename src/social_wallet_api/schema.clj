@@ -118,11 +118,26 @@
 
 (s/defschema NewTransactionQuery
   (assoc Query
-         (s/required-key :from-id)    s/Str
-         (s/required-key :to-id)      s/Str
-         (s/required-key :amount)     s/Str
+         (s/optional-key :from-id)    s/Str
+         (s/optional-key :to-id)      s/Str
+         (s/optional-key :amount)     s/Str
          (s/optional-key :tags)      [s/Str]
-         (s/optional-key :description) s/Str))
+         (s/optional-key :description) s/Str
+         (s/optional-key :data) s/Str
+         (s/optional-key :keys) s/Str
+         (s/optional-key :script) s/Str
+         (s/optional-key :context-id) s/Str))
+
+;; TODO: would be better to have two different data types here, one for sawroom and one for other blockchains
+#_(s/defschema NewSawtoothTransactionQuery
+  (assoc Query
+         (s/optional-key :from-id) s/Str
+         (s/optional-key :tags)      [s/Str]
+         (s/optional-key :description) s/Str
+         (s/required-key :data) s/Str
+         (s/optional-key :keys) s/Str
+         (s/required-key :zencode) s/Str
+         (s/required-key :context-id) s/Str))
 
 (s/defschema NewWithdraw
   (assoc Query

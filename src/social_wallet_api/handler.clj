@@ -38,7 +38,8 @@
             [social-wallet-api.schema :refer [Query Tags DBTransaction BTCTransaction TransactionQuery
                                               Addresses Balance PerAccountQuery NewTransactionQuery Label NewDeposit
                                               ListTransactionsQuery MaybeAccountQuery DecodedRawTransaction NewWithdraw
-                                              Config DepositCheck AddressNew SawtoothTransaction SawtoothTransactions]]
+                                              Config DepositCheck AddressNew SawtoothTransaction
+                                              SawtoothTransactions]]
             [social-wallet-api.api-key :refer [create-and-store-apikey! fetch-apikey apikey
                                                write-apikey-file]]
             [social-wallet-api.core :as swapi]))
@@ -303,7 +304,7 @@ Returns the transaction if found on that connection.
        :body [query NewTransactionQuery]
        :summary "Create a new transaction"
        :description "
-Takes a JSON structure with a `connection`, `type`, `from-account`, `to-account`, `amount` query identifiers and optionally `tags` and `description` as paramaters. Tags are metadata meant to add a category to the transaction and useful for grouping and searching. The amount has been tested for values between `0.00000001` and `9999999999999999.99999999`.
+Takes a JSON structure with a `connection`, `type`, `from-account`, `to-account`, `amount` query identifiers and optionally `tags` and `description` as paramaters. Tags are metadata meant to add a category to the transaction and useful for grouping and searching. The amount has been tested for values between `0.00000001` and `9999999999999999.99999999`. For `sawroom` transactions one needs to use the parameters `script`, `data`, `keys` and `context-id`.
 
 Creates a transaction. This call is only meant for DBs and not for blockchains.
 
@@ -317,8 +318,35 @@ Returns the DB entry that was created.
                                      (:from-id query)
                                      (:amount query)
                                      (:to-id query)
-                                     query) 
-             (f/fail "Transactions can only be made for DBs. For blockchains please look at Deposit and Withdraw"))))))
+                                     query)
+             (if (= (-> query :connection keyword) :sawtooth)
+               (let [{:keys [from-id script data keys context-id tags description]} query]
+                 ;; TODO: Schema check here?
+                 (f/if-let-ok? [response (lib/create-transaction connection
+                                                                 from-id
+                                                                 "0"
+                                                                 nil
+                                                                 (cond-> {:context-id context-id}
+                                                                   tags (assoc :tags tags)
+                                                                   description (assoc :description description)
+                                                                   script (assoc :script (slurp script))
+                                                                   data (assoc :data (slurp data))
+                                                                   keys (assoc :keys (slurp keys))))]
+                   ;; Write on db if written on sawtooth
+                   (f/if-let-ok? [db-transaction (lib/create-transaction (get-db-connection swapi/connections)
+                                                                         from-id
+                                                                         "0"
+                                                                         nil
+                                                                         {:tags tags
+                                                                          :description description
+                                                                          :script script
+                                                                          :data data
+                                                                          :keys keys
+                                                                          :context-id context-id})]
+                     response
+                     (f/fail (f/message db-transaction)))
+                   (f/fail (f/message response))))
+               (f/fail "Transactions can only be made for DBs and the Sawtooth Hyperledger. For other blockchains please look at Deposit and Withdraw")))))))
 
    (context (path-with-version "/withdraws") []
      :tags ["WITHDRAWS"]
