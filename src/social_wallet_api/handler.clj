@@ -322,16 +322,16 @@ Returns the DB entry that was created.
              (if (= (-> query :connection keyword) :sawtooth)
                (let [{:keys [from-id script data keys context-id tags description]} query]
                  ;; TODO: Schema check here?
-                 (f/if-let-ok? [response (lib/create-transaction connection
-                                                                 from-id
-                                                                 "0"
-                                                                 nil
-                                                                 (cond-> {:context-id context-id}
-                                                                   tags (assoc :tags tags)
-                                                                   description (assoc :description description)
-                                                                   script (assoc :script (slurp script))
-                                                                   data (assoc :data (slurp data))
-                                                                   keys (assoc :keys (slurp keys))))]
+                 (f/if-let-ok? [response (f/try* (lib/create-transaction connection
+                                                                          from-id
+                                                                          "0"
+                                                                          nil
+                                                                          (cond-> {:context-id context-id}
+                                                                            tags (assoc :tags tags)
+                                                                            description (assoc :description description)
+                                                                            script (assoc :script (slurp script))
+                                                                            data (assoc :data (slurp data))
+                                                                            keys (assoc :keys (slurp keys)))))]
                    ;; Write on db if written on sawtooth
                    (f/if-let-ok? [db-transaction (lib/create-transaction (get-db-connection swapi/connections)
                                                                          from-id
@@ -345,7 +345,10 @@ Returns the DB entry that was created.
                                                                           :context-id context-id})]
                      response
                      (f/fail (f/message db-transaction)))
-                   (f/fail (f/message response))))
+                   (let [exception-map (Throwable->map response)]
+                     (f/fail (str (:cause exception-map)
+                                  "\n"
+                                  (:via exception-map))))))
                (f/fail "Transactions can only be made for DBs and the Sawtooth Hyperledger. For other blockchains please look at Deposit and Withdraw")))))))
 
    (context (path-with-version "/withdraws") []
