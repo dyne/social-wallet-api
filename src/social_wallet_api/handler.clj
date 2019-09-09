@@ -33,10 +33,10 @@
             [auxiliary.config :refer [config-read]]
             [freecoin-lib.core :as lib]
             [freecoin-lib.app :as freecoin]
-            [social-wallet-api.schema :refer [Query Tags DBTransaction BTCTransaction TransactionQuery
+            [social-wallet-api.schema :refer [Query DBTransaction BTCTransaction TransactionQuery
                                               Addresses Balance PerAccountQuery NewTransactionQuery Label NewDeposit
                                               ListTransactionsQuery MaybeAccountQuery DecodedRawTransaction NewWithdraw
-                                              Config DepositCheck AddressNew]]
+                                              Config DepositCheck AddressNew Tag]]
             [failjure.core :as f]
             [dom-top.core :as dom]
             [ring.middleware.cors :refer [wrap-cors]]
@@ -299,7 +299,8 @@ It returns balance for that particular account. If no account is provided it ret
        :responses {status/not-found {:schema {:error s/Str}}
                    status/service-unavailable {:schema {:error s/Str}}
                    status/bad-request {:schema {:error s/Str}}}
-       :return Tags
+       :return {:total-count s/Num
+                :tags [Tag]}
        :body [query Query]
        :summary "List all tags"
        :description "

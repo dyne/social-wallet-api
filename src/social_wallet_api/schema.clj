@@ -168,9 +168,6 @@
 (s/defschema Label
   {:currency s/Str})
 
-(s/defschema Tags
-  {:tags [Tag]})
-
 (s/defschema AddressNew
   {:address s/Str})
 
