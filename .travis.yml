@@ -1,8 +1,8 @@
+dist: trusty
 language: clojure
 lein: 2.8.1
 script: lein midje
 jdk:
-  - openjdk7
   - oraclejdk8
   - openjdk8
   - oraclejdk9
