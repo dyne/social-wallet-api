@@ -359,7 +359,7 @@ Returns a list of transactions found on that connection.
                                                                         (dissoc :account-id)
                                                                         (assoc  $or [{:from-id account-id}
                                                                                      {:to-id account-id}]))
-                                                                    params))
+                                                                    {}))
                   :transactions transaction-list}
                  transaction-list)
                transaction-list))))))
