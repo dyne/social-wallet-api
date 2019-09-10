@@ -42,7 +42,8 @@
             [ring.middleware.cors :refer [wrap-cors]]
             [clj-time.core :as time]
             [social-wallet-api.api-key :refer [create-and-store-apikey! fetch-apikey apikey
-                                               write-apikey-file]]))
+                                               write-apikey-file]]
+            [monger.operators :refer [$or]]))
 
 (def available-blockchains #{:faircoin :bitcoin :litecoin :multichain})
 
@@ -339,23 +340,29 @@ Returns a list of transactions found on that connection.
 "
        (with-error-responses connections query
          (fn [connection {:keys [account-id tags from-datetime to-datetime page per-page currency description]}]
-           (f/if-let-ok? [transaction-list (lib/list-transactions
-                                            connection
-                                            (cond-> {}
-                                              account-id  (assoc :account-id account-id)
-                                              from-datetime  (assoc :from from-datetime)
-                                              to-datetime  (assoc :to to-datetime)
-                                              tags (assoc :tags tags)
-                                              page (assoc :page page)
-                                              per-page (assoc :per-page per-page)
-                                              ;; TODO: currency filtering doesnt work yet
-                                              currency (assoc :currency currency)
-                                              description (assoc :description description)))]
-             (if (= (-> query :connection keyword) :mongo)
-               {:total-count (lib/count-transactions connection {})
-                :transactions transaction-list}
-               transaction-list)
-             transaction-list)))))
+           (let [params (cond-> {}
+                          account-id  (assoc :account-id account-id)
+                          from-datetime  (assoc :from from-datetime)
+                          to-datetime  (assoc :to to-datetime)
+                          tags (assoc :tags tags)
+                          page (assoc :page page)
+                          per-page (assoc :per-page per-page)
+                          ;; TODO: currency filtering doesnt work yet
+                          currency (assoc :currency currency)
+                          description (assoc :description description))]
+             (f/if-let-ok? [transaction-list (lib/list-transactions
+                                              connection
+                                              params)]
+               (if (= (-> query :connection keyword) :mongo)
+                 {:total-count (lib/count-transactions connection (if account-id
+                                                                    (-> params
+                                                                        (dissoc :account-id)
+                                                                        (assoc  $or [{:from-id account-id}
+                                                                                     {:to-id account-id}]))
+                                                                    params))
+                  :transactions transaction-list}
+                 transaction-list)
+               transaction-list))))))
 
    (context (path-with-version "/transactions") []
      :tags ["TRANSACTIONS"]
