@@ -212,7 +212,7 @@ Wallet API uses the
 underlying [Freecoin-lib](https://github.com/dyne/freecoin-lib)
 blockchain implementation library and adopted as a component of the
 social wallet toolkit being developed for
-the [Commonfare project](https://pieproject.eu) (grant nr. 687922) .
+the [Commonfare project](http://pieproject.eu) (grant nr. 687922) .
 
 
 ## 📄 License
