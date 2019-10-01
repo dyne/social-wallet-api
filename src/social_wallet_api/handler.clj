@@ -35,15 +35,10 @@
             [taoensso.timbre :as log]
             
             [freecoin-lib.core :as lib]
-            [freecoin-lib.app :as freecoin]
-            [social-wallet-api.schema :refer [Query Tags DBTransaction BTCTransaction TransactionQuery
+            [social-wallet-api.schema :refer [Query Tag DBTransaction BTCTransaction TransactionQuery
                                               Addresses Balance PerAccountQuery NewTransactionQuery Label NewDeposit
                                               ListTransactionsQuery MaybeAccountQuery DecodedRawTransaction NewWithdraw
                                               Config DepositCheck AddressNew]]
-            [failjure.core :as f]
-            [dom-top.core :as dom]
-            [ring.middleware.cors :refer [wrap-cors]]
-            [clj-time.core :as time]
             [social-wallet-api.api-key :refer [create-and-store-apikey! fetch-apikey apikey
                                                write-apikey-file]]
             [social-wallet-api.core :as swapi]
