@@ -151,7 +151,9 @@
                 (s/optional-key :from-datetime) java.util.Date
                 (s/optional-key :to-datetime) java.util.Date
                 (s/optional-key :currency) s/Str
-                (s/optional-key :description) s/Str}))
+                (s/optional-key :description) s/Str
+                (s/optional-key :limit) s/Str
+                (s/optional-key :start) s/Str}))
 
 
 (s/defschema DepositCheck
@@ -229,7 +231,9 @@
 (s/defschema SawtoothPaging
   ;; TODO maybe is not nice, but thats more for spec, still recomended for schema. CHeck talk maybe not.
   {(s/required-key "limit") (s/maybe s/Num)
-   (s/required-key "start") (s/maybe s/Num)})
+   (s/required-key "start") (s/maybe s/Str)
+   (s/optional-key "next") s/Str
+   (s/optional-key "next_position") s/Str})
 
 (s/defschema SawtoothTransactions
   {(s/required-key "data") [SawtoothData]

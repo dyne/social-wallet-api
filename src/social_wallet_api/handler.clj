@@ -238,6 +238,7 @@ It returns a list of tags found on the database.
                   [BTCTransaction])
        :body [query ListTransactionsQuery]
        :summary "List transactions"
+       ;; TODO: add sawtooth params to desciption
        :description "
 Takes a JSON structure with a `connection` and a `type` query identifier. Both mongo and btc transactions can be filtered by `account-id`. For blockchains, a number of optional identifiers are available for filtering like `count` and `from`: Returns up to [count] most recent transactions skipping the first [from] transactions for account [account]. For db queries paging can be used with the `page` and `per-page` identifiers which default to 1 and 10 respectively (first page, ten per page). Finally db queries can be also filtered by `currency`, `tags`, `description`, `from-datetime` and `to-datetime`. From-datetime is inclusive and to-datetime is exclusive. 
 
@@ -245,11 +246,10 @@ Returns a list of transactions found on that connection.
 
 "
        (with-error-responses swapi/connections query
-         (fn [connection {:keys [account-id tags from-datetime to-datetime page per-page currency description]}]
+         (fn [connection {:keys [account-id tags from-datetime to-datetime page per-page currency description limit start]}]
            ;; TODO: change input parameters?????
            (f/if-let-ok? [transaction-list (lib/list-transactions
                                             connection
-                                            ;; TODO: adjust params to sawtooth
                                             (cond-> {}
                                               account-id  (assoc :account-id account-id)
                                               from-datetime  (assoc :from from-datetime)
@@ -259,7 +259,9 @@ Returns a list of transactions found on that connection.
                                               per-page (assoc :per-page per-page)
                                               ;; TODO: currency filtering doesnt work yet
                                               currency (assoc :currency currency)
-                                              description (assoc :description description)))]
+                                              description (assoc :description description)
+                                              limit (assoc :limit limit)
+                                              start (assoc :start start)))]
              (if (= (-> query :connection keyword) :mongo)
                {:total-count (lib/count-transactions connection {})
                 :transactions transaction-list}
