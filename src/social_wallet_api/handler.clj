@@ -31,6 +31,7 @@
             [dom-top.core :as dom]
             [clj-time.core :as time]
             [schema.core :as s]
+            [cheshire.core :as json]
             [markdown.core :as md]
             [taoensso.timbre :as log]
             
@@ -38,7 +39,8 @@
             [social-wallet-api.schema :refer [Query Tag DBTransaction BTCTransaction TransactionQuery
                                               Addresses Balance PerAccountQuery NewTransactionQuery Label NewDeposit
                                               ListTransactionsQuery MaybeAccountQuery DecodedRawTransaction NewWithdraw
-                                              Config DepositCheck AddressNew SawtoothTransaction SawtoothTransactions]]
+                                              Config DepositCheck AddressNew SawtoothTransaction SawtoothTransactions
+                                              NewPetitionJson]]
             [social-wallet-api.api-key :refer [create-and-store-apikey! fetch-apikey apikey
                                                write-apikey-file]]
             [social-wallet-api.core :as swapi]
@@ -57,6 +59,15 @@
 
 (defn- get-db-connection [connections]
   (:mongo @connections))
+
+;; TODO: maybe dedicated namespace?
+(defn- construct-create-petition-json [petition-id]
+  (-> "create-petition.json"
+      clojure.java.io/resource
+      slurp
+      json/parse-string
+      (assoc "petition_id" petition-id)
+      json/generate-string))
 
 (defn- with-error-responses [connections query ok-fn]
   (try
@@ -451,7 +462,23 @@ Returns the DB entries that were created.
              (f/fail "Deposit checks are only available for blockchain requests")
              (blockchain-deposit->db-entry connection query (:address query)))))))
 
-
+(context (path-with-version "/petitions") []
+     :tags ["PETITIONS"]
+     :middleware [wrap-auth]
+     (POST "/new" request
+       :responses {status/not-found {:schema {:error s/Str}}
+                   status/service-unavailable {:schema {:error s/Str}}
+                   status/bad-request {:schema {:error s/Str}}}
+       :return s/Any ;; TODO
+       :body [query NewPetitionJson]
+       :summary "Create a new petition"
+       :description "TODO: "
+       (with-error-responses swapi/connections query
+         (fn [connection query]
+           (if (= (-> query :connection keyword) :sawtooth)
+             ;; TODO: the query should contain the type, the json should be either read completely or using the template
+             (lib/create-petition connection query) 
+             (f/fail "Petitions are only supported for sawtooth requests."))))))
    
    ;; (context "/wallet/v1/accounts" []
    ;;          :tags ["ACCOUNTS"]

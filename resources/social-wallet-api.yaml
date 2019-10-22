@@ -24,5 +24,7 @@ freecoin:
     frequency-deposit-millis: 60000
   sawtooth:
     currency: saw
-    host: http://localhost:8090
-
+    sawtooth-api: http://rest-api:8090
+    petition-api: http://halloween.dyne.org:9009
+    credentials-file: credentials.yaml
+    petition-template-dir: /tmp/templates-petitions/

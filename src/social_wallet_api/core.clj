@@ -74,7 +74,7 @@
 (defn- blockchain-conf->conn [blockchain blockchain-conf]
   (case blockchain
     :sawtooth  (lib-saw/new-sawtooth (:currency blockchain-conf)
-                                     (select-keys blockchain-conf [:host]))
+                                     (select-keys blockchain-conf [:sawtooth-api :petition-api]))
     (merge (lib/new-btc-rpc (:currency blockchain-conf) 
                             (:rpc-config-path blockchain-conf))
            {:confirmations {:number-confirmations (:number-confirmations blockchain-conf)
