@@ -184,7 +184,8 @@
 
 (s/defschema SawtoothConfig
   {:currency s/Str
-   :host s/Str})
+   :sawtooth-api s/Str
+   :petition-api s/Str})
 
 (s/defschema SocialWalletAPIConfig
   {:log-level s/Str
@@ -237,3 +238,31 @@
 (s/defschema SawtoothTransaction
   {(s/required-key "data") SawtoothData
    (s/required-key "link") s/Str})
+
+(s/defschema Petition
+  {(s/required-key "uid") s/Str
+   (s/required-key "scores") {"pos" s/Any
+                              "neg" s/Any}})
+
+(s/defschema Zenroom
+  {(s/required-key "curve") s/Str
+   (s/required-key "encoding") s/Str
+   (s/required-key "version") s/Str
+   (s/required-key "scenario") s/Str})
+
+(s/defschema Credentials
+  {(s/required-key "s") s/Str
+   (s/required-key "h") s/Str})
+
+(s/defschema PetitionRequest
+  {(s/required-key "petition") Petition
+   (s/required-key "zenroom") Zenroom
+   (s/required-key "credentials") Credentials
+   ;; TODO can this be more specific?`
+   (s/required-key "credentials_proof") {s/Any s/Any}})
+
+(s/defschema NewPetitionJson
+  {(s/required-key "petition_id") s/Str
+   (s/required-key "petition_reqauest") PetitionRequest
+   ;; TODO can this be more specific?
+   (s/required-key "verifier") {s/Any s/Any}})
