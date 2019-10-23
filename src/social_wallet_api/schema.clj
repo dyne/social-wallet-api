@@ -185,7 +185,9 @@
 (s/defschema SawtoothConfig
   {:currency s/Str
    :sawtooth-api s/Str
-   :petition-api s/Str})
+   :petition-api s/Str
+   :credentials-file s/Str
+   :petition-template-dir s/Str})
 
 (s/defschema SocialWalletAPIConfig
   {:log-level s/Str

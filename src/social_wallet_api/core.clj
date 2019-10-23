@@ -31,7 +31,8 @@
             
             [social-wallet-api.api-key :refer [create-and-store-apikey! fetch-apikey apikey
                                                write-apikey-file]]
-            [social-wallet-api.schema :refer [Config]]))
+            [social-wallet-api.schema :refer [Config]]
+            [yaml.core :as yaml]))
 
 (def available-blockchains #{:faircoin :bitcoin :litecoin :multichain :sawtooth})
 
@@ -71,10 +72,15 @@
 (defn- get-app-conf [config app-name]
   (get-in config [(keyword app-name) :freecoin]))
 
+(defn- read-sawtooth-credentials [file]
+  (s/validate {:username s/Str :password s/Str}
+              (into {} (yaml/from-file file true))))
+
 (defn- blockchain-conf->conn [blockchain blockchain-conf]
   (case blockchain
     :sawtooth  (lib-saw/new-sawtooth (:currency blockchain-conf)
-                                     (select-keys blockchain-conf [:sawtooth-api :petition-api]))
+                                     (select-keys blockchain-conf [:sawtooth-api :petition-api])
+                                     (read-sawtooth-credentials (:credentials-file blockchain-conf)))
     (merge (lib/new-btc-rpc (:currency blockchain-conf) 
                             (:rpc-config-path blockchain-conf))
            {:confirmations {:number-confirmations (:number-confirmations blockchain-conf)
