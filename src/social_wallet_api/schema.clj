@@ -241,10 +241,14 @@
   {(s/required-key "data") SawtoothData
    (s/required-key "link") s/Str})
 
+(s/defschema Scores
+  {(s/required-key "pos") s/Any
+   (s/required-key "neg") s/Any})
+
 (s/defschema Petition
   {(s/required-key "uid") s/Str
-   (s/required-key "scores") {"pos" s/Any
-                              "neg" s/Any}})
+   (s/required-key "scores") Scores
+   (s/required-key "owner") s/Any})
 
 (s/defschema Zenroom
   {(s/required-key "curve") s/Str
@@ -256,15 +260,23 @@
   {(s/required-key "s") s/Str
    (s/required-key "h") s/Str})
 
+(s/defschema CredentialKeypair
+  {(s/required-key "private") s/Str
+   (s/required-key "public") s/Str})
+
 (s/defschema PetitionRequest
   {(s/required-key "petition") Petition
+   (s/required-key "verifier") s/Any
    (s/required-key "zenroom") Zenroom
+   (s/required-key "verifiers") s/Any
    (s/required-key "credentials") Credentials
    ;; TODO can this be more specific?`
-   (s/required-key "credentials_proof") {s/Any s/Any}})
+   (s/required-key "credential_proof") {s/Any s/Any}
+   (s/required-key "credential_keypair") CredentialKeypair})
 
 (s/defschema NewPetitionJson
-  {(s/required-key "petition_id") s/Str
-   (s/required-key "petition_reqauest") PetitionRequest
-   ;; TODO can this be more specific?
-   (s/required-key "verifier") {s/Any s/Any}})
+  (merge Query
+         {(s/required-key "petition_id") s/Str
+          (s/required-key "petition_request") PetitionRequest
+          ;; TODO can this be more specific?
+          (s/required-key "verifier") {s/Any s/Any}}))
