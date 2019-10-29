@@ -41,6 +41,7 @@
 
 (defonce connections (atom {}))
 (defonce client (atom nil))
+(defonce petition-templates (atom nil))
 
 ;; TODO: lets see why we need this
 (defn- get-config
@@ -78,9 +79,11 @@
 
 (defn- blockchain-conf->conn [blockchain blockchain-conf]
   (case blockchain
-    :sawtooth  (lib-saw/new-sawtooth (:currency blockchain-conf)
-                                     (select-keys blockchain-conf [:sawtooth-api :petition-api])
-                                     (read-sawtooth-credentials (:credentials-file blockchain-conf)))
+    :sawtooth  (do
+                 (reset! petition-templates (:templates-petition blockchain-conf))
+                 (lib-saw/new-sawtooth (:currency blockchain-conf)
+                                       (select-keys blockchain-conf [:sawtooth-api :petition-api])
+                                       (read-sawtooth-credentials (:credentials-file blockchain-conf))))
     (merge (lib/new-btc-rpc (:currency blockchain-conf) 
                             (:rpc-config-path blockchain-conf))
            {:confirmations {:number-confirmations (:number-confirmations blockchain-conf)
@@ -108,7 +111,7 @@
 
    ;; TODO a more generic way to go multiple configurations
    (let [swapi-conf (get-app-conf config app-name) 
-         mongo (lib/new-mongo (->  (log/spy swapi-conf) :mongo :currency)
+         mongo (lib/new-mongo (->  swapi-conf :mongo :currency)
                               (freecoin/connect-mongo (dissoc swapi-conf :currency)))]
      (swap! connections conj {:mongo mongo})
      (log/warn "MongoDB backend connected.")

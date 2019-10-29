@@ -275,8 +275,10 @@
    (s/required-key "credential_keypair") CredentialKeypair})
 
 (s/defschema NewPetitionJson
-  (merge Query
-         {(s/required-key "petition_id") s/Str
-          (s/required-key "petition_request") PetitionRequest
-          ;; TODO can this be more specific?
-          (s/required-key "verifier") {s/Any s/Any}}))
+  {(s/required-key "petition_id") s/Str
+   (s/required-key "petition_request") PetitionRequest
+   ;; TODO can this be more specific?
+   (s/required-key "verifier") {s/Any s/Any}})
+
+(s/defschema NewPetition
+  (assoc Query :petition-id s/Str))
