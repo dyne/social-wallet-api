@@ -24,8 +24,6 @@
 (defn construct-create-petition-json [templates-dir petition-id]
   (-> templates-dir
       (str "/create-petition.json")
-      log/spy
       slurp
       json/parse-string
-      (assoc "petition_id" petition-id)
-      json/generate-string))
+      (assoc "petition_id" petition-id)))

@@ -38,13 +38,14 @@
                                               Addresses Balance PerAccountQuery NewTransactionQuery Label NewDeposit
                                               ListTransactionsQuery MaybeAccountQuery DecodedRawTransaction NewWithdraw
                                               Config DepositCheck AddressNew SawtoothTransaction SawtoothTransactions
-                                              NewPetitionJson NewPetition]]
+                                              NewPetitionJson NewPetition CreatePetitionResponse]]
             [social-wallet-api.api-key :refer [create-and-store-apikey! fetch-apikey apikey
                                                write-apikey-file]]
             [social-wallet-api
              [core :as swapi]
              [petition :as pet]]
-            [monger.operators :refer [$or]]))
+            [monger.operators :refer [$or]]
+            [cheshire.core :as json]))
 
 (defn- number-confirmations [connection transaction-id]
   (-> (lib/get-transaction connection transaction-id)
@@ -62,8 +63,8 @@
 
 (defn- with-error-responses [connections query ok-fn]
   (try
-    (if-let [connection (log/spy (get-connection swapi/connections query))]
-      (if (and (not (instance? freecoin_lib.core.Mongo (log/spy connection))) (log/spy (= "db-only" (:type query))))
+    (if-let [connection (get-connection swapi/connections query)]
+      (if (and (not (instance? freecoin_lib.core.Mongo connection)) (= "db-only" (:type query)))
         (not-found {:error "The connection is not of type db-only."})
         (f/if-let-ok? [response (ok-fn connection query)]
           (ok response)
@@ -460,16 +461,16 @@ Returns the DB entries that were created.
        :responses {status/not-found {:schema {:error s/Str}}
                    status/service-unavailable {:schema {:error s/Str}}
                    status/bad-request {:schema {:error s/Str}}}
-       :return s/Any ;; TODO
+       :return CreatePetitionResponse
        :body [query NewPetition]
        :summary "Create a new petition"
        :description "TODO: "
        (with-error-responses swapi/connections query
          (fn [connection query]
            (if (= (-> query :connection keyword) :sawtooth)
-             (f/if-let-ok? [json (log/spy (f/try* (pet/construct-create-petition-json @swapi/petition-templates (:petition-id query))))]
-               (f/if-let-ok? [res (log/spy (f/try* (s/validate NewPetitionJson json)))]
-                 (lib/create-petition connection (log/spy json))
+             (f/if-let-ok? [json (f/try* (pet/construct-create-petition-json @swapi/petition-templates (:petition-id query)))]
+               (f/if-let-ok? [res (f/try* (s/validate NewPetitionJson json))]
+                 (lib/create-petition connection (json/generate-string json))
                  (f/fail (str "Cannot produce a valid create petition json. Please check the teplates: " res)))
                (f/fail "Could not create the json " json)) 
              (f/fail "Petitions are only supported for sawtooth requests."))))))

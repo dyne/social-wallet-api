@@ -80,7 +80,7 @@
 (defn- blockchain-conf->conn [blockchain blockchain-conf]
   (case blockchain
     :sawtooth  (do
-                 (reset! petition-templates (:templates-petition blockchain-conf))
+                 (reset! petition-templates (:petition-template-dir blockchain-conf))
                  (lib-saw/new-sawtooth (:currency blockchain-conf)
                                        (select-keys blockchain-conf [:sawtooth-api :petition-api])
                                        (read-sawtooth-credentials (:credentials-file blockchain-conf))))

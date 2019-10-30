@@ -282,3 +282,6 @@
 
 (s/defschema NewPetition
   (assoc Query :petition-id s/Str))
+
+(s/defschema CreatePetitionResponse
+  {:link s/Str})
