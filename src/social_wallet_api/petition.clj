@@ -27,3 +27,10 @@
       slurp
       json/parse-string
       (assoc "petition_id" petition-id)))
+
+(defn construct-sign-petition-json [templates-dir]
+  (-> templates-dir
+      (str "/sign-petition.json")
+      slurp
+      json/parse-string)
+  )
