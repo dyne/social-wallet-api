@@ -289,8 +289,17 @@
   {(s/required-key "petition_signature") PetitionSignature
    (s/required-key "zenroom") Zenroom})
 
+(s/defschema TallyPetitionJson
+  {(s/required-key "zenroom") Zenroom
+   (s/required-key "Alice") s/Any})
+
 (s/defschema NewPetition
   (assoc Query :petition-id s/Str))
 
 (s/defschema CreatePetitionResponse
   {:link s/Str})
+
+(s/defschema CountPetitionResponse
+  {:pos s/Num
+   :neg s/Num})
+
