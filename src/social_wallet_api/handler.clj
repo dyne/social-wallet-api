@@ -38,7 +38,7 @@
                                               Addresses Balance PerAccountQuery NewTransactionQuery Label NewDeposit
                                               ListTransactionsQuery MaybeAccountQuery DecodedRawTransaction NewWithdraw
                                               Config DepositCheck AddressNew SawtoothTransaction SawtoothTransactions
-                                              NewPetitionJson NewPetition CreatePetitionResponse]]
+                                              NewPetitionJson SignPetitionJson NewPetition CreatePetitionResponse]]
             [social-wallet-api.api-key :refer [create-and-store-apikey! fetch-apikey apikey
                                                write-apikey-file]]
             [social-wallet-api
@@ -475,6 +475,31 @@ Returns the DB entries that were created.
                (f/fail "Could not create the json " json)) 
              (f/fail "Petitions are only supported for sawtooth requests."))))))
    
+
+(context (path-with-version "/petitions") []
+  :tags ["PETITIONS"]
+  :middleware [wrap-auth]
+  (POST "/sign" request
+    :responses {status/not-found {:schema {:error s/Str}}
+                status/service-unavailable {:schema {:error s/Str}}
+                status/bad-request {:schema {:error s/Str}}}
+    :return CreatePetitionResponse
+    :body [query NewPetition]
+    :summary "Sign an existing petition"
+    :description "TODO: "
+    (with-error-responses swapi/connections query
+      (fn [connection query]
+        (if (= (-> query :connection keyword) :sawtooth)
+          (f/if-let-ok? [json (f/try* (pet/construct-sign-petition-json @swapi/petition-templates))]
+                        (f/if-let-ok? [res (f/try* (s/validate SignPetitionJson json))]
+                                      (lib/sign-petition connection (:petition-id query) (json/generate-string json))
+                                      (f/fail (str "Cannot produce a valid create petition json. Please check the teplates: " res)))
+                        (f/fail "Could not create the json " json))
+          (f/fail "Petitions are only supported for sawtooth requests."))
+        )
+      )
+    )
+  )
    ;; (context "/wallet/v1/accounts" []
    ;;          :tags ["ACCOUNTS"]
    ;;          (GET "/list" request
