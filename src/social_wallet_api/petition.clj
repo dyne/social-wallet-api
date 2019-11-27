@@ -34,3 +34,10 @@
       slurp
       json/parse-string)
   )
+
+
+(defn construct-tally-petition-json [templates-dir]
+  (-> templates-dir
+      (str "/tally-petition.json")
+      slurp
+      json/parse-string))
