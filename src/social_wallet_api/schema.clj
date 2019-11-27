@@ -264,6 +264,11 @@
   {(s/required-key "private") s/Str
    (s/required-key "public") s/Str})
 
+(s/defschema PetitionSignature
+  {(s/required-key "uid_signature") s/Str
+   (s/required-key "proof") s/Any}
+  )
+
 (s/defschema PetitionRequest
   {(s/required-key "petition") Petition
    (s/required-key "verifier") s/Any
@@ -279,6 +284,10 @@
    (s/required-key "petition_request") PetitionRequest
    ;; TODO can this be more specific?
    (s/required-key "verifier") {s/Any s/Any}})
+
+(s/defschema SignPetitionJson
+  {(s/required-key "petition_signature") PetitionSignature
+   (s/required-key "zenroom") Zenroom})
 
 (s/defschema NewPetition
   (assoc Query :petition-id s/Str))
