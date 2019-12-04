@@ -1,0 +1,26 @@
+{
+  "data": {
+    "header": {
+      "signer_public_key": "038c05299190628e234d09f015c666aaa121fc9f90b2e32b8a5da2770d358248e1",
+      "dependencies": [],
+      "batcher_public_key": "038c05299190628e234d09f015c666aaa121fc9f90b2e32b8a5da2770d358248e1",
+      "outputs": [
+        "000000a87cb5eafdcca6a8cde0fb0dec1400c5ab274474a6aa82c1c0cbf0fbcaf64c0b",
+        "000000a87cb5eafdcca6a8f82af32160bc5311783bdad381ea57b4e3b0c44298fc1c14"
+      ],
+      "family_version": "1.0",
+      "inputs": [
+        "000000a87cb5eafdcca6a8cde0fb0dec1400c5ab274474a6aa82c1c0cbf0fbcaf64c0b",
+        "000000a87cb5eafdcca6a8cde0fb0dec1400c5ab274474a6aa82c12840f169a04216b7",
+        "000000a87cb5eafdcca6a8cde0fb0dec1400c5ab274474a6aa82c1918142591ba4e8a7",
+        "000000a87cb5eafdcca6a8f82af32160bc5311783bdad381ea57b4e3b0c44298fc1c14"
+      ],
+      "nonce": "",
+      "family_name": "sawtooth_settings",
+      "payload_sha512": "ebd5dd67413e3c9aed650c981c6c0d22b3a0079c867c196dcdb515988701f3e790440e0ce1d3ef50b7f33f88cb9b2dea2b0c89f75148d904111f24478334714b"
+    },
+    "header_signature": "3f2f965242543d2f69355e2aa44eafdc1faf9b58abd5a9a1b502ec8cf05e6c2b16a0e3184e23b859e57e7f127b56c3f090d1590d8c429deebbc6d67df43c2888",
+    "payload": 8
+  },
+  "link": "http://localhost:8090/transactions/3f2f965242543d2f69355e2aa44eafdc1faf9b58abd5a9a1b502ec8cf05e6c2b16a0e3184e23b859e57e7f127b56c3f090d1590d8c429deebbc6d67df43c2888"
+}

@@ -18,9 +18,10 @@
 ;; If you modify Social Wallet REST API, or any covered work, by linking or combining it with any library (or a modified version of that library), containing parts covered by the terms of EPL v 1.0, the licensors of this Program grant you additional permission to convey the resulting work. Your modified version must prominently offer all users interacting with it remotely through a computer network (if your version supports such interaction) an opportunity to receive the Corresponding Source of your version by providing access to the Corresponding Source from a network server at no charge, through some standard or customary means of facilitating copying of software. Corresponding Source for a non-source form of such a combination shall include the source code for the parts of the libraries (dependencies) covered by the terms of EPL v 1.0 used as well as that of the covered work.
 
 (ns social-wallet-api.test.precision
-  (:require [midje.sweet :refer :all]
+  (:require [midje.sweet :refer [=> against-background before after facts fact]]
             [ring.mock.request :as mock]
             [social-wallet-api.handler :as h]
+            [social-wallet-api.core :as swapi]
             [social-wallet-api.test.handler :refer [test-app-name parse-body mongo-db-only]]
             [auxiliary.config :refer [config-read]]
             [taoensso.timbre :as log]
@@ -54,17 +55,17 @@
                                             :tags ["blabla"]}))))))
 
 (defn get-latest-transaction [account-id]
-  (first (lib/list-transactions (:mongo @h/connections) {:account-id account-id})))
+  (first (lib/list-transactions (:mongo @swapi/connections) {:account-id account-id})))
 
 (defn empty-transactions []
-  (store/delete-all! (-> @h/connections :mongo :stores-m :transaction-store)))
+  (store/delete-all! (-> @swapi/connections :mongo :stores-m :transaction-store)))
 
-(against-background [(before :contents (h/init
+(against-background [(before :contents (swapi/init
                                         (config-read test-app-name)
                                         test-app-name))
                      (after :contents (do
                                         (empty-transactions)
-                                        (h/destroy)))]
+                                        (swapi/destroy)))]
                     (facts "Check specific amounts" 
                            (fact "Check one Satochi (8 decimal)"
                                  (let [response (new-transaction-request (.toString Satoshi)

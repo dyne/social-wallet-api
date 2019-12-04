@@ -116,6 +116,9 @@
 (s/defschema TransactionQuery
   (merge Query {:txid s/Str}))
 
+(s/defschema PetitionQuery
+  (merge Query {:petition-id s/Str}))
+
 (s/defschema NewTransactionQuery
   (assoc Query
          (s/required-key :from-id)    s/Str
@@ -182,6 +185,13 @@
    :deposit-expiration-millis s/Num
    :frequency-deposit-millis s/Num})
 
+(s/defschema SawtoothConfig
+  {:currency s/Str
+   :sawtooth-api s/Str
+   :petition-api s/Str
+   :credentials-file s/Str
+   :petition-template-dir s/Str})
+
 (s/defschema SocialWalletAPIConfig
   {:log-level s/Str
    :freecoin {:mongo MongoConfig
@@ -189,7 +199,8 @@
               (s/optional-key :bitcoin) BlockchainConfig
               (s/optional-key :litecoin) BlockchainConfig
               (s/optional-key :multichain) BlockchainConfig
-              (s/optional-key :apikey) s/Str}})
+              (s/optional-key :apikey) s/Str
+              (s/optional-key :sawtooth) SawtoothConfig}})
 
 (s/defschema Config
   {:appname s/Str
@@ -199,3 +210,101 @@
    (s/optional-key :social-wallet-api) SocialWalletAPIConfig
    (s/optional-key :social-wallet-api-test) SocialWalletAPIConfig
    (s/optional-key :social-wallet-with-apikey-test) SocialWalletAPIConfig})
+
+(s/defschema SawtoothHeader
+  {(s/required-key "batcher_public_key") s/Str
+   ;; BE CAREFULL: do not leave empty vectors for schema, ends up to  https://stackoverflow.com/questions/54074251/swagger-ui-has-console-error-cannot-read-property-ref-of-null-how-to-fix. If content not know fill in  s/Any
+   (s/required-key "dependencies") [s/Any]
+   (s/required-key "family_name") s/Str
+   (s/required-key "family_version") s/Str
+   (s/required-key "inputs") [s/Str]
+   (s/required-key "nonce") s/Str
+   (s/required-key "outputs") [s/Str]
+   (s/required-key "payload_sha512") s/Str
+   (s/required-key "signer_public_key") s/Str})
+
+(s/defschema SawtoothData
+  {(s/required-key "header") SawtoothHeader
+   (s/required-key "header_signature") s/Str
+   ;; TODO: do we know the possible payloads?
+   (s/required-key "payload") s/Any})
+
+(s/defschema SawtoothPaging
+  ;; TODO maybe is not nice, but thats more for spec, still recomended for schema. CHeck talk maybe not.
+  {(s/required-key "limit") (s/maybe s/Num)
+   (s/required-key "next") s/Str
+   (s/required-key "next_position") s/Str
+   (s/required-key "start") (s/maybe s/Num)})
+
+(s/defschema SawtoothTransactions
+  {(s/required-key "data") [SawtoothData]
+   (s/required-key "head") s/Str
+   (s/required-key "link") s/Str
+   (s/required-key "paging") SawtoothPaging})
+
+(s/defschema SawtoothTransaction
+  {(s/required-key "data") SawtoothData
+   (s/required-key "link") s/Str})
+
+(s/defschema Scores
+  {(s/required-key "pos") s/Any
+   (s/required-key "neg") s/Any})
+
+(s/defschema Petition
+  {(s/required-key "uid") s/Str
+   (s/required-key "scores") Scores
+   (s/required-key "owner") s/Any})
+
+(s/defschema Zenroom
+  {(s/required-key "curve") s/Str
+   (s/required-key "encoding") s/Str
+   (s/required-key "version") s/Str
+   (s/required-key "scenario") s/Str})
+
+(s/defschema Credentials
+  {(s/required-key "s") s/Str
+   (s/required-key "h") s/Str})
+
+(s/defschema CredentialKeypair
+  {(s/required-key "private") s/Str
+   (s/required-key "public") s/Str})
+
+(s/defschema PetitionSignature
+  {(s/required-key "uid_signature") s/Str
+   (s/required-key "proof") s/Any}
+  )
+
+(s/defschema PetitionRequest
+  {(s/required-key "petition") Petition
+   (s/required-key "verifier") s/Any
+   (s/required-key "zenroom") Zenroom
+   (s/required-key "verifiers") s/Any
+   (s/required-key "credentials") Credentials
+   ;; TODO can this be more specific?`
+   (s/required-key "credential_proof") {s/Any s/Any}
+   (s/required-key "credential_keypair") CredentialKeypair})
+
+(s/defschema NewPetitionJson
+  {(s/required-key "petition_id") s/Str
+   (s/required-key "petition_request") PetitionRequest
+   ;; TODO can this be more specific?
+   (s/required-key "verifier") {s/Any s/Any}})
+
+(s/defschema SignPetitionJson
+  {(s/required-key "petition_signature") PetitionSignature
+   (s/required-key "zenroom") Zenroom})
+
+(s/defschema TallyPetitionJson
+  {(s/required-key "zenroom") Zenroom
+   (s/required-key "Alice") s/Any})
+
+(s/defschema NewPetition
+  (assoc Query :petition-id s/Str))
+
+(s/defschema CreatePetitionResponse
+  {:link s/Str})
+
+(s/defschema CountPetitionResponse
+  {:pos s/Num
+   :neg s/Num})
+

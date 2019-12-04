@@ -22,4 +22,9 @@ freecoin:
     rpc-config-path: /tmp/bitcoin.conf
     deposit-expiration-millis: 3600000
     frequency-deposit-millis: 60000
-
+  sawtooth:
+    currency: saw
+    sawtooth-api: http://rest-api:8090
+    petition-api: http://halloween.dyne.org:9009
+    credentials-file: credentials.yaml
+    petition-template-dir: /tmp/templates-petition/
