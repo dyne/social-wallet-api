@@ -34,7 +34,7 @@
             [markdown.core :as md]
             [taoensso.timbre :as log]            
             [freecoin-lib.core :as lib]
-            [social-wallet-api.schema :refer [Query Tag DBTransaction BTCTransaction TransactionQuery
+            [social-wallet-api.schema :refer [Query Tag PetitionQuery DBTransaction BTCTransaction TransactionQuery
                                               Addresses Balance PerAccountQuery NewTransactionQuery Label NewDeposit
                                               ListTransactionsQuery MaybeAccountQuery DecodedRawTransaction NewWithdraw
                                               Config DepositCheck AddressNew SawtoothTransaction SawtoothTransactions
@@ -454,6 +454,46 @@ Returns the DB entries that were created.
              (f/fail "Deposit checks are only available for blockchain requests")
              (blockchain-deposit->db-entry connection query (:address query)))))))
 
+
+(context (path-with-version "/petitions") []
+  :tags ["PETITIONS"]
+  :middleware [wrap-auth]
+  (POST "/list" request
+    :responses {status/not-found {:schema {:error s/Str}}
+                status/service-unavailable {:schema {:error s/Str}}}
+    :return SawtoothTransactions
+    :body [query Query]
+    :summary "List petitions"
+    :description "Returns a list of petitions found on that sawroom blockchain"
+    (with-error-responses swapi/connections query
+      (fn [connection query]
+           ;; TODO: change input parameters?????
+        (f/if-let-ok? [transaction-list (lib/list-transactions
+                                         connection
+                                            ;; TODO: adjust params to sawtooth
+                                         {})]
+                      transaction-list)))))
+
+(context (path-with-version "/petitions") []
+     :tags ["PETITIONS"]
+     :middleware [wrap-auth]
+     (POST "/get" request
+       :responses {status/not-found {:schema {:error s/Str}}
+                   status/service-unavailable {:schema {:error s/Str}}}
+       :return SawtoothTransaction
+       :body [query PetitionQuery]
+       :summary "Retieve a petition by petition-id"
+       :description "
+Takes a JSON structure with a `connection`, `type` query identifier and a `petition-id`.
+
+Returns the petition if found on that sawroom blockchain
+
+"
+       (with-error-responses swapi/connections query
+         (fn [connection query] (lib/get-transaction
+                                 connection
+                                 (:petition-id query))))))
+
 (context (path-with-version "/petitions") []
      :tags ["PETITIONS"]
      :middleware [wrap-auth]
@@ -464,7 +504,11 @@ Returns the DB entries that were created.
        :return CreatePetitionResponse
        :body [query NewPetition]
        :summary "Create a new petition"
-       :description "TODO: "
+       :description "Takes a JSON structure with a `connection` `type` `petition-id` as paramaters. It is meant to be used with an existent JSON that includes Zenroom related data.
+
+Creates a petition. This call is only meant for sawroom implementation and not for DBs.
+
+Returns the link to check the petition status."
        (with-error-responses swapi/connections query
          (fn [connection query]
            (if (= (-> query :connection keyword) :sawtooth)
@@ -486,7 +530,11 @@ Returns the DB entries that were created.
        :return CreatePetitionResponse
        :body [query NewPetition]
        :summary "Sign an existing petition"
-       :description "TODO: "
+       :description "Takes a JSON structure with a `connection` `type` `petition-id` as paramaters. It is meant to be used with an existent JSON that includes Zenroom related data.
+
+Signs a petition. This call is only meant for sawroom implementation and not for DBs.
+
+Returns the link to check the petition status."
        (with-error-responses swapi/connections query
          (fn [connection query]
            (if (= (-> query :connection keyword) :sawtooth)
@@ -507,7 +555,11 @@ Returns the DB entries that were created.
        :return CreatePetitionResponse
        :body [query NewPetition]
        :summary "Tally an existing petition"
-       :description "TODO: "
+       :description "Takes a JSON structure with a `connection` `type` `petition-id` as paramaters. It is meant to be used with an existent JSON that includes Zenroom related data.
+
+Tally a petition. This call is only meant for sawroom implementation and not for DBs.
+
+Returns the link to check the petition status."
        (with-error-responses swapi/connections query
          (fn [connection query]
            (if (= (-> query :connection keyword) :sawtooth)
@@ -528,7 +580,11 @@ Returns the DB entries that were created.
        :return CountPetitionResponse
        :body [query NewPetition]
        :summary "Count a tallied petition"
-       :description "TODO: "
+       :description "Takes a JSON structure with a `connection` `type` `petition-id` as paramaters. It is meant to be used with an existent JSON that includes Zenroom related data.
+
+Count a petition. This call can be used only after a Tally and is only meant for sawroom implementation and not for DBs.
+
+Returns the amount of POS and NEG related to the petition."
        (with-error-responses swapi/connections query
          (fn [connection query]
            (if (= (-> query :connection keyword) :sawtooth)
