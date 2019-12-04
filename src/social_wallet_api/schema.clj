@@ -116,6 +116,9 @@
 (s/defschema TransactionQuery
   (merge Query {:txid s/Str}))
 
+(s/defschema PetitionQuery
+  (merge Query {:petition-id s/Str}))
+
 (s/defschema NewTransactionQuery
   (assoc Query
          (s/required-key :from-id)    s/Str
@@ -229,6 +232,8 @@
 (s/defschema SawtoothPaging
   ;; TODO maybe is not nice, but thats more for spec, still recomended for schema. CHeck talk maybe not.
   {(s/required-key "limit") (s/maybe s/Num)
+   (s/required-key "next") s/Str
+   (s/required-key "next_position") s/Str
    (s/required-key "start") (s/maybe s/Num)})
 
 (s/defschema SawtoothTransactions
